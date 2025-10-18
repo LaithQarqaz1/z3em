@@ -1,0 +1,554 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>المحفظة | متجر زعيم</title>
+  <link rel="icon" href="https://i.ibb.co/zHC1tQ8b/1757362837638.png" type="image/png">
+
+  <!-- خطوط وأيقونات -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+  <!-- Firebase SDK (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+  (function(){
+    function applyCardState(card, state){
+      var finalState = (state == null) ? 'on' : state;
+      var titleEl = card.querySelector ? card.querySelector('h2') : null;
+      var img = card.querySelector ? card.querySelector('img') : null;
+      try{ card.classList.remove('loading'); }catch(_){ }
+      if (finalState === 'off'){
+        if (img){ try{ img.setAttribute('loading','eager'); img.setAttribute('decoding','sync'); img.setAttribute('fetchpriority','high'); }catch(_){ } }
+        try{ card.classList.add('maintenance'); card.classList.remove('pending-state'); }catch(_){ }
+        try{ card.removeAttribute('href'); }catch(_){ }
+        if (titleEl){ try{ titleEl.textContent = '🚧 مغلق للصيانة'; }catch(_){ } }
+      } else {
+        try{
+          if (card.dataset && card.dataset.originalHref){ card.setAttribute('href', card.dataset.originalHref); }
+          card.classList.remove('maintenance','pending-state');
+          if (titleEl && card.dataset && card.dataset.originalTitle){ titleEl.textContent = card.dataset.originalTitle; }
+        }catch(_){ }
+      }
+    }
+    function prepCard(card){
+      try{
+        if (!card.dataset.originalHref){ var href = card.getAttribute('href'); if (href) card.dataset.originalHref = href; }
+        var t = card.querySelector && card.querySelector('h2');
+        if (t && !card.dataset.originalTitle){ card.dataset.originalTitle = t.textContent || ''; }
+      }catch(_){ }
+    }
+    function getPageNameFromCard(card){
+      try{
+        var href = (card.dataset && card.dataset.originalHref) || card.getAttribute('href') || '';
+        href = href.split('?')[0].split('#')[0];
+        return href.replace(/\.html$/,'');
+      }catch(_){ return ''; }
+    }
+    var STATES_TTL_MS = 5*60*1000;
+    var STATES_CACHE_KEY = 'statesCache';
+    function saveStatesCache(map){ try{ localStorage.setItem(STATES_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), map: map||{} })); }catch(_){ } }
+    function readStatesCache(ignoreTTL){
+      try{
+        var raw = localStorage.getItem(STATES_CACHE_KEY);
+        if(!raw) return null;
+        var obj; try{ obj = JSON.parse(raw); }catch(_){ obj=null; }
+        if (obj && typeof obj === 'object'){
+          if(!ignoreTTL){ var now = Date.now(); if(obj.savedAt && (now-obj.savedAt)>STATES_TTL_MS){ /* expired */ } }
+          if (obj.map && typeof obj.map === 'object') return obj.map;
+          if (typeof obj.stateJson === 'string'){ try{ var m=JSON.parse(obj.stateJson); if(m && typeof m==='object') return m; }catch(_){ } }
+          var vals = Object.values(obj); if (vals.length && vals.every(function(v){return v==='on'||v==='off';})) return obj;
+        }
+        try{ var m2 = JSON.parse(raw); if (m2 && typeof m2==='object') return m2; }catch(_){ }
+        return null;
+      }catch(_){ return null; }
+    }
+    function parseStatesDoc(data){
+      var map = {};
+      try{
+        if (typeof data.stateJson === 'string') { map = JSON.parse(data.stateJson)||{}; }
+        else if (data.map && typeof data.map==='object'){ map = data.map; }
+        else { map = data||{}; }
+      }catch(_){ map = {}; }
+      return map;
+    }
+    async function loadStatesMap(){
+      try{
+        if (typeof firebase==='undefined' || !firebase.firestore) return null;
+        var ref = firebase.firestore().collection('config').doc('states');
+        var snap = await ref.get({ source:'server' }).catch(function(){ return ref.get(); });
+        if (!snap || !snap.exists) return null;
+        var map = parseStatesDoc(snap.data()||{});
+        saveStatesCache(map);
+        return map;
+      }catch(_){ return null; }
+    }
+    function applyStatesToPage(){
+      try{
+        var cards = Array.prototype.slice.call(document.querySelectorAll('a.card, .card[href]'));
+        if (!cards.length) return;
+        cards.forEach(prepCard);
+        if (window.__SKIP_FIREBASE__){ try{ cards.forEach(function(card){ try{ card.removeAttribute('href'); card.classList.add('pending-state'); }catch(_){ } }); }catch(_){ } var cached = readStatesCache(true);
+          if (cached){ cards.forEach(function(card){ var name=getPageNameFromCard(card); var s=(name && cached.hasOwnProperty(name))? cached[name] : 'on'; applyCardState(card,s); }); }
+          return;
+        }
+        loadStatesMap().then(function(map){ if(!map){ map = readStatesCache(false)||{}; } cards.forEach(function(card){ var name=getPageNameFromCard(card); var s=(name && map && map.hasOwnProperty(name))? map[name] : 'on'; applyCardState(card,s); }); });
+      }catch(_){ }
+    }
+    if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyStatesToPage); else try{ applyStatesToPage(); }catch(_){ }
+  })();
+  </script>
+
+  <!-- الهيدر -->
+  <link rel="stylesheet" href="header.css" />
+  <script src="header.js" defer></script>
+  <!-- Loader assets -->
+  <link rel="stylesheet" href="loader.css">
+  <script src="loader.js" defer></script>
+
+  <style>
+    body{font-family:'Cairo',sans-serif;margin:0;direction:rtl;background:#f9f9f9;color:#333}
+    .container{max-width: 1100px; margin: 80px auto 20px; padding: 0 15px}
+    h2{margin:0 0 14px}
+    .wallet-list{display:flex;flex-direction:column;gap:12px}
+    .card{border:1px solid #e5e7eb;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px}
+    .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .code{font-weight:800;color:#374151}
+    .status{padding:4px 10px;border-radius:999px;background:#f3f4f6;color:#111;font-weight:700;font-size:.85rem}
+    .status{border:1px solid #e5e7eb}
+    .status.done{background:#dcfce7;color:#065f46;border-color:#86efac}
+    .status.pending{background:#fff7ed;color:#7c2d12;border-color:#fed7aa}
+    .status.rejected{background:#fee2e2;color:#7f1d1d;border-color:#fecaca}
+    .meta{display:flex;gap:14px;flex-wrap:wrap;color:#374151}
+    .meta span{display:inline-flex;align-items:center;gap:6px}
+    .meta i{color:#6b7280}
+    .details{margin-top:10px; color:#4b5563; line-height:1.8}
+    .proof{margin-top:8px}
+    .proof a{color:#0077cc;text-decoration:none}
+
+    .loading{position:relative;overflow:hidden;pointer-events:none}
+    .loading::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,#fff6,transparent);animation:shimmer 1.2s infinite}
+    @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+    .empty{padding:24px;text-align:center;border:1px dashed #e5e7eb;border-radius:12px;color:#6b7280;background:#fff}
+
+    /* Dark */
+    body.dark-mode{background:#0b1220;color:#e6edf3}
+    body.dark-mode .card{background:#1a2234;color:#e6edf3;border-color:#334155;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+    body.dark-mode .status{background:#111827;color:#e6edf3}
+    body.dark-mode .status{border-color:#334155}
+    body.dark-mode .status.done{background:#064e3b;color:#bbf7d0;border-color:#047857}
+    body.dark-mode .status.pending{background:#2b2f3a;color:#fde68a;border-color:#a16207}
+    body.dark-mode .status.rejected{background:#3f1d1d;color:#fecaca;border-color:#7f1d1d}
+    body.dark-mode .empty{background:#0f172a;border-color:#334155;color:#9aa7b7}
+    body.dark-mode .meta{color:#cbd5e1}
+    body.dark-mode .meta i{color:#94a3b8}
+    body.dark-mode .code{color:#cbd5e1}
+
+    /* Desktop: كل معلومة في سطر */
+    @media (min-width: 992px){
+      .meta{display:flex;flex-direction:column;gap:6px}
+    }
+
+    /* إبراز اختيار المستخدم */
+    .card.selected{outline:2px solid #0ea5e9; box-shadow:0 0 0 2px rgba(14,165,233,.15)}
+    body.dark-mode .card.selected{outline-color:#0ea5e9; box-shadow:0 0 0 2px rgba(14,165,233,.25)}
+
+    /* تمييز أزرار الفلاتر بحسب النوع */
+    .chip{padding:6px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-weight:700}
+    .chip.active{box-shadow:0 0 0 2px rgba(14,165,233,.15)}
+    .chip[data-filter="all"].active{background:#e5f3fb;border-color:#0ea5e9;color:#0b4a67}
+    .chip[data-filter="pending"]{background:#fff7ed;border-color:#fed7aa;color:#7c2d12}
+    .chip[data-filter="pending"].active{background:#fde7c7;border-color:#fb923c;color:#7c2d12}
+    .chip[data-filter="approved"]{background:#dcfce7;border-color:#86efac;color:#065f46}
+    .chip[data-filter="approved"].active{background:#bbf7d0;border-color:#22c55e;color:#065f46}
+    .chip[data-filter="rejected"]{background:#fee2e2;border-color:#fecaca;color:#7f1d1d}
+    .chip[data-filter="rejected"].active{background:#fecaca;border-color:#ef4444;color:#7f1d1d}
+    body.dark-mode .chip{background:#0f172a;border-color:#334155;color:#e6edf3}
+    body.dark-mode .chip[data-filter="all"].active{background:#0b2840;border-color:#0ea5e9;color:#7dd3fc}
+    body.dark-mode .chip[data-filter="pending"]{background:#2b2f3a;border-color:#a16207;color:#fde68a}
+    body.dark-mode .chip[data-filter="approved"]{background:#064e3b;border-color:#047857;color:#bbf7d0}
+    body.dark-mode .chip[data-filter="rejected"]{background:#3f1d1d;border-color:#7f1d1d;color:#fecaca}
+
+    /* زر الحالة قابل للنقر دون إلغاء تنسيقات الحالة */
+    .code-status-btn{background:transparent; cursor:pointer}
+    .code-status-btn:focus{outline:2px solid rgba(14,165,233,.35)}
+  </style>
+</head>
+<body>
+  <div id="preloader"><div class="loader"></div></div>
+  <div id="headerContainer"></div>
+  <div id="sidebarContainer"></div>
+
+  <main class="container">
+    <h2 style="display:flex;align-items:center;gap:10px;justify-content:space-between">
+      <span><i class="fas fa-wallet" style="color:#0ea5e9"></i> محفظتي</span>
+    </h2>
+
+    <div class="toolbar" id="walletToolbar" style="margin:10px 0 16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="chip" data-filter="all">الكل</button>
+      <button class="chip" data-filter="pending">قيد المراجعة</button>
+      <button class="chip" data-filter="approved">مقبولة</button>
+      <button class="chip" data-filter="rejected">مرفوضة</button>
+    </div>
+    <div id="walletList" class="wallet-list"></div>
+  </main>
+
+  <script>
+    // تفعيل الوضع الداكن حسب الإعداد المحفوظ
+    (function(){ try{ if(localStorage.getItem('theme')==='dark'){ document.body.classList.add('dark-mode'); } }catch(e){} })();
+
+    // Firebase init (نفس الإعدادات المستخدمة ببقية الصفحات)
+    const firebaseConfig = {
+          apiKey:"AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
+          authDomain:"z3em-d9b11.firebaseapp.com",
+          projectId:"z3em-d9b11",
+          storageBucket:"z3em-d9b11.firebasestorage.app",
+          messagingSenderId:"236716520945",
+          appId:"1:236716520945:web:a0c336db7dc7079c190050",
+          measurementId:"G-1GG6DE12K6"
+        };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    const listEl = document.getElementById('walletList');
+    const refreshBtn = document.getElementById('refreshWallet');
+    const chipsWrap = document.getElementById('walletToolbar');
+
+    function cardSkeleton(){
+      const d = document.createElement('div'); d.className='card loading'; d.style.height='86px'; return d;
+    }
+
+    function showSkeleton(n=3){ listEl.innerHTML=''; for(let i=0;i<n;i++) listEl.appendChild(cardSkeleton()); }
+    function showEmpty(){ listEl.innerHTML = '<div class="empty">لا توجد عمليات إيداع حتى الآن.</div>'; }
+
+    function asDate(ts){
+      try{
+        if (!ts) return null;
+        if (ts.toDate) return ts.toDate();
+        if (typeof ts === 'object' && ts.seconds) return new Date(ts.seconds * 1000);
+        return new Date(ts);
+      }catch{ return null; }
+    }
+    function formatDate(ts){
+      const d = asDate(ts);
+      if (!d || isNaN(d.getTime())) return ts || '-';
+      try{ return d.toLocaleString('ar-EG',{ weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
+      catch{ return d.toString(); }
+    }
+
+    function normStatus(s){
+      const v = (s||'').toString().toLowerCase();
+      if (v.includes('reject') || v.includes('مرفوض')) return 'rejected';
+      if (v.includes('approved') || v.includes('done') || v.includes('completed') || v.includes('تم_') || v === 'تم' || v.includes('مقبول')) return 'approved';
+      return 'pending';
+    }
+    function statusClass(s){
+      const n = normStatus(s);
+      if (n === 'rejected') return 'status rejected';
+      if (n === 'approved') return 'status done';
+      return 'status pending';
+    }
+    function statusLabel(s){
+      const n = normStatus(s);
+      if (n === 'rejected') return 'مرفوضة';
+      if (n === 'approved') return 'مقبولة';
+      return 'قيد المراجعة';
+    }
+
+    function renderDeposits(items){
+      listEl.innerHTML='';
+      if (!items.length) return showEmpty();
+      items.forEach(it=>{
+        const code = it.code || it.depositCode || it.id || '-';
+        const st   = it.status || it.state || it.depositStatus || 'pending';
+        const ts   = it.timestamp || it.createdAt || it.created_at || '';
+        const paidVal = (it.amountCurrency!=null) ? Number(it.amountCurrency) : (it.client_payAmount!=null ? Number(it.client_payAmount) : (it.payAmount!=null ? Number(it.payAmount) : null));
+        const paidCur = it.currency || '';
+        const paid = (paidVal!=null) ? (paidVal.toFixed(2) + (paidCur? (' ' + paidCur):'')) : '';
+        const added= (it.amountJOD!=null) ? (Number(it.amountJOD).toFixed(2) + ' $') : '';
+        const proof= it.proof || it.proofUrl || '';
+        const method = it.methodName || it.method || '';
+        const country= it.countryName || it.country || '';
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="row">
+            <div class="code">كود: <button class="code-btn" data-code="${code}" style="background:none;border:0;padding:0;margin:0;color:inherit;text-decoration:underline;cursor:pointer;font-weight:800">${code}</button></div>
+            <button class="code-status-btn ${statusClass(st)}" data-code="${code}">${statusLabel(st)}</button>
+          </div>
+          <div class="meta" style="margin-top:8px">
+            ${paid? `<span class="meta-paid"><i class=\"fas fa-money-bill-wave\"></i> المدفوع: <b>${paid}</b></span>`:''}
+            ${added? `<span class="meta-added"><i class=\"fas fa-plus-circle\"></i> سيضاف للمحفظة: <b>${added}</b></span>`:''}
+            ${ts? `<span class="meta-date"><i class=\"fas fa-clock\"></i> ${formatDate(ts)}</span>`:''}
+          </div>
+          <div class="details">
+            ${(country||method) ? `<span class="meta-place"><i class=\"fas fa-globe\"></i> ${country} ${method? '• '+method:''}</span>` : ''}
+            ${proof? `<div class="proof"><i class=\"fas fa-image\"></i> إثبات: <a href=\"${proof}\" target=\"_blank\" rel=\"noopener\">عرض</a></div>`:''}
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    // ====== تخزين محلي للحد من القراءات ======
+    const WK = (uid)=>`wallet:cache:${uid}`;
+    const RECENT_WINDOW_DAYS = 7;
+    const CACHE_TTL_MS = 5*60*1000; // 5 دقائق
+
+    function readCache(uid){
+      try{
+        const raw = localStorage.getItem(WK(uid));
+        if (!raw) return { byCode:{}, order:[], lastSync:0 };
+        const parsed = JSON.parse(raw);
+        return { byCode: parsed.byCode||{}, order: parsed.order||[], lastSync: parsed.lastSync||0 };
+      }catch{ return { byCode:{}, order:[], lastSync:0 }; }
+    }
+    function saveCache(uid, obj){
+      try{ localStorage.setItem(WK(uid), JSON.stringify(obj)); }catch{}
+    }
+    function replaceCache(uid, items){
+      const byCode = {}; const order = [];
+      (items||[]).forEach(it=>{ const code = it.code || it.id; if(!code) return; byCode[code] = it; order.push(code); });
+      saveCache(uid, { byCode, order, lastSync: Date.now() });
+    }
+    function mergeCache(uid, items){
+      const c = readCache(uid);
+      c.byCode = c.byCode || {}; c.order = Array.isArray(c.order)? c.order: [];
+      (items||[]).forEach(it=>{
+        const code = it.code || it.id; if(!code) return;
+        c.byCode[code] = { ...(c.byCode[code]||{}), ...it };
+        if (!c.order.includes(code)) c.order.push(code);
+      });
+      c.lastSync = Date.now();
+      saveCache(uid, c);
+    }
+    function upsertCache(uid, code, data){
+      const c=readCache(uid); c.byCode = c.byCode||{}; c.order = Array.isArray(c.order)? c.order: [];
+      c.byCode[code]= { ...(c.byCode[code]||{}), ...data, __cachedAt: Date.now() };
+      if (!c.order.includes(code)) c.order.unshift(code);
+      c.lastSync = Date.now();
+      saveCache(uid, c);
+    }
+    function cacheToArray(uid){
+      const c = readCache(uid);
+      const arr = (c.order||[]).map(code => ({ code, ...(c.byCode||{})[code] })).filter(x=>x && (x.code||x.id));
+      // ترتيب تنازليًا حسب التاريخ إن وُجد
+      arr.sort((a,b)=>{
+        const ta = asDate(a.createdAt || a.computedAt || a.timestamp)?.getTime() || 0;
+        const tb = asDate(b.createdAt || b.computedAt || b.timestamp)?.getTime() || 0;
+        return tb - ta;
+      });
+      return arr;
+    }
+    function isRecent(ts){
+      const d = asDate(ts); if (!d) return true;
+      return (Date.now() - d.getTime()) <= RECENT_WINDOW_DAYS*24*60*60*1000;
+    }
+
+    function updateCardFromData(card, data){
+      if (!card || !data) return;
+      const st = data.status || data.state || 'pending';
+      const paidVal = (data.amountCurrency!=null)? Number(data.amountCurrency) : (data.client_payAmount!=null? Number(data.client_payAmount) : (data.payAmount!=null? Number(data.payAmount): null));
+      const paidCur = data.currency || '';
+      const paid = (paidVal!=null)? (paidVal.toFixed(2) + (paidCur? (' '+paidCur):'')) : '';
+      const added = (data.amountJOD!=null)? (Number(data.amountJOD).toFixed(2) + ' $') : '';
+      const ts = data.createdAt || data.computedAt || data.timestamp || '';
+      const method = data.methodName || data.method || '';
+      const country= data.countryName || data.country || '';
+      const proof = data.proof || data.proofUrl || '';
+
+      const statusBtn = card.querySelector('.code-status-btn');
+      if (statusBtn){ statusBtn.className = `code-status-btn ${statusClass(st)}`; statusBtn.textContent = statusLabel(st); }
+      const paidEl = card.querySelector('.meta-paid'); if (paidEl && paid) paidEl.innerHTML = `<i class="fas fa-money-bill-wave"></i> المدفوع: <b>${paid}</b>`;
+      const addedEl= card.querySelector('.meta-added'); if (addedEl && added) addedEl.innerHTML = `<i class="fas fa-plus-circle"></i> سيضاف للمحفظة: <b>${added}</b>`;
+      const dateEl = card.querySelector('.meta-date'); if (dateEl && ts) dateEl.innerHTML = `<i class="fas fa-clock"></i> ${formatDate(ts)}`;
+      const placeEl= card.querySelector('.meta-place'); if (placeEl) placeEl.innerHTML = `<i class="fas fa-globe"></i> ${country} ${method? '• '+method:''}`;
+      const proofEl= card.querySelector('.proof a'); if (proofEl && proof) proofEl.href = proof;
+    }
+
+    async function fetchFromDepositRequests(uid){
+      const baseRef = db.collection('depositRequests').where('userId','==',uid);
+      try{
+        // حاول أولاً الاستعلام مع ترتيب على الخادم (يتطلب فهرسًا مركّبًا)
+        const snap = await baseRef.orderBy('createdAt','desc').get();
+        let arr = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+        arr = arr.filter(x => String(x.code || x.id || '').toUpperCase().startsWith('DEP'));
+        return arr;
+      }catch(e){
+        // إذا كان الخطأ يتطلب فهرسًا، جرّب دون orderBy ثم فرز على العميل
+        const msg = String(e && e.message || e || '');
+        if (msg.includes('requires an index') || msg.includes('FAILED_PRECONDITION')){
+          try{
+            const snap2 = await baseRef.get();
+            let arr = snap2.docs.map(d=>({ id:d.id, ...d.data() }));
+            arr = arr.filter(x => String(x.code || x.id || '').toUpperCase().startsWith('DEP'));
+            arr.sort((a,b)=>{
+              const ta = asDate(a.createdAt || a.computedAt || a.timestamp)?.getTime() || 0;
+              const tb = asDate(b.createdAt || b.computedAt || b.timestamp)?.getTime() || 0;
+              return tb - ta;
+            });
+            return arr;
+          }catch(e2){
+            return [];
+          }
+        }
+        return [];
+      }
+    }
+
+    async function fetchFromOrdersPrefix(uid){
+      // نحاول أولاً جلب أوامر المستخدم ثم نصفي DEP على العميل لتجنب متطلبات الفهارس
+      try{
+        const userOrders = await db.collection('orders').where('userId','==',uid).get();
+        const rows = await Promise.all(userOrders.docs.map(async (doc)=>{
+          const base = { id: doc.id, ...doc.data() };
+          let pub = {};
+          try{
+            const pubSnap = await doc.ref.collection('public').doc('main').get();
+            if (pubSnap.exists) pub = pubSnap.data() || {};
+          }catch(e){}
+          return { ...pub, ...base };
+        }));
+        // ترشيح الأكواد التي تبدأ بـ DEP
+        return rows.filter(r=>{
+          const c = (r.code || r.id || r.depositCode || '').toString();
+          return c.toUpperCase().startsWith('DEP');
+        }).sort((a,b)=>{
+          const ta = a.timestamp? new Date(a.timestamp).getTime() : 0;
+          const tb = b.timestamp? new Date(b.timestamp).getTime() : 0;
+          return tb - ta;
+        });
+      }catch(e){ return []; }
+    }
+
+    let ALL_ITEMS = [];
+    let CURRENT_FILTER = 'all';
+
+    function applyFilter(items){
+      if (CURRENT_FILTER === 'all') return items;
+      return items.filter(x=>{
+        const n = normStatus(x.status || x.state || '');
+        if (CURRENT_FILTER==='approved') return n === 'approved';
+        if (CURRENT_FILTER==='rejected') return n === 'rejected';
+        return n === 'pending';
+      });
+    }
+
+    async function loadWallet(){
+      showSkeleton(3);
+      const user = auth.currentUser;
+      if (!user) { listEl.innerHTML = '<div class="empty">يرجى تسجيل الدخول لعرض محفظتك.</div>'; return; }
+
+      // 1) اعرض من الكاش فورًا إن وُجد
+      const cache = readCache(user.uid);
+      let usedCache = false;
+      if (cache.order && cache.order.length){
+        ALL_ITEMS = cacheToArray(user.uid);
+        usedCache = true;
+      } else {
+        // لا يوجد كاش → قراءة أول مرة
+        let data = await fetchFromDepositRequests(user.uid);
+        if (!data.length) data = await fetchFromOrdersPrefix(user.uid);
+        ALL_ITEMS = data;
+        replaceCache(user.uid, data);
+      }
+      // استرداد الفلتر المحفوظ
+      try{ const savedFilter = localStorage.getItem(`wallet:filter:${user.uid}`); if (savedFilter) CURRENT_FILTER = savedFilter; }catch{}
+      renderDeposits(applyFilter(ALL_ITEMS));
+      if (chipsWrap){ chipsWrap.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', (c.dataset.filter||'all')===CURRENT_FILTER)); }
+      // إبراز آخر كود تم فتحه
+      try{ const last = localStorage.getItem(`wallet:lastCode:${user.uid}`);
+        if (last){ const btn = listEl.querySelector(`.code-btn[data-code="${last}"]`) || listEl.querySelector(`.code-status-btn[data-code="${last}"]`); if (btn){ const card = btn.closest('.card'); if (card) card.classList.add('selected'); const cached = readCache(user.uid).byCode?.[last]; if (cached) updateCardFromData(card, cached); } }
+      }catch{}
+
+      // 2) تحديث ذكي: إن كان الكاش أقدم من TTL → حدّث حالات الطلبات الحديثة فقط
+      if (usedCache && (!cache.lastSync || (Date.now()-cache.lastSync) > CACHE_TTL_MS)){
+        const recentCodes = (cache.order||[]).filter(code=>{
+          const it = (cache.byCode||{})[code]||{};
+          return isRecent(it.createdAt || it.computedAt || it.timestamp);
+        }).slice(0, 20); // حدّ أقصى 20 قراءة حديثة
+        for (const code of recentCodes){
+          try{
+            const snap = await db.collection('depositRequests').doc(code).get();
+            if (snap.exists){
+              const fresh = { id:snap.id, ...snap.data() };
+              upsertCache(user.uid, code, fresh);
+              // حدّث البطاقة الظاهرة إن وُجدت
+              const card = listEl.querySelector(`.code-btn[data-code="${code}"]`)?.closest('.card') || listEl.querySelector(`.code-status-btn[data-code="${code}"]`)?.closest('.card');
+              if (card) updateCardFromData(card, fresh);
+            }
+          }catch{}
+        }
+      }
+      // اربط مستمع نقر للقراءة عند الطلب
+      listEl.addEventListener('click', async (e)=>{
+        const btn = e.target.closest('.code-btn, .code-status-btn');
+        if (!btn) return;
+        const code = btn.dataset.code;
+        const card = btn.closest('.card');
+        if (!code || !card) return;
+        const uid = auth.currentUser && auth.currentUser.uid;
+        if (!uid) return;
+
+        // حدّث من الكاش أولًا إن وُجد
+        try{
+          const cached = readCache(uid).byCode?.[code];
+          if (cached) updateCardFromData(card, cached);
+        }catch{}
+        // قراءة عند الطلب من Firestore ثم تخزين
+        try{
+          const snap = await db.collection('depositRequests').doc(code).get();
+          if (snap.exists){
+            const fresh = { id: snap.id, ...snap.data() };
+            updateCardFromData(card, fresh);
+            upsertCache(uid, code, fresh);
+            try{ localStorage.setItem(`wallet:lastCode:${uid}`, code); }catch{}
+            // حدّث العنصر في ALL_ITEMS كذلك
+            const i = ALL_ITEMS.findIndex(x => (x.code||x.id) === code);
+            if (i >= 0) ALL_ITEMS[i] = { ...ALL_ITEMS[i], ...fresh };
+          }
+        }catch{}
+        // إبراز هذه البطاقة وإلغاء إبراز البقية
+        listEl.querySelectorAll('.card.selected').forEach(el=>{ if (el!==card) el.classList.remove('selected'); });
+        card.classList.add('selected');
+      });
+    }
+
+    auth.onAuthStateChanged(()=> loadWallet());
+
+    // تم إزالة شريط البحث للحفاظ على بساطة صفحة المحفظة
+
+    // تبديل الفلاتر
+    if (chipsWrap){
+      chipsWrap.addEventListener('click', (e)=>{
+        const btn = e.target.closest('.chip');
+        if (!btn) return;
+        CURRENT_FILTER = btn.dataset.filter || 'all';
+        chipsWrap.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', c===btn));
+        renderDeposits(applyFilter(ALL_ITEMS));
+      });
+      const first = chipsWrap.querySelector('.chip[data-filter="all"]');
+      if (first) first.classList.add('active');
+    }
+
+    if (refreshBtn){ refreshBtn.addEventListener('click', loadWallet); }
+  </script>
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,60 @@
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /1-main/index.html
+## Explicitly allow all root pages
+Allow: /games.html
+Allow: /map.html
+Allow: /software.html
+Allow: /social.html
+Allow: /edaa.html
+Allow: /sahb.html
+Allow: /jawaker.html
+Allow: /freefireN.html
+Allow: /freefireinbut.html
+Allow: /yala.html
+Allow: /bloodstrike.html
+Allow: /freefireauto.html
+Allow: /wallet.html
+Allow: /pubg.html
+Allow: /mobailleg.html
+Allow: /8ball.html
+Allow: /freefiremembership.html
+Allow: /weplay.html
+Allow: /instainbut.html
+Allow: /indexteam.html
+Allow: /login.html
+Allow: /Reviews.html
+Allow: /settings.html
+Allow: /talabat.html
+Allow: /terms.html
+Allow: /freefire.html
+Allow: /roblox.html
+
+## Explicitly allow common 1-main pages (if served)
+Allow: /1-main/games.html
+Allow: /1-main/map.html
+Allow: /1-main/software.html
+Allow: /1-main/social.html
+Allow: /1-main/edaa.html
+Allow: /1-main/sahb.html
+Allow: /1-main/jawaker.html
+Allow: /1-main/freefireN.html
+Allow: /1-main/freefireinbut.html
+Allow: /1-main/yala.html
+Allow: /1-main/bloodstrike.html
+Allow: /1-main/freefireauto.html
+Allow: /1-main/wallet.html
+Allow: /1-main/pubg.html
+Allow: /1-main/roblox.html
+Allow: /1-main/Reviews.html
+Allow: /1-main/indexteam.html
+Allow: /1-main/terms.html
+Allow: /1-main/freefire.html
+Allow: /1-main/login.html
+Allow: /1-main/talabat.html
+Allow: /1-main/settings.html
+
+# ملفات خرائط الموقع
+Sitemap: https://qusai.shop/sitemap.xml
+Sitemap: https://qusai.shop/1-main/sitemap.xml

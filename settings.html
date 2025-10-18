@@ -1,0 +1,423 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>إعدادات الحساب</title>
+  <link rel="icon" href="https://i.ibb.co/zHC1tQ8b/1757362837638.png" type="image/png">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="header.css">
+  <link rel="stylesheet" href="loader.css">
+  <script src="loader.js" defer></script>
+
+  <style>
+    :root{
+      --primary:#00aaff;
+      --primary-2:#008ecc;
+      --bg:#f4faff;
+      --card:#ffffff;
+      --text:#1e1e1e;
+      --muted:#5c5c5c;
+      --border: rgba(0,170,255,.25);
+      --shadow: 0 12px 35px rgba(0, 170, 255, .15);
+      --radius:16px;
+      --ring: 0 0 0 3px rgba(0,170,255,.25);
+      --success:#16a34a;
+      --danger:#ef4444;
+    }
+
+    /* الوضع الداكن: نعدّل المتغيرات والألوان العامة */
+    body.dark-mode{
+      --bg:#0f172a;
+      --card:#111827;
+      --text:#e5e7eb;
+      --muted:#a3a3a3;
+      --border: rgba(102,217,255,.25);
+      --shadow: 0 12px 35px rgba(0,0,0,.55);
+      --ring: 0 0 0 3px rgba(102,217,255,.25);
+    }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      margin: 0;
+      background: linear-gradient(180deg,#f0faff,#e6f7ff);
+      color: var(--text);
+    }
+    body.dark-mode{
+      background: linear-gradient(180deg,#0b1220,#0b172a);
+    }
+
+    .main-content { flex: 1; padding: 28px; }
+    .container {
+      max-width: 900px;
+      margin: 34px auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    h2 { margin: 0 0 10px; color: var(--primary); font-size: 1.6rem; text-align:center }
+    .sub { text-align:center; color: var(--muted); margin-bottom: 22px }
+
+    .info-list{ display: grid; grid-template-columns: repeat(12,1fr); gap:14px; }
+    .col-6{ grid-column: span 6 }
+    .col-12{ grid-column: span 12 }
+    @media(max-width:720px){ .col-6{ grid-column: span 12 } }
+
+    .info-card{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px 14px;
+      display:grid; grid-template-columns:120px 1fr;   /* قلّلنا عرض عمود الوسم لتوسيع عمود القيمة */
+      align-items:center; gap:10px 12px;
+      transition:.15s;
+    }
+    body.dark-mode .info-card{ background:#1a2234; border-color: var(--border); }
+
+    .info-card:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(0,170,255,.15);
+      border-color: var(--primary);
+    }
+
+    .label{ color: var(--muted); font-weight:700; display:flex; gap:10px; }
+    .label i{ color: var(--primary) }
+
+    .value{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      min-width:0;                     /* يسمح للعنصر أن ينضغط داخل الشبكة */
+      word-break: normal;
+      overflow-wrap: anywhere;         /* التفاف آمن للكلمات/الرموز الطويلة */
+      max-width:100%;
+    }
+
+    .badge{
+      background:#e6f7ff; border:1px dashed var(--primary);
+      padding:3px 10px; border-radius:999px; font-weight:700; color: var(--primary-2);
+    }
+    body.dark-mode .badge{
+      background: #0f2a35; border-color: var(--primary);
+      color:#9adfff;
+    }
+
+    .copyable{
+      font-weight:700; cursor:pointer;
+      padding:2px 8px; border-radius:8px;
+      transition:.15s;
+      position: relative;
+      white-space: normal;
+      max-width:100%;
+      overflow-wrap:anywhere;
+    }
+    .copyable:hover{ background:#e6f7ff; color: var(--primary-2); }
+    body.dark-mode .copyable:hover{ background:#0f2a35; }
+
+    .copyable.copied{ box-shadow: var(--ring); }
+    .copyable.copied::after{
+      content:"✓"; position:absolute; right:-16px; top:-6px;
+      background: var(--success); color:#fff; width:18px; height:18px;
+      border-radius:50%; display:grid; place-items:center; font-size:.75rem;
+    }
+
+    #resetBtn {
+      width:100%; padding:12px;
+      background: linear-gradient(135deg,#3fa6ff,#00cfff);
+      color:#fff; font-size:1rem;
+      border:none; border-radius:12px; cursor:pointer; margin-top:20px;
+      box-shadow:0 8px 18px rgba(0,167,255,.25);
+    }
+    #resetBtn:hover { opacity:.9 }
+    body.dark-mode #resetBtn{ background: linear-gradient(135deg,#0099ff,#00cccc); }
+
+    .toast{
+      position:fixed; left:50%; top:18px; transform:translateX(-50%);
+      background:#111; color:#fff; padding:10px 14px; border-radius:12px;
+      box-shadow:0 12px 28px rgba(0,0,0,.18); font-size:.95rem; z-index:9999;
+    }
+    body.dark-mode .toast{ background:#0e1525; color:#e6edf3; }
+    @media(max-width:560px){ .toast{ top:auto; bottom:16px } }
+
+    .hint{ margin-top:8px; color:var(--muted); font-size:.9rem; text-align:center }
+    .spacer{ height:40px }
+
+    /* على الشاشات الصغيرة: نجعل الوسم فوق القيمة للحصول على عرض أكبر للقيمة */
+    @media(max-width:560px){
+      .info-card{ grid-template-columns:1fr; align-items:start; }
+      .label{ text-align:right; }
+      .value{ justify-content:flex-start; }
+    }
+
+    /* جعل الحقول الرقمية/البريد/المعرف LTR لعرض سليم داخل RTL */
+    #email, #phone, #webuid, #balance, #totalspent{
+      direction:ltr;
+      unicode-bidi:isolate;
+      text-align:left;
+    }
+
+    /* زر تبديل الوضع داخل الإعدادات */
+    .theme-toggle{
+      width:100%;
+      margin-top:14px;
+      padding:12px;
+      border:none;
+      border-radius:12px;
+      cursor:pointer;
+      font-size:1rem;
+      font-weight:700;
+      background: linear-gradient(135deg,#6a6a6a,#444);
+      color:#fff;
+      box-shadow:0 8px 18px rgba(0,0,0,.25);
+    }
+    .theme-toggle:hover{ opacity:.9 }
+    body.dark-mode .theme-toggle{
+      background: linear-gradient(135deg,#999,#666);
+    }
+  </style>
+</head>
+<body>
+  <div id="headerContainer"></div>
+  <div id="sidebarContainer"></div>
+  <div id="preloader"><div class="loader"></div></div>
+  <div class="spacer"></div>
+
+  <div class="main-content">
+    <div class="container">
+      <h2>إعدادات الحساب</h2>
+      <div class="sub">انقر على أي قيمة لنسخها مباشرة</div>
+
+      <div class="info-list">
+        <div class="info-card col-6"><div class="label"><i class="fa-regular fa-id-badge"></i> الاسم</div><div class="value"><span id="username" class="copyable"></span></div></div>
+        <div class="info-card col-6"><div class="label"><i class="fa-solid fa-signal"></i> المستوى</div><div class="value"><span id="level" class="copyable badge"></span></div></div>
+        <div class="info-card col-6"><div class="label"><i class="fa-regular fa-envelope"></i> البريد</div><div class="value"><span id="email" class="copyable"></span></div></div>
+        <div class="info-card col-6"><div class="label"><i class="fa-solid fa-mobile-screen"></i> الهاتف</div><div class="value"><span id="phone" class="copyable"></span></div></div>
+        <div class="info-card col-6"><div class="label"><i class="fa-solid fa-wallet"></i> الرصيد</div><div class="value"><span id="balance" class="copyable"></span><span class="badge">$</span></div></div>
+        <div class="info-card col-6"><div class="label"><i class="fa-solid fa-coins"></i> إجمالي الإنفاق</div><div class="value"><span id="totalspent" class="copyable"></span><span class="badge">$</span></div></div>
+        <div class="info-card col-12"><div class="label"><i class="fa-regular fa-hashtag"></i> معرف المستخدم</div><div class="value"><span id="webuid" class="copyable"></span></div></div>
+      </div>
+
+      <button id="resetBtn"><i class="fa-solid fa-key"></i> إعادة تعيين كلمة المرور</button>
+      <div id="msg" style="margin-top:12px; text-align:center; color:var(--success);"></div>
+
+      <!-- زر تبديل الوضع الداكن داخل الإعدادات -->
+      <button id="themeToggle" class="theme-toggle" type="button">🌙 الوضع الداكن</button>
+    </div>
+  </div>
+  <div id="footerContainer"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+  (function(){
+    function applyCardState(card, state){
+      var finalState = (state == null) ? 'on' : state;
+      var titleEl = card.querySelector ? card.querySelector('h2') : null;
+      var img = card.querySelector ? card.querySelector('img') : null;
+      try{ card.classList.remove('loading'); }catch(_){ }
+      if (finalState === 'off'){
+        if (img){ try{ img.setAttribute('loading','eager'); img.setAttribute('decoding','sync'); img.setAttribute('fetchpriority','high'); }catch(_){ } }
+        try{ card.classList.add('maintenance'); card.classList.remove('pending-state'); }catch(_){ }
+        try{ card.removeAttribute('href'); }catch(_){ }
+        if (titleEl){ try{ titleEl.textContent = '🚧 مغلق للصيانة'; }catch(_){ } }
+      } else {
+        try{
+          if (card.dataset && card.dataset.originalHref){ card.setAttribute('href', card.dataset.originalHref); }
+          card.classList.remove('maintenance','pending-state');
+          if (titleEl && card.dataset && card.dataset.originalTitle){ titleEl.textContent = card.dataset.originalTitle; }
+        }catch(_){ }
+      }
+    }
+    function prepCard(card){
+      try{
+        if (!card.dataset.originalHref){ var href = card.getAttribute('href'); if (href) card.dataset.originalHref = href; }
+        var t = card.querySelector && card.querySelector('h2');
+        if (t && !card.dataset.originalTitle){ card.dataset.originalTitle = t.textContent || ''; }
+      }catch(_){ }
+    }
+    function getPageNameFromCard(card){
+      try{
+        var href = (card.dataset && card.dataset.originalHref) || card.getAttribute('href') || '';
+        href = href.split('?')[0].split('#')[0];
+        return href.replace(/\.html$/,'');
+      }catch(_){ return ''; }
+    }
+    var STATES_TTL_MS = 5*60*1000;
+    var STATES_CACHE_KEY = 'statesCache';
+    function saveStatesCache(map){ try{ localStorage.setItem(STATES_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), map: map||{} })); }catch(_){ } }
+    function readStatesCache(ignoreTTL){
+      try{
+        var raw = localStorage.getItem(STATES_CACHE_KEY);
+        if(!raw) return null;
+        var obj; try{ obj = JSON.parse(raw); }catch(_){ obj=null; }
+        if (obj && typeof obj === 'object'){
+          if(!ignoreTTL){ var now = Date.now(); if(obj.savedAt && (now-obj.savedAt)>STATES_TTL_MS){ /* expired */ } }
+          if (obj.map && typeof obj.map === 'object') return obj.map;
+          if (typeof obj.stateJson === 'string'){ try{ var m=JSON.parse(obj.stateJson); if(m && typeof m==='object') return m; }catch(_){ } }
+          var vals = Object.values(obj); if (vals.length && vals.every(function(v){return v==='on'||v==='off';})) return obj;
+        }
+        try{ var m2 = JSON.parse(raw); if (m2 && typeof m2==='object') return m2; }catch(_){ }
+        return null;
+      }catch(_){ return null; }
+    }
+    function parseStatesDoc(data){
+      var map = {};
+      try{
+        if (typeof data.stateJson === 'string') { map = JSON.parse(data.stateJson)||{}; }
+        else if (data.map && typeof data.map==='object'){ map = data.map; }
+        else { map = data||{}; }
+      }catch(_){ map = {}; }
+      return map;
+    }
+    async function loadStatesMap(){
+      try{
+        if (typeof firebase==='undefined' || !firebase.firestore) return null;
+        var ref = firebase.firestore().collection('config').doc('states');
+        var snap = await ref.get({ source:'server' }).catch(function(){ return ref.get(); });
+        if (!snap || !snap.exists) return null;
+        var map = parseStatesDoc(snap.data()||{});
+        saveStatesCache(map);
+        return map;
+      }catch(_){ return null; }
+    }
+    function applyStatesToPage(){
+      try{
+        var cards = Array.prototype.slice.call(document.querySelectorAll('a.card, .card[href]'));
+        if (!cards.length) return;
+        cards.forEach(prepCard);
+        if (window.__SKIP_FIREBASE__){ try{ cards.forEach(function(card){ try{ card.removeAttribute('href'); card.classList.add('pending-state'); }catch(_){ } }); }catch(_){ } var cached = readStatesCache(true);
+          if (cached){ cards.forEach(function(card){ var name=getPageNameFromCard(card); var s=(name && cached.hasOwnProperty(name))? cached[name] : 'on'; applyCardState(card,s); }); }
+          return;
+        }
+        loadStatesMap().then(function(map){ if(!map){ map = readStatesCache(false)||{}; } cards.forEach(function(card){ var name=getPageNameFromCard(card); var s=(name && map && map.hasOwnProperty(name))? map[name] : 'on'; applyCardState(card,s); }); });
+      }catch(_){ }
+    }
+    if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyStatesToPage); else try{ applyStatesToPage(); }catch(_){ }
+  })();
+  </script>
+  <script src="header.js" defer></script>
+
+  <script>
+    // --- Firebase ---
+    const firebaseConfig={
+          apiKey:"AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
+          authDomain:"z3em-d9b11.firebaseapp.com",
+          projectId:"z3em-d9b11",
+          storageBucket:"z3em-d9b11.firebasestorage.app",
+          messagingSenderId:"236716520945",
+          appId:"1:236716520945:web:a0c336db7dc7079c190050",
+          measurementId:"G-1GG6DE12K6"
+        };
+    firebase.initializeApp(firebaseConfig);
+    const auth=firebase.auth();
+    const db=firebase.firestore();
+
+    function showToast(text,ok=true){
+      const t=document.createElement('div');
+      t.className='toast';
+      t.textContent=(ok?'✅ ':'❌ ')+text;
+      document.body.appendChild(t);
+      setTimeout(()=>t.remove(),1800);
+    }
+
+    async function copyText(text){
+      text=(text||'').trim(); if(!text) throw new Error();
+      try{ await navigator.clipboard.writeText(text); return true }
+      catch{
+        const ta=document.createElement('textarea'); ta.value=text;
+        ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta);
+        ta.select(); document.execCommand('copy'); document.body.removeChild(ta); return true;
+      }
+    }
+
+    // تحميل بيانات المستخدم
+    auth.onAuthStateChanged(async (user)=>{
+      if(!user){ location.href="login.html"; return }
+      email.textContent=user.email||"--";
+      const uid=user.uid;
+      const doc=await db.collection("users").doc(uid).get();
+      if(doc.exists){
+        const d=doc.data();
+        username.textContent=d.username||"--";
+        level.textContent=d.level||"--";
+        totalspent.textContent=(d.totalspent??0).toString();
+        phone.textContent=d.phone||"--";
+        balance.textContent=(d.balance??0).toFixed(2);
+        webuid.textContent=d.webuid||"--";
+
+        username.dataset.copy=username.textContent;
+        level.dataset.copy=level.textContent;
+        email.dataset.copy=email.textContent;
+        phone.dataset.copy=phone.textContent;
+        webuid.dataset.copy=webuid.textContent;
+        balance.dataset.copy=balance.textContent;
+        totalspent.dataset.copy=totalspent.textContent;
+      }
+    });
+
+    // إعادة تعيين كلمة المرور
+    resetBtn.onclick=async()=>{
+      const user=auth.currentUser;
+      if(!user||!user.email)return;
+      try{
+        await auth.sendPasswordResetEmail(user.email);
+        msg.textContent="📨 تم إرسال رابط إعادة التعيين إلى بريدك.";
+      }catch{
+        msg.textContent="حدث خطأ أثناء الإرسال.";
+      }
+    }
+
+    // النسخ السريع
+    document.addEventListener('click',async e=>{
+      const t=e.target.closest('.copyable'); if(!t)return;
+      try{
+        await copyText(t.dataset.copy||t.textContent);
+        t.classList.add('copied'); showToast('تم النسخ');
+        setTimeout(()=>t.classList.remove('copied'),1000);
+      }catch{ showToast('تعذر النسخ',false) }
+    });
+
+    // --- تبديل الوضع الداكن مع التخزين في localStorage ---
+    const themeToggle=document.getElementById('themeToggle');
+    const THEME_KEY='theme';
+
+    function applySavedTheme(){
+      const saved=localStorage.getItem(THEME_KEY);
+      if(saved==='dark'){
+        document.body.classList.add('dark-mode');
+      }else{
+        document.body.classList.remove('dark-mode');
+      }
+      updateThemeToggleText();
+    }
+
+    function updateThemeToggleText(){
+      const isDark = document.body.classList.contains('dark-mode');
+      themeToggle.textContent = isDark ? '☀️ الوضع الفاتح' : '🌙 الوضع الداكن';
+    }
+
+    themeToggle.addEventListener('click', ()=>{
+      document.body.classList.toggle('dark-mode');
+      const isDark=document.body.classList.contains('dark-mode');
+      localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+      updateThemeToggleText();
+    });
+
+    // طبّق الحالة المحفوظة عند التحميل
+    applySavedTheme();
+  </script>
+  
+</body>
+</html>
+
+
+
+
+
+
+

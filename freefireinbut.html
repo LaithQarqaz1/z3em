@@ -1,0 +1,807 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>فري فاير (إدخال) | متجر زعيم</title>
+  <link rel="icon" href="https://i.ibb.co/zHC1tQ8b/1757362837638.png" type="image/png">
+
+  <!-- حارس مبكر: منع فتح الصفحة مباشرةً أو إن كانت البطاقة مغلقة -->
+  <script>
+    (function(){
+      try{
+        var base = (location.pathname.split('/').pop() || '');
+        var page = base.replace(/\.html$/,'');
+        var redirectTo = 'index.html';
+
+        // 1) افحص كاش حالات البطاقات (مخزنة من الصفحة الرئيسية)
+        try{
+          var raw = localStorage.getItem('statesCache');
+          if (raw){
+            var obj = JSON.parse(raw);
+            var map = obj && obj.map ? obj.map : null;
+            if (map && page && map[page] === 'off'){
+              try{ sessionStorage.setItem('nav:reason','closed:'+page); }catch(_){ }
+              return window.location.replace(redirectTo);
+            }
+          }
+        }catch(_){/* ignore */}
+
+        // 2) امنع الدخول المباشر إن لم يكن من داخل الموقع
+        var nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')) || [];
+        var type = nav[0] ? nav[0].type : (performance.navigation ? (performance.navigation.type === 1 ? 'reload' : (performance.navigation.type === 2 ? 'back_forward' : '')) : '');
+        var isReload = type === 'reload';
+        var isBF = type === 'back_forward';
+        var fromHome = false; try{ fromHome = sessionStorage.getItem('nav:fromHome') === '1'; }catch(_){ }
+        var refOk = false; try{ var rr=document.referrer; if(rr){ var uu=new URL(rr); refOk=(uu.origin===location.origin);} }catch(_){ }
+        var paramsAllow = false; try{ paramsAllow=(new URLSearchParams(location.search)).has('allow'); }catch(_){ }
+        var guardOff = false; try{ guardOff=localStorage.getItem('nav:guardOff')==='1'; }catch(_){ }
+
+        if (!fromHome && !isReload && !isBF && !refOk && !paramsAllow && !guardOff){
+          try{ sessionStorage.setItem('nav:redirectedFrom', base); }catch(_){ }
+          return window.location.replace(redirectTo);
+        }
+        if (fromHome){ try{ sessionStorage.removeItem('nav:fromHome'); }catch(_){} }
+      }catch(e){ window.location.replace('index.html'); }
+    })();
+  </script>
+
+  <!-- سكربت تثبيت الثيم مبكرًا جدًا لمنع اللمعة -->
+  <script>
+  (function () {
+    var theme = 'dark';
+    try {
+      var t = localStorage.getItem('theme');
+      if (!t) {
+        t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      }
+      theme = (t === 'light') ? 'light' : 'dark';
+    } catch (e) { theme = 'dark'; }
+
+    var root = document.documentElement;
+    root.setAttribute('data-theme', theme);
+
+    var metaCS = document.querySelector('meta[name="color-scheme"]');
+    if (!metaCS) { metaCS = document.createElement('meta'); metaCS.name = 'color-scheme'; document.head.appendChild(metaCS); }
+    metaCS.setAttribute('content', theme === 'dark' ? 'dark light' : 'light dark');
+
+    var metaTC = document.querySelector('meta[name="theme-color"]');
+    if (!metaTC) { metaTC = document.createElement('meta'); metaTC.name = 'theme-color'; document.head.appendChild(metaTC); }
+    metaTC.setAttribute('content', theme === 'dark' ? '#0b1220' : '#f9f9f9');
+
+    var cs = document.getElementById('critical-theme');
+    if (cs) {
+      cs.textContent = cs.textContent.replace(
+        /color-scheme:\s*(dark|light)\s*;/,
+        'color-scheme:' + (theme === 'dark' ? 'dark' : 'light') + ';'
+      );
+    }
+  })();
+  </script>
+
+  <!-- تحميل الصور أولاً -->
+  <link rel="preload" as="image" href="https://i.ibb.co/1GYPyKMj/1447-02-27-23-46-21-df66c84f.jpg">
+  <link rel="preload" as="image" href="https://i.ibb.co/Vcq1dr69/1756157590278.jpg">
+  <link rel="preload" as="image" href="https://i.ibb.co/XZHyMGSG/1756247096045.jpg">
+  <link rel="preload" as="image" href="https://i.ibb.co/cXQ1mG6y/prod-68632f4bac1c0-1.jpg">
+
+  <!-- تحسين الاتصال بالمصادر -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://i.ibb.co" crossorigin>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+
+  <!-- الخطوط -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- الأيقونات -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+  <!-- CSS -->
+  <link rel="preload" href="header.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
+  <!-- Scripts -->
+  <script src="header.js" defer></script>
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js" async></script>
+  <!-- Loader assets -->
+  <link rel="stylesheet" href="loader.css">
+  <script src="loader.js" defer></script>
+
+  <meta name="color-scheme" content="dark light">
+
+  <style id="critical-theme">
+    :root { color-scheme: light; }
+    html[data-theme="dark"]  { background:#0b1220; color:#e6edf3; }
+    html[data-theme="light"] { background:#f9f9f9; color:#333; }
+    html, body { margin:0; padding:0; }
+    body { background: inherit; color: inherit; }
+  </style>
+
+  <!-- Theme tokens -->
+  <style>
+  :root {
+    --bg:#f9f9f9; --text:#333; --muted:#888;
+    --card-bg:#fff; --card-text:var(--text); --card-border:#e5e7eb; --elev-shadow:0 2px 8px rgba(0,0,0,.1);
+    --input-bg:#fff; --input-text:var(--text); --input-border:#0077cc; --input-border-focus:#005fa3; --input-focus-glow:rgba(0,119,204,.5);
+    --btn-bg:#0077cc; --btn-bg-hover:#005fa3; --btn-text:#fff;
+    --balance-bg:#fff; --balance-text:#0077cc; --balance-shadow:0 5px 15px rgba(0,0,0,.1);
+    --modal-bg:#fff; --modal-text:var(--text); --modal-shadow:0 5px 15px rgba(0,0,0,.3);
+    --warn-bg:#fff3cd; --warn-text:#7a5d00; --warn-border:#ffe69c;
+    --skeleton:#f0f0f0; --shimmer-stripe:rgba(255,255,255,.4); --border-strong:#e5e7eb;
+  }
+  html[data-theme="dark"] {
+    --bg:#0b1220; --text:#e6edf3; --muted:#94a3b8;
+    --card-bg:#1a2234; --card-text:#e6edf3; --card-border:#334155; --elev-shadow:0 2px 10px rgba(0,0,0,.35);
+    --input-bg:#0b1220; --input-text:#e6edf3; --input-border:#334155; --input-border-focus:#38bdf8; --input-focus-glow:rgba(56,189,248,.35);
+    --btn-bg:#0369a1; --btn-bg-hover:#0ea5e9; --btn-text:#fff;
+    --balance-bg:#0f172a; --balance-text:#7dd3fc; --balance-shadow:0 6px 18px rgba(0,0,0,.35);
+    --modal-bg:#111827; --modal-text:#e6edf3; --modal-shadow:0 10px 30px rgba(0,0,0,.5);
+    --warn-bg:#2b2f3a; --warn-text:#facc15; --warn-border:#334155;
+    --skeleton:#162032; --shimmer-stripe:rgba(255,255,255,.15); --border-strong:#334155;
+  }
+  </style>
+
+  <style>
+/* Modal */
+.modal{position:fixed;inset:0;background-color:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999}
+.modal-content{background:var(--modal-bg);color:var(--modal-text);padding:30px;border-radius:10px;max-width:400px;width:100%;box-shadow:var(--modal-shadow);text-align:center}
+
+/* Base */
+body{font-family:'Cairo',sans-serif;margin:0;direction:rtl}
+html[data-theme="dark"]  body,
+html[data-theme="light"] body{background:var(--bg);color:var(--text)}
+
+/* Search */
+.search-container{margin:80px auto 20px;max-width:1000px;display:flex;justify-content:center;gap:10px;padding:0}
+.search-container input[type="text"]{flex:1;padding:12px 15px;background:var(--input-bg);color:var(--input-text);border:2px solid var(--input-border);border-radius:25px;font-size:1rem;outline:none;transition:.3s}
+.search-container input[type="text"]:focus{box-shadow:0 0 6px var(--input-focus-glow);border-color:var(--input-border-focus)}
+.search-container button{background:var(--btn-bg);border:none;padding:12px 20px;border-radius:25px;color:var(--btn-text);font-size:1rem;cursor:pointer;transition:.3s}
+.search-container button:hover{background:var(--btn-bg-hover)}
+
+main{max-width:1200px;margin:20px auto;padding:0 15px}
+
+/* Grid */
+.categories{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,max-content));gap:20px;justify-content:start;max-width:1000px;margin:auto}
+
+/* Card */
+.card{background:var(--card-bg);color:var(--card-text);border:1px solid var(--card-border);border-radius:12px;box-shadow:var(--elev-shadow);text-align:center;padding:16px;text-decoration:none;transition:transform .3s ease,box-shadow .3s ease;display:flex;flex-direction:column;gap:12px}
+.card:hover{transform:translateY(-5px);box-shadow:0 8px 20px rgba(0,0,0,.15)}
+.card h2{font-weight:700;font-size:1rem;margin:0;line-height:1.4;word-break:break-word}
+
+/* Image */
+.card img{width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;object-position:center;border-radius:8px;user-select:none;background-color:var(--skeleton);display:block;margin:0 auto}
+
+/* Show image even while pending (لو حصل تضارب مع .loading) */
+.card.pending-state img{visibility:visible}
+
+/* No results */
+.no-results{text-align:center;font-size:1.2rem;color:var(--muted);margin-top:30px}
+
+/* Balance */
+#userBalance{margin:20px auto;max-width:600px;text-align:center;font-weight:700;font-size:1.3rem;color:var(--text);background:var(--balance-bg);border-radius:20px;padding:20px;display:flex;align-items:center;justify-content:center;box-shadow:var(--balance-shadow);position:relative;border:1px solid var(--card-border)}
+.balance-content{display:flex;align-items:center;justify-content:center}
+#balanceText{margin-right:10px;color:var(--balance-text)}
+.loading-spinner{border:4px solid #f3f3f3;border-top:4px solid var(--btn-bg);border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;display:none}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+#userBalance img{width:30px;height:30px;margin-left:10px}
+
+/* Auth buttons */
+#loginBtn,#logoutBtn{position:fixed;top:5px;border:none;padding:10px 18px;border-radius:25px;font-size:1rem;cursor:pointer;z-index:9999;transition:.3s}
+#loginBtn{left:20px;background:var(--btn-bg);color:var(--btn-text);visibility:visible}
+#loginBtn:hover{background:var(--btn-bg-hover)}
+#logoutBtn{left:160px;background:#cc0000;color:#fff;visibility:hidden}
+#logoutBtn:hover{background:#990000}
+
+/* Login modal fields */
+.login-modal .modal-content input{padding:10px;background:var(--input-bg);color:var(--input-text);border:1px solid var(--card-border);border-radius:6px;font-size:1rem}
+.login-modal .modal-content button{padding:10px;background:var(--btn-bg);color:var(--btn-text);border:none;border-radius:6px;cursor:pointer}
+.login-modal .modal-content button:hover{background:var(--btn-bg-hover)}
+.modal-content .close{position:absolute;top:10px;left:20px;cursor:pointer;font-size:1.2rem}
+
+/* Maintenance / Loading / Pending */
+.card.maintenance{background:var(--bg)!important;pointer-events:none;opacity:.7}
+.card.maintenance h2{color:#a00}
+.card.maintenance img{filter:grayscale(100%)}
+
+.card.pending-state{pointer-events:none;opacity:.7;position:relative}
+.card.pending-state::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--shimmer-stripe),transparent);animation:shimmer 1.2s infinite;border-radius:12px}
+@keyframes shimmer{0%{right:-150px}100%{right:100%}}
+
+.card.loading{position:relative;background:var(--skeleton);overflow:hidden;pointer-events:none}
+.card.loading img,.card.loading h2{visibility:hidden}
+.card.loading::after{content:'';position:absolute;top:0;right:-150px;width:100px;height:100%;background:linear-gradient(90deg,transparent,var(--shimmer-stripe),transparent);animation:shimmer 1.2s infinite}
+
+/* Responsive */
+@media (max-width:480px){.categories{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px}.card{padding:12px;gap:10px}.card h2{font-size:.95rem}}
+@media (max-width:768px){.categories{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
+@media (max-width:992px){.categories{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}}
+
+.card.loading{pointer-events:none;opacity:.7}
+
+/* Fixed grid overrides */
+.categories{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:20px;justify-content:center}
+@media (max-width:768px){.categories{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px}.card{padding:12px!important}.card h2{font-size:.9rem!important}}
+@media (max-width:480px){.categories{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px}.card{padding:10px!important}.card h2{font-size:.85rem!important}}
+hr{border-color:var(--border-strong)}
+
+/* Auto ribbon like FREEFIREINBUT */
+a.card.auto{position:relative;overflow:hidden}
+a.card.auto::before{
+  content:"تلقائي";
+  position:absolute; top:12px; right:-42px;
+  padding:8px 48px;
+  font-weight:900; font-size:.9rem; line-height:1; color:#fff;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0) 60%),
+    linear-gradient(135deg,#06b6d4,#10b981);
+  background-size:100% 100%, 200% 100%;
+  background-position:0 0, 0% 50%;
+  animation:ribbonShift 8s ease-in-out infinite;
+  transform:rotate(45deg);
+  border-radius:10px; letter-spacing:.4px;
+  text-shadow:0 1px 1px rgba(0,0,0,.25);
+  clip-path: polygon(8% 0, 92% 0, 100% 50%, 92% 100%, 8% 100%, 0% 50%);
+  box-shadow:0 10px 20px rgba(0,0,0,.18),
+             inset 0 1px 0 rgba(255,255,255,.25),
+             inset 0 -1px 0 rgba(0,0,0,.15);
+  pointer-events:none; z-index:3;
+  direction: rtl;
+  will-change: transform;
+}
+@keyframes ribbonShift{
+  0%   { background-position: 0 0, 0% 50%; }
+  50%  { background-position: 0 0, 100% 50%; }
+  100% { background-position: 0 0, 0% 50%; }
+}
+@media (prefers-reduced-motion: reduce){ a.card.auto::before{ animation:none } }
+html[data-theme="dark"] a.card.auto::before{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 60%),
+    linear-gradient(135deg,#22c55e,#06b6d4);
+  background-size:100% 100%, 200% 100%;
+  background-position:0 0, 0% 50%;
+}
+
+/* Premium visual enhancements for .card.auto */
+a.card.auto{
+  border:1.5px solid transparent;
+  background:
+    linear-gradient(var(--card-bg),var(--card-bg)) padding-box,
+    linear-gradient(135deg,#06b6d4,#10b981) border-box; /* match auto ribbon */
+  box-shadow:0 8px 22px rgba(0,0,0,.12), 0 1px 0 rgba(255,255,255,.04) inset;
+  transition:transform .25s ease, box-shadow .35s ease, filter .25s ease;
+}
+html[data-theme="dark"] a.card.auto{
+  background:
+    linear-gradient(var(--card-bg),var(--card-bg)) padding-box,
+    linear-gradient(135deg,#22c55e,#06b6d4) border-box;
+  box-shadow:0 10px 26px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.04) inset;
+}
+
+/* Ambient pulse glow */
+@keyframes luxPulse{
+  0%,100%{box-shadow:0 8px 22px rgba(0,0,0,.12), 0 0 0 0 rgba(250,204,21,.0)}
+  50%{box-shadow:0 12px 34px rgba(0,0,0,.16), 0 0 24px 0 rgba(250,204,21,.18)}
+}
+a.card.auto{animation:luxPulse 3.6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){ a.card.auto{animation:none} }
+
+/* Image richness + micro parallax */
+a.card.auto img{transition:transform .45s ease, filter .35s ease; will-change:transform}
+a.card.auto:hover img{transform:scale(1.06) translateY(-2px); filter:saturate(1.08) contrast(1.05)}
+
+/* Diagonal glossy sweep (only when active) */
+a.card.auto:not(.pending-state):not(.maintenance)::after{
+  content:""; position:absolute; inset:-20% -120% -20% -120%;
+  background:linear-gradient(115deg, transparent 45%, rgba(255,255,255,.38) 50%, transparent 55%);
+  transform:translateX(-20%) rotate(12deg);
+  animation:luxSweep 3.8s linear infinite; pointer-events:none; z-index:1;
+}
+@keyframes luxSweep{ 0%{transform:translateX(-20%) rotate(12deg)} 100%{transform:translateX(120%) rotate(12deg)} }
+@media (prefers-reduced-motion: reduce){ a.card.auto::after{animation:none} }
+
+  /* Hover lift */
+  a.card.auto:hover{ transform:translateY(-4px) scale(1.01); box-shadow:0 16px 36px rgba(0,0,0,.18), 0 0 28px rgba(250,204,21,.16) }
+  
+  </style>
+</head>
+<body>
+  <div id="preloader"><div class="loader"></div></div>
+
+<div id="headerContainer"></div>
+<div id="sidebarContainer"></div>
+
+  <!-- البحث -->
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" />
+  </div>
+
+  <main>
+    <section class="categories" id="categoriesContainer">
+
+      <a href="freefireauto.html" class="card auto featured" data-title="فري فاير تلقائي">
+        <img src="https://i.ibb.co/xKmTvgwS/1756498380860.jpg" alt="فري فاير تلقائي" />
+        <h2>فري فاير تلقائي</h2>
+      </a>
+
+      <a href="freefireN.html" class="card" data-title="فري فاير نيجيري">
+        <img src="https://i.ibb.co/0pDbDVsc/1756498704843.jpg" alt="فري فاير نيجيري" />
+        <h2>فري فاير نيجيري</h2>
+      </a>
+
+      <a href="freefire.html" class="card" data-title="فري فاير يدوي">
+        <img src="https://i.ibb.co/7xZwmG1F/1756498841823.jpg" alt="فري فاير يدوي" />
+        <h2>فري فاير يدوي</h2>
+      </a>
+
+      <a href="freefiremembership.html" class="card" data-title="فري فاير يدوي">
+        <img src="https://i.ibb.co/7xZwmG1F/1756498841823.jpg" alt="فري فاير يدوي" />
+        <h2>عضويات فري فاير</h2>
+      </a>
+
+    </section>
+    <p class="no-results" id="noResults" style="display:none;">عذراً، لم يتم العثور على نتائج.</p>
+  </main>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+  (function(){
+    function applyCardState(card, state){
+      var finalState = (state == null) ? 'on' : state;
+      var titleEl = card.querySelector ? card.querySelector('h2') : null;
+      var img = card.querySelector ? card.querySelector('img') : null;
+      try{ card.classList.remove('loading'); }catch(_){ }
+      if (finalState === 'off'){
+        if (img){ try{ img.setAttribute('loading','eager'); img.setAttribute('decoding','sync'); img.setAttribute('fetchpriority','high'); }catch(_){ } }
+        try{ card.classList.add('maintenance'); card.classList.remove('pending-state'); }catch(_){ }
+        try{ card.removeAttribute('href'); }catch(_){ }
+        if (titleEl){ try{ titleEl.textContent = '🚧 مغلق للصيانة'; }catch(_){ } }
+      } else {
+        try{
+          if (card.dataset && card.dataset.originalHref){ card.setAttribute('href', card.dataset.originalHref); }
+          card.classList.remove('maintenance','pending-state');
+          if (titleEl && card.dataset && card.dataset.originalTitle){ titleEl.textContent = card.dataset.originalTitle; }
+        }catch(_){ }
+      }
+    }
+    function prepCard(card){
+      try{
+        if (!card.dataset.originalHref){ var href = card.getAttribute('href'); if (href) card.dataset.originalHref = href; }
+        var t = card.querySelector && card.querySelector('h2');
+        if (t && !card.dataset.originalTitle){ card.dataset.originalTitle = t.textContent || ''; }
+      }catch(_){ }
+    }
+    function getPageNameFromCard(card){
+      try{
+        var href = (card.dataset && card.dataset.originalHref) || card.getAttribute('href') || '';
+        href = href.split('?')[0].split('#')[0];
+        return href.replace(/\.html$/,'');
+      }catch(_){ return ''; }
+    }
+    var STATES_TTL_MS = 5*60*1000;
+    var STATES_CACHE_KEY = 'statesCache';
+    function saveStatesCache(map){ try{ localStorage.setItem(STATES_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), map: map||{} })); }catch(_){ } }
+    function readStatesCache(ignoreTTL){
+      try{
+        var raw = localStorage.getItem(STATES_CACHE_KEY);
+        if(!raw) return null;
+        var obj; try{ obj = JSON.parse(raw); }catch(_){ obj=null; }
+        if (obj && typeof obj === 'object'){
+          if(!ignoreTTL){ var now = Date.now(); if(obj.savedAt && (now-obj.savedAt)>STATES_TTL_MS){ /* expired */ } }
+          if (obj.map && typeof obj.map === 'object') return obj.map;
+          if (typeof obj.stateJson === 'string'){ try{ var m=JSON.parse(obj.stateJson); if(m && typeof m==='object') return m; }catch(_){ } }
+          var vals = Object.values(obj); if (vals.length && vals.every(function(v){return v==='on'||v==='off';})) return obj;
+        }
+        try{ var m2 = JSON.parse(raw); if (m2 && typeof m2==='object') return m2; }catch(_){ }
+        return null;
+      }catch(_){ return null; }
+    }
+    function parseStatesDoc(data){
+      var map = {};
+      try{
+        if (typeof data.stateJson === 'string') { map = JSON.parse(data.stateJson)||{}; }
+        else if (data.map && typeof data.map==='object'){ map = data.map; }
+        else { map = data||{}; }
+      }catch(_){ map = {}; }
+      return map;
+    }
+    async function loadStatesMap(){
+      try{
+        if (typeof firebase==='undefined' || !firebase.firestore) return null;
+        var ref = firebase.firestore().collection('config').doc('states');
+        var snap = await ref.get({ source:'server' }).catch(function(){ return ref.get(); });
+        if (!snap || !snap.exists) return null;
+        var map = parseStatesDoc(snap.data()||{});
+        saveStatesCache(map);
+        return map;
+      }catch(_){ return null; }
+    }
+    function applyStatesToPage(){
+      try{
+        var cards = Array.prototype.slice.call(document.querySelectorAll('a.card, .card[href]'));
+        if (!cards.length) return;
+        cards.forEach(prepCard);
+        if (window.__SKIP_FIREBASE__){ try{ cards.forEach(function(card){ try{ card.removeAttribute('href'); card.classList.add('pending-state'); }catch(_){ } }); }catch(_){ } var cached = readStatesCache(true);
+          if (cached){ cards.forEach(function(card){ var name=getPageNameFromCard(card); var s=(name && cached.hasOwnProperty(name))? cached[name] : 'on'; applyCardState(card,s); }); }
+          return;
+        }
+        loadStatesMap().then(function(map){ if(!map){ map = readStatesCache(false)||{}; } cards.forEach(function(card){ var name=getPageNameFromCard(card); var s=(name && map && map.hasOwnProperty(name))? map[name] : 'on'; applyCardState(card,s); }); });
+      }catch(_){ }
+    }
+    if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyStatesToPage); else try{ applyStatesToPage(); }catch(_){ }
+  })();
+  </script>
+
+  <script>
+    /* ===== كاش/أدوات الحالات ===== */
+    function getStatesCache() {
+      try { const raw = localStorage.getItem('statesCache'); return raw ? JSON.parse(raw) : null; }
+      catch { return null; }
+    }
+    function setStatesCache(map) {
+      try { localStorage.setItem('statesCache', JSON.stringify({ ts: Date.now(), map })); }
+      catch {}
+    }
+    function lockAllCards() {
+      document.querySelectorAll('.card').forEach(card => {
+        // خزّن href والعنوان الأصليين
+        if (!card.dataset.originalHref) {
+          const href = card.getAttribute('href');
+          if (href) card.dataset.originalHref = href;
+        }
+        const titleEl = card.querySelector('h2');
+        if (!card.dataset.originalTitle && titleEl) card.dataset.originalTitle = titleEl.textContent;
+
+        // ✅ أزل أي إخفاء بصري للصور مبكرًا
+        card.classList.remove('loading');
+
+        // قفل فوري
+        card.removeAttribute('href');
+        card.classList.add('pending-state');
+      });
+    }
+    function applyCardState(card, state) {
+      const finalState = (state === undefined || state === null) ? 'on' : state;
+      const titleEl = card.querySelector('h2');
+      const img = card.querySelector('img');
+
+      // أزل أي إخفاء بصري
+      card.classList.remove('loading');
+
+      if (finalState === 'off') {
+        // ✅ اجعل صورة العناصر المغلقة تظهر فورًا
+        if (img) {
+          img.setAttribute('loading', 'eager');
+          img.setAttribute('decoding', 'sync');
+          img.setAttribute('fetchpriority', 'high');
+        }
+        card.classList.add('maintenance');
+        card.classList.remove('pending-state');
+        card.removeAttribute('href');
+        if (titleEl) titleEl.textContent = '🚧 مغلق للصيانة';
+      } else {
+        if (card.dataset.originalHref) card.setAttribute('href', card.dataset.originalHref);
+        card.classList.remove('maintenance','pending-state');
+        if (titleEl && card.dataset.originalTitle) titleEl.textContent = card.dataset.originalTitle;
+      }
+    }
+
+    function generateAuthKey() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let key = '';
+      for (let i = 0; i < 36; i++) key += chars.charAt(Math.floor(Math.random() * chars.length));
+      return key;
+    }
+
+    // Firebase
+    const firebaseConfig = {
+          apiKey:"AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
+          authDomain:"z3em-d9b11.firebaseapp.com",
+          projectId:"z3em-d9b11",
+          storageBucket:"z3em-d9b11.firebasestorage.app",
+          messagingSenderId:"236716520945",
+          appId:"1:236716520945:web:a0c336db7dc7079c190050",
+          measurementId:"G-1GG6DE12K6"
+        };
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    async function ensurePublicReadAuth() {
+      const ENABLE_ANON = false; // disable anonymous auth by default
+      try {
+        if (ENABLE_ANON && !auth.currentUser) {
+          await auth.signInAnonymously();
+          console.log('[Auth] Signed in anonymously for public reads');
+        }
+      } catch (e) {
+        console.warn('[Auth] Anonymous sign-in failed (enable it in Firebase Console):', e);
+      }
+    }
+
+    function closeResetModal() { resetModal.style.display = 'none'; }
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        //loadUserBalance(user.uid);
+      } else {
+        const el = document.getElementById('balanceAmount');
+        if (el) el.textContent = 'يجب تسجيل الدخول اولا';
+      }
+    });
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const userRef = db.collection('users').doc(user.uid);
+        const docSnap = await userRef.get();
+
+        if (docSnap.exists) {
+          const data = docSnap.data();
+
+          if (data.isBanned === true) {
+            document.body.innerHTML = `
+              <div class="modal">
+                <div class="modal-content">
+                  <h2>🚫 تم تعليق الحساب</h2>
+                  <p>تم تعليق حسابك بسبب أنشطة مشبوهة. إذا كنت تعتقد أن هذا خطأ، يرجى التواصل معنا.</p>
+                  <button id="logoutBtnFromBan" style="margin-top:20px;background:#cc0000;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:1rem;cursor:pointer">تسجيل الخروج</button>
+                </div>
+              </div>`;
+            document.getElementById('logoutBtnFromBan').addEventListener('click', () => {
+              firebase.auth().signOut().then(() => { window.location.href = "login.html"; });
+            });
+            return;
+          }
+
+          if (!data.authkey) {
+            const authkey = generateAuthKey();
+            await userRef.set({ authkey }, { merge: true });
+          }
+
+          checkAndRequestPhoneNumber(user);
+        }
+      } else {
+        const el = document.getElementById('balanceAmount');
+        if (el) el.textContent = 'يجب تسجيل الدخول اولا';
+      }
+    });
+
+    /* ===== تسريع ومنع النافذة الزمنية للدخول ===== */
+    const STATES_TTL_MS = 60 * 1000; // مهلة احتياطية للكاش
+    async function loadStatesMap() {
+      const ref = db.collection('config').doc('states');
+      const tryGet = async () => { try { return await ref.get({ source: 'server' }); } catch(_) { return await ref.get(); } };
+      try {
+        let doc = await tryGet();
+        if (!doc.exists) throw new Error('not-found');
+        const data = doc.data() || {};
+        let map = {};
+        if (typeof data.stateJson === 'string') { try { map = JSON.parse(data.stateJson); } catch(_) { map = {}; } }
+        else if (data.map && typeof data.map === 'object') { map = data.map; }
+        else { map = data; }
+        setStatesCache(map);
+        return { map, fromCache: false };
+      } catch (e) {
+        try {
+          var ENABLE_ANON = false;
+          if (ENABLE_ANON && e && e.code === 'permission-denied' && auth && !auth.currentUser && auth.signInAnonymously) {
+            await auth.signInAnonymously();
+            const doc = await tryGet();
+            if (doc && doc.exists) {
+              const data = doc.data() || {};
+              let map = {};
+              if (typeof data.stateJson === 'string') { try { map = JSON.parse(data.stateJson); } catch(_) { map = {}; } }
+              else if (data.map && typeof data.map === 'object') { map = data.map; }
+              else { map = data; }
+              setStatesCache(map);
+              return { map, fromCache: false };
+            }
+          }
+        } catch(_) {}
+        const fallback = getStatesCache();
+        return { map: (fallback && fallback.map) ? fallback.map : {}, fromCache: true };
+      }
+    }
+
+    function applyCardsVisibility() {
+      const cards = document.querySelectorAll('.card');
+
+      // 0) تحضير الكاش وتحديد حداثته
+      const cached = getStatesCache();
+      const isFresh = !!(cached && cached.ts && (Date.now() - cached.ts) < 120000 && cached.map);
+
+      // 1) إذا الكاش حديث: طبّق فورًا كامل الحالات بدون قفل مسبق
+      if (isFresh) {
+        cards.forEach(card => {
+          const pageName = (card.dataset.originalHref || card.getAttribute('href') || '').replace('.html','');
+          const state = cached.map.hasOwnProperty(pageName) ? cached.map[pageName] : 'on';
+          applyCardState(card, state);
+        });
+      } else {
+        // خلاف ذلك: اقفل ثم افتح العناصر التي حالتها on في الكاش لتقليل الانتظار
+        lockAllCards();
+        if (cached && cached.map) {
+          cards.forEach(card => {
+            const pageName = (card.dataset.originalHref || card.getAttribute('href') || '').replace('.html','');
+            const state = cached.map.hasOwnProperty(pageName) ? cached.map[pageName] : 'on';
+            if (String(state).toLowerCase() === 'on') applyCardState(card, 'on');
+          });
+        }
+      }
+
+      // 2) جلب وثيقة واحدة فقط بصيغة JSON وتطبيقها (بدون مصادقة مجهولة افتراضيًا)
+      try { var ENABLE_ANON = false; if (ENABLE_ANON && auth && !auth.currentUser && auth.signInAnonymously) { auth.signInAnonymously().catch(()=>{}); } } catch(_){ }
+      loadStatesMap()
+        .then(({ map }) => {
+          cards.forEach(card => {
+            const pageName = (card.dataset.originalHref || card.getAttribute('href') || '').replace('.html','');
+            const state = Object.prototype.hasOwnProperty.call(map, pageName) ? map[pageName] : 'on';
+            applyCardState(card, state);
+          });
+        })
+        .catch(error => {
+          try { localStorage.removeItem('statesCache'); } catch(_){}
+          document.querySelectorAll('.card').forEach(card => applyCardState(card, 'on'));
+        });
+    }
+
+    // ابدأ مباشرة دون الانتظار
+    applyCardsVisibility();
+
+    function checkAndRequestPhoneNumber(user) {
+      const userRef = db.collection('users').doc(user.uid);
+      userRef.get().then(doc => {
+        const data = doc.data();
+        if (!data || !data.phone) {
+          const isHome = location.pathname.endsWith('index.html') || location.pathname === '/' || location.pathname === '';
+          if (!isHome) {
+            showPhoneModal(user.uid);
+          } else {
+            showPhoneBanner(user.uid);
+          }
+        }
+      });
+    }
+
+    function showPhoneBanner(uid) {
+      if (document.getElementById('phoneBanner')) return;
+
+      const banner = document.createElement('div');
+      banner.id = 'phoneBanner';
+      banner.style.cssText = `
+        max-width: 1200px; margin: 0 auto 10px; padding: 12px 16px;
+        background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); border-radius: 10px;
+        display: flex; align-items: center; gap: 10px; justify-content: space-between;
+      `;
+
+      banner.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px;">
+          <i class="fas fa-info-circle" aria-hidden="true"></i>
+          <span>يرجى إضافة رقم هاتفك لإكمال بيانات الحساب.</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button id="addPhoneBtn" style="padding:8px 14px; border:0; border-radius:8px; background: var(--btn-bg); color: var(--btn-text); cursor:pointer;">إضافة الآن</button>
+          <button id="dismissPhoneBanner" style="padding:8px 12px; border:0; border-radius:8px; background:#e5e7eb; color:#111; cursor:pointer;">لاحقًا</button>
+        </div>
+      `;
+
+      const searchWrapper = document.querySelector('.search-container')?.parentElement || document.body;
+      searchWrapper.insertBefore(banner, document.querySelector('.search-container'));
+
+      banner.querySelector('#addPhoneBtn').addEventListener('click', () => {
+        banner.remove();
+        showPhoneModal(uid);
+      });
+      banner.querySelector('#dismissPhoneBanner').addEventListener('click', () => banner.remove());
+    }
+
+    function showPhoneModal(uid) {
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.innerHTML = `
+        <div class="modal-content" style="position: relative;">
+          <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+          <h3>يرجى إدخال رقم هاتفك</h3>
+          <input type="tel" id="phoneInput" placeholder="أدخل رقم الهاتف" />
+          <button onclick="savePhoneNumber('${uid}')">حفظ</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function savePhoneNumber(uid) {
+      const phone = document.getElementById('phoneInput').value.trim();
+      if (!phone || phone.length < 6) { alert('يرجى إدخال رقم هاتف صحيح.'); return; }
+      db.collection('users').doc(uid).update({ phone }).then(() => {
+        alert('تم حفظ رقم الهاتف بنجاح.');
+        document.querySelector('.modal').remove();
+      }).catch(() => { alert('حدث خطأ أثناء حفظ الرقم.'); });
+    }
+
+    // توافق قديم للثيم
+    document.addEventListener('DOMContentLoaded', function () {
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.body.classList.toggle('dark-mode', isDark);
+
+      // البحث + الفلترة
+      const input = document.getElementById('searchInput');
+      // الزر محذوف؛ نكتفي بالإدخال وEnter
+      const grid = document.getElementById('categoriesContainer');
+      const noResults = document.getElementById('noResults');
+      if(!input || !grid) return;
+
+      const norm = s => (s||'').toString().toLowerCase()
+        .replace(/[ًٌٍَُِّْـ]/g,'')
+        .replace(/[إأآا]/g,'ا')
+        .replace(/ى/g,'ي')
+        .replace(/ة/g,'ه')
+        .replace(/[^\p{L}\p{N}\s]/gu,'')
+        .trim();
+
+      const cards = Array.from(grid.querySelectorAll('.card'));
+      function apply(query){
+        const q = norm(query);
+        let shown = 0;
+        cards.forEach(card => {
+          const title = card.dataset.title || card.querySelector('h2')?.textContent || '';
+          const ok = q === '' || norm(title).includes(q);
+          card.style.display = ok ? '' : 'none';
+          if (ok) shown++;
+        });
+        if (noResults) noResults.style.display = shown ? 'none' : 'block';
+      }
+
+      const KEY = 'home:q';
+      const saved = localStorage.getItem(KEY) || '';
+      if (saved) input.value = saved;
+      apply(saved);
+
+      // زر البحث محذوف
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); localStorage.setItem(KEY, input.value); apply(input.value); }
+      });
+      let t;
+      input.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => apply(input.value), 150); });
+    });
+  </script>
+ <script>
+// Gate: require login, and page state must be open in Firestore 'states'
+(function(){
+  function getPageId(){ try{ return (location.pathname.split('/').pop()||'').replace('.html',''); }catch(_){ return '' } }
+  firebase.auth().onAuthStateChanged(async function(user){
+    if(!user){ try{ location.href = 'login.html'; }catch(_){} return; }
+    try{
+      var pageId = getPageId();
+      if(!pageId) return; // if unknown, allow
+      var doc = await firebase.firestore().collection('states').doc(pageId).get();
+      var st = doc && doc.exists ? (doc.data() && (doc.data().state || doc.data().status || 'on')) : 'on';
+      if(String(st).toLowerCase() !== 'on'){
+        // redirect back to games list if this card is closed
+        try{ location.href = 'games.html'; }catch(_){}
+      }
+    }catch(e){ /* if check fails, allow to avoid blocking */ }
+  });
+})();
+</script>
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1588 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>متجر زعيم</title>
+  <link rel="icon" href="https://i.ibb.co/Q7Gnqy2z/1757362837638.png" type="image/png">
+  <link rel="apple-touch-icon" href="https://i.ibb.co/Q7Gnqy2z/1757362837638.png" sizes="180x180">
+  <meta name="application-name" content="متجر زعيم">
+  <meta name="apple-mobile-web-app-title" content="متجر زعيم">
+
+  <!-- SEO -->
+  <meta name="description" content="متجر زعيم | زعيم ستور — متجر موثوق لشحن الألعاب والاشتراكات الرقمية بسرعة وأمان. فري فاير، ببجي،  جواكر والمزيد بأسعار تنافسية ودعم فني سريع.">
+
+<meta name="keywords" content="زعيم شوب, زعيم ستور, موبايل ليجند, بلا لودو, جواكر, ببجي, فري فاير, بلود سترايك, وي بلاي, بلياردو, chatgpt Plus, كانفا, فيسبوك, انستجرام, تسوق, عروض, كروت شحن, خدمات رقمية">
+
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="متجر زعيم">
+  <meta property="og:description" content="متجر زعيم (زعيم ستور) — شحن ألعاب واشتراكات رقمية بسرعة وأمان وبأفضل الأسعار.">
+  <meta property="og:image" content="https://i.ibb.co/Q7Gnqy2z/1757362837638.png">
+  <meta property="og:image:alt" content="شعار متجر زعيم">
+  <meta property="og:site_name" content="متجر زعيم">
+  <meta property="og:locale" content="ar_AR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="متجر زعيم">
+  <meta name="twitter:description" content="سرعة وأمان وأسعار تنافسية عبر متجر زعيم (زعيم ستور).">
+  <meta name="twitter:image" content="https://i.ibb.co/Q7Gnqy2z/1757362837638.png">
+
+
+
+  <!-- سكربت تثبيت الثيم مبكرًا جدًا لمنع اللمعة -->
+  <script>
+  (function () {
+    var theme = 'dark';
+    try {
+      var t = localStorage.getItem('theme');
+      if (!t) {
+        // إذا لم يكن هناك theme في localStorage اجعله داكنًا افتراضيًا
+        t = 'dark';
+        try { localStorage.setItem('theme', 'dark'); } catch (_) {}
+      }
+      theme = (t === 'light') ? 'light' : 'dark';
+    } catch (e) { theme = 'dark'; }
+
+    var root = document.documentElement;
+    root.setAttribute('data-theme', theme);
+
+    var metaCS = document.querySelector('meta[name="color-scheme"]');
+    if (!metaCS) { metaCS = document.createElement('meta'); metaCS.name = 'color-scheme'; document.head.appendChild(metaCS); }
+    metaCS.setAttribute('content', theme === 'dark' ? 'dark light' : 'light dark');
+
+    var metaTC = document.querySelector('meta[name="theme-color"]');
+    if (!metaTC) { metaTC = document.createElement('meta'); metaTC.name = 'theme-color'; document.head.appendChild(metaTC); }
+    metaTC.setAttribute('content', theme === 'dark' ? '#0b1220' : '#f9f9f9');
+
+    var cs = document.getElementById('critical-theme');
+    if (cs) {
+      cs.textContent = cs.textContent.replace(
+        /color-scheme:\s*(dark|light)\s*;/,
+        'color-scheme:' + (theme === 'dark' ? 'dark' : 'light') + ';'
+      );
+    }
+  })();
+  </script>
+
+
+
+  <!-- الخطوط -->
+  <!-- Load Google Fonts without blocking first paint -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"></noscript>
+
+  <!-- الأيقونات -->
+  <!-- Load Font Awesome without blocking first paint -->
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" /></noscript>
+
+  <!-- CSS -->
+  <link rel="preload" href="header.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
+  <!-- Scripts -->
+  <script src="header.js" defer></script>
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js" async></script>
+    
+
+  <meta name="color-scheme" content="dark light">
+
+  <style id="critical-theme">
+    :root { color-scheme: light; }
+    html[data-theme="dark"]  { background: linear-gradient(180deg,#0b1220,#0b172a); color:#e6edf3; }
+    html[data-theme="light"] { background: linear-gradient(135deg,#f7fbff,#e6f6ff); color:#333; }
+    html, body { margin:0; padding:0; }
+    body { background: inherit; color: inherit; }
+  </style>
+  
+  <!-- Styles for inline-loaded pages: auto ribbon, premium cards -->
+  <style>
+  /* Auto ribbon like FREEFIREINBUT */
+  a.card.auto{position:relative;overflow:hidden}
+  a.card.auto::before {
+    content: "تلقائي";
+    position: absolute;
+    top: 12px;
+    right: -50px;
+    width: 160px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: .9rem;
+    color: #fff;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0) 60%),
+      linear-gradient(135deg,#06b6d4,#10b981);
+    transform: rotate(45deg);
+    border-radius: 10px;
+    text-shadow: 0 1px 1px rgba(0,0,0,.25);
+    box-shadow: 0 10px 20px rgba(0,0,0,.18),
+                inset 0 1px 0 rgba(255,255,255,.25),
+                inset 0 -1px 0 rgba(0,0,0,.15);
+    pointer-events: none;
+    z-index: 3;
+  }
+  @keyframes ribbonShift{
+    0%   { background-position: 0 0, 0% 50%; }
+    50%  { background-position: 0 0, 100% 50%; }
+    100% { background-position: 0 0, 0% 50%; }
+  }
+  @media (prefers-reduced-motion: reduce){ a.card.auto::before{ animation:none } }
+  html[data-theme="dark"] a.card.auto::before{
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 60%),
+      linear-gradient(135deg,#22c55e,#06b6d4);
+    background-size:100% 100%, 200% 100%;
+    background-position:0 0, 0% 50%;
+  }
+  /* Premium visual enhancements for .card.auto */
+  a.card.auto{
+    border:1.5px solid transparent;
+    background:
+      linear-gradient(var(--card-bg),var(--card-bg)) padding-box,
+      linear-gradient(135deg,#06b6d4,#10b981) border-box;
+    box-shadow:0 8px 22px rgba(0,0,0,.12), 0 1px 0 rgba(255,255,255,.04) inset;
+    transition:transform .25s ease, box-shadow .35s ease, filter .25s ease;
+    animation:luxPulse 3.6s ease-in-out infinite;
+  }
+  html[data-theme="dark"] a.card.auto{
+    background:
+      linear-gradient(var(--card-bg),var(--card-bg)) padding-box,
+      linear-gradient(135deg,#22c55e,#06b6d4) border-box;
+    box-shadow:0 10px 26px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.04) inset;
+  }
+  @keyframes luxPulse{
+    0%,100%{box-shadow:0 8px 22px rgba(0,0,0,.12), 0 0 0 0 rgba(250,204,21,.0)}
+    50%{box-shadow:0 12px 34px rgba(0,0,0,.16), 0 0 24px 0 rgba(250,204,21,.18)}
+  }
+  a.card.auto img{transition:transform .45s ease, filter .35s ease; will-change:transform}
+  a.card.auto:hover img{transform:scale(1.06) translateY(-2px); filter:saturate(1.08) contrast(1.05)}
+  a.card.auto:not(.pending-state):not(.maintenance)::after{
+    content:""; position:absolute; inset:-20% -120% -20% -120%;
+    background:linear-gradient(115deg, transparent 45%, rgba(255,255,255,.38) 50%, transparent 55%);
+    transform:translateX(-20%) rotate(12deg);
+    animation:luxSweep 3.8s linear infinite; pointer-events:none; z-index:1;
+  }
+  @keyframes luxSweep{ 0%{transform:translateX(-20%) rotate(12deg)} 100%{transform:translateX(120%) rotate(12deg)} }
+  @media (prefers-reduced-motion: reduce){ a.card.auto::after{animation:none} }
+  a.card.auto:hover{ transform:translateY(-4px) scale(1.01); box-shadow:0 16px 36px rgba(0,0,0,.18), 0 0 28px rgba(250,204,21,.16) }
+
+  /* Inline page chrome */
+  #inlinePage{margin-top:10px}
+  /* toolbar disabled per request */
+  .inline-toolbar{display:none}
+  .inline-back{display:none}
+  .inline-title{display:none}
+  </style>
+  
+  <!-- بانر علوي: تنسيق بسيط + سلايدر -->
+  <style>
+    .page-hero{ max-width:1000px; margin:10px auto 12px; padding:0 }
+    .page-hero img{ width:100%; height:auto; display:block; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.12) }
+
+    /* سلايدر الهيدر */
+    .hero-slider{ position:relative; overflow:hidden; border-radius:12px; touch-action: pan-y }
+    .hero-track{ display:flex; transform:translateX(0); transition:transform .6s ease; will-change:transform; direction:ltr }
+    .hero-slide{ flex:0 0 100%; min-width:100% }
+    .hero-slider.dragging .hero-track{ transition:none; cursor:grabbing }
+    .hero-slide img{ display:block; width:100%; height:auto; -webkit-user-drag:none; user-select:none }
+  </style>
+
+  <!-- Theme tokens -->
+  <style>
+  :root {
+    --bg:#f9f9f9; --text:#111827; --muted:#6b7280;
+    --card-bg:#ffffff; --card-text:var(--text); --card-border:#e5e7eb; --elev-shadow:0 2px 8px rgba(0,0,0,.1);
+    --input-bg:#ffffff; --input-text:var(--text); --input-border:#0ea5e9; --input-border-focus:#0284c7; --input-focus-glow:rgba(14,165,233,.35);
+    --btn-bg:#0ea5e9; --btn-bg-hover:#0284c7; --btn-text:#fff;
+    --balance-bg:#fff; --balance-text:#0ea5e9; --balance-shadow:0 5px 15px rgba(0,0,0,.1);
+    --modal-bg:#fff; --modal-text:var(--text); --modal-shadow:0 5px 15px rgba(0,0,0,.3);
+    --warn-bg:#fff3cd; --warn-text:#7a5d00; --warn-border:#ffe69c;
+    --skeleton:#f0f0f0; --shimmer-stripe:rgba(255,255,255,.4); --border-strong:#e5e7eb;
+    /* اجعل خلفية الجسم تعتمد على لون ثابت مثل games.html */
+    --bg-app: var(--bg);
+  }
+  html[data-theme="dark"] {
+    --bg:#0b1220; --text:#e6edf3; --muted:#94a3b8;
+    --card-bg:#1a2234; --card-text:#e6edf3; --card-border:#334155; --elev-shadow:0 2px 10px rgba(0,0,0,.35);
+    --input-bg:#0b1220; --input-text:#e6edf3; --input-border:#334155; --input-border-focus:#38bdf8; --input-focus-glow:rgba(56,189,248,.35);
+    --btn-bg:#0284c7; --btn-bg-hover:#0ea5e9; --btn-text:#fff;
+    --balance-bg:#0f172a; --balance-text:#7dd3fc; --balance-shadow:0 6px 18px rgba(0,0,0,.35);
+    --modal-bg:#111827; --modal-text:#e6edf3; --modal-shadow:0 10px 30px rgba(0,0,0,.5);
+    --warn-bg:#2b2f3a; --warn-text:#facc15; --warn-border:#334155;
+    --skeleton:#162032; --shimmer-stripe:rgba(255,255,255,.15); --border-strong:#334155;
+    /* خلفية الجسم ثابتة لتطابق games.html */
+    --bg-app: var(--bg);
+  }
+  </style>
+
+  <style>
+/* Modal */
+.modal{position:fixed;inset:0;background-color:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999}
+.modal-content{background:var(--modal-bg);color:var(--modal-text);padding:30px;border-radius:10px;max-width:400px;width:100%;box-shadow:var(--modal-shadow);text-align:center}
+
+/* Base */
+body{font-family:'Cairo',sans-serif;margin:0;direction:rtl}
+  html[data-theme="dark"]  body,
+  html[data-theme="light"] body{background:var(--bg-app, var(--bg));color:var(--text)}
+
+/* Search */
+  /* تقليل الفراغ فوق شريط البحث */
+  .search-container{margin:10px auto 12px;max-width:1000px;display:flex;justify-content:center;gap:10px;padding:0}
+.search-container input[type="text"]{flex:1;padding:12px 15px;background:var(--input-bg);color:var(--input-text);border:2px solid var(--input-border);border-radius:25px;font-size:1rem;outline:none;transition:.3s}
+.search-container input[type="text"]:focus{box-shadow:0 0 6px var(--input-focus-glow);border-color:var(--input-border-focus)}
+.search-container button{background:var(--btn-bg);border:none;padding:12px 20px;border-radius:25px;color:var(--btn-text);font-size:1rem;cursor:pointer;transition:.3s}
+.search-container button:hover{background:var(--btn-bg-hover)}
+
+main{max-width:1200px;margin:20px auto;padding:0 15px}
+
+/* Grid */
+.categories{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,max-content));gap:20px;justify-content:start;max-width:1000px;margin:auto}
+
+/* Card */
+.card{background:var(--card-bg);color:var(--card-text);border:1px solid var(--card-border);border-radius:12px;box-shadow:var(--elev-shadow);text-align:center;padding:16px;text-decoration:none;transition:transform .3s ease,box-shadow .3s ease;display:flex;flex-direction:column;gap:12px}
+.card:hover{transform:translateY(-5px);box-shadow:0 8px 20px rgba(0,0,0,.15)}
+.card h2{font-weight:700;font-size:1rem;margin:0;line-height:1.4;word-break:break-word}
+
+/* Image */
+.card img{width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;object-position:center;border-radius:8px;user-select:none;background-color:var(--skeleton);display:block;margin:0 auto}
+
+/* Show image even while pending (لو حصل تضارب مع .loading) */
+.card.pending-state img{visibility:visible}
+
+/* No results */
+.no-results{text-align:center;font-size:1.2rem;color:var(--muted);margin-top:30px}
+
+/* Balance */
+#userBalance{margin:20px auto;max-width:600px;text-align:center;font-weight:700;font-size:1.3rem;color:var(--text);background:var(--balance-bg);border-radius:20px;padding:20px;display:flex;align-items:center;justify-content:center;box-shadow:var(--balance-shadow);position:relative;border:1px solid var(--card-border)}
+.balance-content{display:flex;align-items:center;justify-content:center}
+#balanceText{margin-right:10px;color:var(--balance-text)}
+.loading-spinner{border:4px solid #f3f3f3;border-top:4px solid var(--btn-bg);border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;display:none}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+#userBalance img{width:30px;height:30px;margin-left:10px}
+
+/* Auth buttons */
+#loginBtn,#logoutBtn{position:fixed;top:5px;border:none;padding:10px 18px;border-radius:25px;font-size:1rem;cursor:pointer;z-index:9999;transition:.3s}
+#loginBtn{left:20px;background:var(--btn-bg);color:var(--btn-text);visibility:visible}
+#loginBtn:hover{background:var(--btn-bg-hover)}
+#logoutBtn{left:160px;background:#cc0000;color:#fff;visibility:hidden}
+#logoutBtn:hover{background:#990000}
+
+/* Login modal fields */
+.login-modal .modal-content input{padding:10px;background:var(--input-bg);color:var(--input-text);border:1px solid var(--card-border);border-radius:6px;font-size:1rem}
+.login-modal .modal-content button{padding:10px;background:var(--btn-bg);color:var(--btn-text);border:none;border-radius:6px;cursor:pointer}
+.login-modal .modal-content button:hover{background:var(--btn-bg-hover)}
+.modal-content .close{position:absolute;top:10px;left:20px;cursor:pointer;font-size:1.2rem}
+
+/* Maintenance / Loading / Pending */
+.card.maintenance{background:var(--bg)!important;pointer-events:none;opacity:.7}
+.card.maintenance h2{color:#a00}
+.card.maintenance img{filter:grayscale(100%)}
+
+.card.pending-state{pointer-events:none;opacity:.7;position:relative;overflow:hidden}
+.card.pending-state::after{content:'';position:absolute;top:0;right:-150px;width:100px;height:100%;background:linear-gradient(90deg,transparent,var(--shimmer-stripe),transparent);animation:shimmer 1.2s infinite;border-radius:12px;z-index:2}
+@keyframes shimmer{0%{right:-150px}100%{right:100%}}
+
+.card.loading{position:relative;background:var(--skeleton);overflow:hidden;pointer-events:none}
+.card.loading img,.card.loading h2{visibility:visible}
+.card.loading::after{content:'';position:absolute;top:0;right:-150px;width:100px;height:100%;background:linear-gradient(90deg,transparent,var(--shimmer-stripe),transparent);animation:shimmer 1.2s infinite}
+
+/* Responsive */
+@media (max-width:480px){.categories{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px}.card{padding:12px;gap:10px}.card h2{font-size:.95rem}}
+@media (max-width:768px){.categories{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
+@media (max-width:992px){.categories{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}}
+
+.card.loading{pointer-events:none;opacity:.7}
+
+/* Fixed grid overrides */
+.categories{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:20px;justify-content:center}
+@media (max-width:768px){.categories{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px}.card{padding:12px!important}.card h2{font-size:.9rem!important}}
+@media (max-width:480px){.categories{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px}.card{padding:10px!important}.card h2{font-size:.85rem!important}}
+  hr{border-color:var(--border-strong)}
+  </style>
+  
+  <!-- توافق شريط الإشعار + البحث للهواتف -->
+  <style>
+    @media (max-width: 600px){
+      /* تقليل المسافة داخل النسخة الواحدة بدلًا من إضافة فجوة بين النسختين */
+      .notice-ticker .ticker-copy{ gap:24px }
+      .notice-ticker span{ font-size:1rem }
+      .search-container{ margin:8px 8px 10px; padding:0 }
+      .page-hero{ margin:8px 8px 10px; padding:0 }
+      .page-hero img{ border-radius:10px }
+      .search-container input[type="text"]{ font-size:1rem; padding:10px 12px }
+      .search-container button{ padding:10px 16px }
+    }
+  </style>
+  <script>
+  // Register Service Worker only in allowed protocols (https or localhost over http)
+  (function(){
+    try {
+      var h = (location.hostname||'');
+      var isLocal = h === 'localhost' || h === '127.0.0.1' || /^0\.0\.0\.0$/.test(h) || /^192\.168\./.test(h) || /^10\./.test(h) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(h);
+      var proto = String(location.protocol || '').toLowerCase();
+      var canRegister = ('serviceWorker' in navigator) && (proto === 'https:' || (proto === 'http:' && isLocal));
+      if (canRegister) {
+        navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function(e){ console.warn('SW register skipped', e); });
+      }
+    } catch(e) { console.warn('SW register skipped', e); }
+  })();
+  </script>
+
+  <!-- Preload/Warm important game images for seamless navigation -->
+  <script>
+    (function preloadGameImages(){
+      // Key images used in games.html and its branches
+      var images = [
+        // Games categories (from games.html)
+        'https://i.ibb.co/Lz2rDsgr/1756331102734.jpg',
+        'https://i.ibb.co/wFvwLZZR/1756330901302.jpg',
+        'https://i.ibb.co/N6NmR9qr/1756415248251.jpg',
+        'https://i.ibb.co/HpDvMDry/1756415249784.jpg',
+        'https://i.ibb.co/xt399t27/1756424103296.jpg',
+        'https://i.ibb.co/SXdhVf8r/1756424101725.jpg',
+        'https://i.ibb.co/hFGnwDYT/1756415246638.jpg',
+        'https://i.ibb.co/b5VMTNpz/1756415284620.jpg',
+
+        // Free Fire auto/variants (from freefireinbut.html)
+        'https://i.ibb.co/xKmTvgwS/1756498380860.jpg',
+        'https://i.ibb.co/0pDbDVsc/1756498704843.jpg',
+        'https://i.ibb.co/7xZwmG1F/1756498841823.jpg'
+      ];
+
+      function warm(u){
+        try {
+          var img = new Image();
+          img.decoding = 'async';
+          img.referrerPolicy = 'no-referrer';
+          img.src = u;
+        } catch(_) {}
+      }
+
+      // Warm after the page is interactive/idle
+      var run = function(){ images.forEach(warm); };
+      if (window.requestIdleCallback) {
+        requestIdleCallback(run, { timeout: 2000 });
+      } else {
+        setTimeout(run, 1200);
+      }
+    })();
+  </script>
+
+  <!-- وضع علامة الملاحة مبكرًا جدًا لمنع إعادة التوجيه الخاطئة عند النقر بسرعة -->
+  <script>
+  (function(){
+    function ensureAllow(a){
+      try{
+        var url = new URL(a.getAttribute('href'), location.href);
+        if (!url.searchParams.has('allow')) {
+          url.searchParams.set('allow','1');
+          a.setAttribute('href', url.pathname + url.search + url.hash);
+        }
+      }catch(_){}
+    }
+    function mark(e){
+      try{
+        var t = e.target;
+        var a = t && t.closest ? t.closest('a[href$=".html"]') : null;
+        if (!a) return;
+        sessionStorage.setItem('nav:fromHome','1');
+        ensureAllow(a);
+      }catch(_){}
+    }
+    document.addEventListener('pointerdown', mark, true);
+    document.addEventListener('auxclick',    mark, true);
+    document.addEventListener('click',       mark, true);
+  })();
+  </script>
+  
+  <!-- شريط إشعار متحرك (CSS) -->
+  <style>
+    .notice-ticker {
+      max-width: 1000px;
+      margin: 12px auto 10px;
+      background: var(--input-bg);
+      --nt-bg: var(--input-bg); /* للتلاشي الجانبي */
+      --fadeWidth: 40px; /* عرض طبقة التلاشي على الأطراف (سطح المكتب) */
+      color: var(--input-text);
+      border: 2px solid var(--input-border);
+      border-radius: 25px; /* مثل حقل البحث */
+      padding: 12px 15px; /* مثل حقل البحث */
+      font-size: 1rem; /* مطابق لحقل البحث */
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      box-shadow: 0 6px 14px rgba(0,0,0,.06);
+      position: relative;
+      direction: rtl; /* بداية السطر من اليمين */
+    }
+    html[data-theme="dark"] .notice-ticker {
+      background: var(--input-bg);
+      --nt-bg: var(--input-bg);
+      border-color: var(--input-border);
+      box-shadow: 0 8px 20px rgba(0,0,0,.35);
+      color: var(--input-text);
+    }
+    /* تلاشي الأطراف لإخفاء أي حواف بداية/نهاية */
+    .notice-ticker::before,
+    .notice-ticker::after{
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: var(--fadeWidth, 40px);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .notice-ticker::before{ right:0; background: linear-gradient(270deg, var(--nt-bg) 0%, rgba(0,0,0,0) 70%); }
+    .notice-ticker::after { left:0;  background: linear-gradient(90deg,  var(--nt-bg) 0%, rgba(0,0,0,0) 70%); }
+
+    .notice-ticker .ticker-track {
+      display: inline-flex;
+      align-items: center;
+      gap: 0; /* لا فجوة بين النسخ */
+      white-space: nowrap;
+      will-change: transform;
+      animation: marquee-single var(--dur, 18s) linear infinite;
+    }
+    .notice-ticker .ticker-copy {
+      display: inline-flex;
+      align-items: center;
+      gap: 48px; /* المسافة داخل النسخة الواحدة */
+      flex-shrink: 0; /* لا تنكمش لتبقى قيمة القياس ثابتة */
+    }
+    /* استخدم نسخة مرئية واحدة فقط ليتحقق الاختفاء التام بين الدورات */
+    .notice-ticker .ticker-copy[aria-hidden="true"]{ display: none !important; }
+    .notice-ticker span { font-weight: 700; font-size: 1rem; }
+    /* عدم إيقاف الحركة عند التحويم/التحديد */
+    .notice-ticker .ticker-track:hover { animation-play-state: running; }
+    @media (prefers-reduced-motion: reduce){
+      .notice-ticker .ticker-track{ animation: none; transform: none; }
+    }
+    /* مسار واحد: يبدأ من خارج الحافة، يعبر، يخرج بالكامل، ثم يعاود من البداية */
+    /* اجعل الاتجاه قابلاً للعكس عبر --dir (1 أو -1) */
+    #homeTicker { --dir: 1; } /* 1 = يبدأ من اليمين ويتجه لليسار، -1 = يبدأ من اليسار */
+    @media (max-width: 767px){
+      /* على الهاتف: الجهة المعاكسة */
+      #homeTicker { --dir: -1; }
+    }
+    @media (min-width: 768px){
+      /* على الكمبيوتر: نفس اتجاه الهاتف (الجهة المعاكسة) */
+      #homeTicker { --dir: -1 !important; }
+    }
+    
+    /* Mobile override to fully match search bar */
+    @media (max-width: 600px){
+      #homeTicker.notice-ticker{
+        margin:8px 8px 10px;
+        padding:10px 12px;
+        border-radius:25px;
+        border:2px solid var(--input-border);
+        background: var(--input-bg);
+        color: var(--input-text);
+        font-size:1rem;
+        line-height:1.2;
+        --fadeWidth: 28px;
+      }
+      #homeTicker.notice-ticker span{ font-size:1rem }
+    }
+    @keyframes marquee-single {
+      0%   { transform: translate3d(var(--start, 100%), 0, 0); }
+      5%   { transform: translate3d(var(--start, 100%), 0, 0); }
+      95%  { transform: translate3d(var(--end, -100%), 0, 0); }
+      100% { transform: translate3d(var(--end, -100%), 0, 0); }
+    }
+  </style>
+</head>
+  <body>
+
+<div id="headerContainer"></div>
+<div id="sidebarContainer"></div>
+
+<!-- عنوان دلالي واضح للمحركات -->
+<h1 class="sr-only">متجر زعيم | متجر شحن الألعاب والاشتراكات الرقمية بسرعة وأمان</h1>
+
+<style>
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+</style>
+
+
+<div style="height:70px;"></div>
+
+    <div class="page-hero">
+      <div class="hero-slider" id="heroSlider" aria-label="بانرات مميزة">
+        <div class="hero-track">
+          <div class="hero-slide"><img draggable="false" src="https://i.ibb.co/TBh1qpzV/1757616222968.jpg" alt="بانر ترحيبي" loading="eager" decoding="async" fetchpriority="high"></div>
+          <div class="hero-slide"><img draggable="false" src="https://i.ibb.co/PGh4ChVf/1447-03-25-23-25-28-9c3ddea5.jpg" alt="عرض 1"  decoding="async"></div>
+          <div class="hero-slide"><img draggable="false" src="https://i.ibb.co/v4CHSKHy/1447-03-25-23-25-29-a22fe9dc.jpg" alt="عرض 2"  decoding="async"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+      var slider = document.getElementById('heroSlider');
+      if(!slider) return;
+      var track = slider.querySelector('.hero-track');
+      var slides = Array.prototype.slice.call(slider.querySelectorAll('.hero-slide'));
+      var realCount = slides.length;
+      // إنشاء نسخ للتكرار اللانهائي (آخر شريحة بالبداية، وأول شريحة بالنهاية)
+      var firstClone = slides[0] && slides[0].cloneNode(true);
+      var lastClone  = slides[realCount-1] && slides[realCount-1].cloneNode(true);
+      if (firstClone) track.appendChild(firstClone);
+      if (lastClone) track.insertBefore(lastClone, track.firstChild);
+      var index = 1; // نبدأ من أول شريحة حقيقية
+      var timer = null;
+      var isDown = false, startX = 0, deltaX = 0, isAnimating = false;
+
+      function go(i, animate){
+        index = i;
+        var w = slider.clientWidth;
+        var withAnim = animate !== false;
+        track.style.transition = withAnim ? 'transform .6s ease' : 'none';
+        track.style.transform = 'translateX(' + (-index*w) + 'px)';
+        isAnimating = withAnim;
+      }
+      function next(){ if(isAnimating) return; go(index+1, true); }
+      function prev(){ if(isAnimating) return; go(index-1, true); }
+
+      function start(){ stop(); timer = setInterval(prev, 7000); }
+      function stop(){ if(timer){ clearInterval(timer); timer=null; } }
+
+      function onDown(e){
+        if(isAnimating) return; // لا تبدأ سحب أثناء الحركة
+        isDown = true; deltaX = 0; slider.classList.add('dragging'); stop();
+        if (e.pointerId !== undefined && slider.setPointerCapture) { try { slider.setPointerCapture(e.pointerId); } catch(_){} }
+        startX = (e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX);
+      }
+      function onMove(e){
+        if(!isDown) return;
+        var x = (e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX);
+        deltaX = x - startX;
+        var w = slider.clientWidth;
+        track.style.transition = 'none';
+        track.style.transform = 'translateX(' + ((-index*w)+deltaX) + 'px)';
+      }
+      function onUp(){
+        if(!isDown) return; isDown=false; slider.classList.remove('dragging');
+        var w = slider.clientWidth; var threshold = Math.min(80, w*0.15);
+        if(Math.abs(deltaX) > threshold){ deltaX>0 ? prev() : next(); }
+        else { go(index, true); }
+        start();
+      }
+
+      slider.addEventListener('pointerdown', onDown);
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      slider.addEventListener('pointercancel', onUp);
+      slider.addEventListener('touchstart', onDown, {passive:true});
+      slider.addEventListener('touchmove', onMove, {passive:true});
+      slider.addEventListener('touchend', onUp);
+      slider.addEventListener('touchcancel', onUp);
+
+      // منع سحب الصورة الافتراضي
+      slider.addEventListener('dragstart', function(e){ e.preventDefault(); });
+
+      slider.addEventListener('mouseenter', stop);
+      slider.addEventListener('mouseleave', start);
+
+      // عند انتهاء التحريك، إذا كنا على نسخة مكررة، نعيد التمركز للشريحة الحقيقية بدون أن يلاحظ المستخدم
+      track.addEventListener('transitionend', function(){
+        isAnimating = false;
+        if (index === 0) {
+          track.style.transition = 'none';
+          index = realCount;
+          track.style.transform = 'translateX(' + (-index*slider.clientWidth) + 'px)';
+          // إجبار إعادة التدفق ثم إعادة التفعيل
+          void track.offsetHeight;
+          track.style.transition = 'transform .6s ease';
+        } else if (index === realCount + 1) {
+          track.style.transition = 'none';
+          index = 1;
+          track.style.transform = 'translateX(' + (-index*slider.clientWidth) + 'px)';
+          void track.offsetHeight;
+          track.style.transition = 'transform .6s ease';
+        }
+      });
+
+      // تأكيد تحميل الصور لتفادي وميض الفراغ عند السحب السريع
+      try {
+        slides.forEach(function(s){
+          var im = s.querySelector('img');
+          if (im && im.decode) { im.decode().catch(function(){/* ignore */}); }
+        });
+      } catch (_) {}
+
+      // إعادة تموضع عند تغيير العرض لضمان المحاذاة بالبكسل
+      window.addEventListener('resize', function(){ go(index, false); });
+
+      go(1, false); start();
+    })();
+    </script>
+
+  <!-- شريط الإشعار: يبدأ من البداية، يخرج تمامًا، ثم يعاود من البداية -->
+  <div class="notice-ticker" id="homeTicker" aria-label="إعلانات الموقع">
+    <div class="ticker-track" role="marquee" aria-live="polite">
+      <div class="ticker-copy">
+        <span>متجر زعيم | شحن الألعاب والاشتراكات الرقمية بسرعة وأمان وبأفضل الأسعار</span>
+      </div>
+    </div>
+  </div>
+  
+
+
+    <!-- البحث -->
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" />
+  </div>
+
+  <script>
+    // حركة تبدأ من الحافة، تمر عبر الشريط، تخرج بالكامل، ثم تعاود من البداية
+    (function(){
+      var ticker = document.getElementById('homeTicker');
+      var track  = ticker && ticker.querySelector('.ticker-track');
+      var one    = track && track.querySelector('.ticker-copy');
+      if(!ticker || !track || !one) return;
+
+      var SPEED = 80; // بكسل/ثانية
+      var rafId = 0;
+
+      function parseDir(){
+        var d = 1;
+        try{
+          var v = getComputedStyle(ticker).getPropertyValue('--dir').trim();
+          if (v) d = parseFloat(v) || 1;
+          d = d >= 0 ? 1 : -1;
+        }catch(e){}
+        return d;
+      }
+
+      function px(v){
+        if (!v) return 0;
+        var n = parseFloat(String(v).replace('px','').trim());
+        return isFinite(n) ? n : 0;
+      }
+
+      function apply(cw, ow, dir){
+        if (!cw || !ow) return;
+        // خذ في الاعتبار عرض طبقة التلاشي على الأطراف، ويختلف بين الهاتف والكمبيوتر
+        var styles = getComputedStyle(ticker);
+        var fade   = px(styles.getPropertyValue('--fadeWidth'));
+        var pad    = 2; // هامش أمان صغير لضمان الخروج الكامل
+        var start  = dir * (cw + fade + pad);   // خارج الحافة في جهة البداية
+        var end    = -dir * (ow + fade + pad);  // خارج الحافة في جهة النهاية
+        var dist   = cw + ow + (2 * fade) + (2 * pad); // المسافة المقطوعة الفعلية
+        var dur   = (dist / SPEED).toFixed(2) + 's';
+        track.style.setProperty('--start', start + 'px');
+        track.style.setProperty('--end',   end   + 'px');
+        track.style.setProperty('--dur',   dur);
+      }
+
+      function measure(){
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(function(){
+          // قياسات دقيقة
+          var cw  = ticker.clientWidth;    // عرض الحاوية (يتبدل بين الهاتف والكمبيوتر)
+          var ow  = one.scrollWidth;       // عرض المحتوى
+          var dir = parseDir();
+          apply(cw, ow, dir);
+        });
+      }
+
+      // قياس أولي
+      measure();
+
+      // أعِد القياس بعد تحميل الخطوط/الصور لضمان ثبات العرض
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(measure).catch(function(){});
+      }
+      window.addEventListener('load', measure, { once:true });
+      window.addEventListener('resize', measure);
+
+      // راقب تغيّر الحجم للمحتوى نفسه
+      if (typeof ResizeObserver !== 'undefined'){
+        var ro = new ResizeObserver(measure);
+        ro.observe(one);
+      }
+    })();
+  </script>
+
+<main>
+  <section class="categories" id="categoriesContainer">
+    <a href="games.html" class="card" data-title="الألعاب">
+      <img draggable="false" src="https://i.ibb.co/1GYPyKMj/1447-02-27-23-46-21-df66c84f.jpg" alt="ألعاب" loading="eager" decoding="async" fetchpriority="high" />
+      <h2>الألعاب</h2>
+    </a>
+    <a href="social.html" class="card" data-title="مواقع التواصل الاجتماعي">
+      <img draggable="false" src="https://i.ibb.co/Vcq1dr69/1756157590278.jpg" alt="التواصل الاجتماعي" loading="eager" decoding="async" fetchpriority="high" />
+      <h2>مواقع التواصل</h2>
+    </a>
+    <a href="software.html" class="card" data-title="اشتراكات البرامج">
+      <img draggable="false" src="https://i.ibb.co/XZHyMGSG/1756247096045.jpg" alt="البرامج" loading="eager" decoding="async" fetchpriority="high" />
+      <h2>اشتراكات البرامج</h2>
+    </a>
+
+    <a href="webdev.html" class="card" data-title="تطوير مواقع">
+      <img draggable="false" src="https://i.ibb.co/XZHyMGSG/1756247096045.jpg" alt="تطوير مواقع" loading="eager" decoding="async" fetchpriority="high" />
+      <h2>تطوير مواقع</h2>
+    </a>
+
+  </section>
+  <p class="no-results" id="noResults" style="display:none;">عذراً، لم يتم العثور على نتائج.</p>
+  
+  <!-- Inline page content container -->
+  <div id="inlinePage" style="display:none"></div>
+</main>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+    (function(){
+      try{
+        var KEY='global:loadTimes';
+        var now=Date.now();
+        var arr=[]; try{arr=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){arr=[]}
+        if(!Array.isArray(arr)) arr=[];
+        arr=arr.filter(function(t){return typeof t==='number' && (now-t)<10000;});
+        arr.push(now);
+        try{localStorage.setItem(KEY, JSON.stringify(arr.slice(-10)));}catch(_){ }
+        window.__SKIP_FIREBASE__=(arr.length>=3);
+        if(window.__SKIP_FIREBASE__ && typeof firebase!=='undefined'){
+          try{
+            var noOp=function(){};
+            function stubDoc(){ return { get:function(){ return Promise.resolve({exists:false,data:function(){return {};},id:''}); }, set:function(){ return Promise.resolve(); }, update:function(){ return Promise.resolve(); }, onSnapshot:function(){ return noOp; } }; }
+            function stubCol(){ return { doc:function(){ return stubDoc(); }, where:function(){ return stubCol(); }, orderBy:function(){ return stubCol(); }, limit:function(){ return stubCol(); }, get:function(){ return Promise.resolve({ empty:true, forEach:noOp, docs:[] }); }, onSnapshot:function(){ return noOp; } }; }
+            var stubDb={ collection:function(){ return stubCol(); }, doc:function(){ return stubDoc(); } };
+            try{ window.__ORIG_FIREBASE__ = { auth: firebase.auth, firestore: firebase.firestore }; }catch(_){ }
+            
+            firebase.firestore = function(){ return stubDb; };
+          }catch(_){ }
+        }
+      }catch(_){ window.__SKIP_FIREBASE__ = false; }
+    })();
+  </script>
+    <script>
+  (function(){
+    function applyCardState(card, state){
+      var finalState = (state == null) ? 'on' : state;
+      var titleEl = card.querySelector ? card.querySelector('h2') : null;
+      var img = card.querySelector ? card.querySelector('img') : null;
+      try{ card.classList.remove('loading'); }catch(_){ }
+      if (finalState === 'off'){
+        if (img){ try{ img.setAttribute('loading','eager'); img.setAttribute('decoding','sync'); img.setAttribute('fetchpriority','high'); }catch(_){ } }
+        try{ card.classList.add('maintenance'); card.classList.remove('pending-state'); }catch(_){ }
+        try{ card.removeAttribute('href'); }catch(_){ }
+        if (titleEl){ try{ titleEl.textContent = '🚧 مغلق للصيانة'; }catch(_){ } }
+      } else {
+        try{
+          if (card.dataset && card.dataset.originalHref){ card.setAttribute('href', card.dataset.originalHref); }
+          card.classList.remove('maintenance','pending-state');
+          if (titleEl && card.dataset && card.dataset.originalTitle){ titleEl.textContent = card.dataset.originalTitle; }
+        }catch(_){ }
+      }
+    }
+    function prepCard(card){
+      try{
+        if (!card.dataset.originalHref){ var href = card.getAttribute('href'); if (href) card.dataset.originalHref = href; }
+        var t = card.querySelector && card.querySelector('h2');
+        if (t && !card.dataset.originalTitle){ card.dataset.originalTitle = t.textContent || ''; }
+      }catch(_){ }
+    }
+    function getPageNameFromCard(card){
+      try{
+        var href = (card.dataset && card.dataset.originalHref) || card.getAttribute('href') || '';
+        href = href.split('?')[0].split('#')[0];
+        return href.replace(/\.html$/,'');
+      }catch(_){ return ''; }
+    }
+    var STATES_TTL_MS = 5*60*1000;
+    var STATES_CACHE_KEY = 'statesCache';
+    function saveStatesCache(map){ try{ localStorage.setItem(STATES_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), map: map||{} })); }catch(_){ } }
+    function readStatesCache(ignoreTTL){
+      try{
+        var raw = localStorage.getItem(STATES_CACHE_KEY);
+        if(!raw) return null;
+        var obj; try{ obj = JSON.parse(raw); }catch(_){ obj=null; }
+        if (obj && typeof obj === 'object'){
+          if(!ignoreTTL){ var now = Date.now(); if(obj.savedAt && (now-obj.savedAt)>STATES_TTL_MS){ /* expired */ } }
+          if (obj.map && typeof obj.map === 'object') return obj.map;
+          if (typeof obj.stateJson === 'string'){ try{ var m=JSON.parse(obj.stateJson); if(m && typeof m==='object') return m; }catch(_){ } }
+          var vals = Object.values(obj); if (vals.length && vals.every(function(v){return v==='on'||v==='off';})) return obj;
+        }
+        try{ var m2 = JSON.parse(raw); if (m2 && typeof m2==='object') return m2; }catch(_){ }
+        return null;
+      }catch(_){ return null; }
+    }
+    function parseStatesDoc(data){
+      var map = {};
+      try{
+        if (typeof data.stateJson === 'string') { map = JSON.parse(data.stateJson)||{}; }
+        else if (data.map && typeof data.map==='object'){ map = data.map; }
+        else { map = data||{}; }
+      }catch(_){ map = {}; }
+      return map;
+    }
+    async function loadStatesMap(){
+      try{
+        if (typeof firebase==='undefined' || !firebase.firestore) return null;
+        var ref = firebase.firestore().collection('config').doc('states');
+        var snap = await ref.get({ source:'server' }).catch(function(){ return ref.get(); });
+        if (!snap || !snap.exists) return null;
+        var map = parseStatesDoc(snap.data()||{});
+        saveStatesCache(map);
+        return map;
+      }catch(_){ return null; }
+    }
+    function applyStatesToPage(){
+      try{
+        var cards = Array.prototype.slice.call(document.querySelectorAll('a.card, .card[href]'));
+        if (!cards.length) return;
+        cards.forEach(prepCard);
+
+        // أضف انيميشن التحميل مؤقتًا
+        try { cards.forEach(function(card){ card.classList.add('pending-state'); }); } catch(_){ }
+
+      // طبّق الكاش سريعًا إن وجد
+      var cached = null;
+      try { cached = readStatesCache(window.__SKIP_FIREBASE__ ? true : false); } catch(_) { cached = null; }
+      if (cached && typeof cached === 'object'){
+        cards.forEach(function(card){
+          var name = getPageNameFromCard(card);
+          var s = (name && Object.prototype.hasOwnProperty.call(cached, name)) ? cached[name] : 'on';
+          // إن كانت الحالة مغلقة طبقها فورًا، وإلا اترك الانيميشن حتى يتم تحديث الشبكة أو انتهاء المهلة
+          if (s === 'off') applyCardState(card, 'off');
+        });
+        // مهلة أمان لإنهاء الانيميشن إن لم تصل الشبكة سريعًا
+        setTimeout(function(){ cards.forEach(function(card){ if (card.classList.contains('pending-state')) applyCardState(card, 'on'); }); }, 1200);
+      } else {
+        // لا يوجد كاش: لا تترك الانيميشن عالقة
+        setTimeout(function(){ cards.forEach(function(card){ applyCardState(card, 'on'); }); }, 800);
+      }
+
+        // إن لم نكن في وضع التخطي، حمّل من الشبكة وحدث الحالة لاحقًا (ويُنهي الانيميشن)
+        if (!window.__SKIP_FIREBASE__){
+          loadStatesMap().then(function(result){
+            var map = (result && result.map) ? result.map : result;
+            map = map || readStatesCache(false) || {};
+            cards.forEach(function(card){
+              var name = getPageNameFromCard(card);
+              var s = (name && map && Object.prototype.hasOwnProperty.call(map, name)) ? map[name] : 'on';
+              applyCardState(card, s);
+            });
+          }).catch(function(){ /* تجاهل */ });
+        }
+      }catch(_){ }
+    }
+    if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyStatesToPage); else try{ applyStatesToPage(); }catch(_){ }
+  })();
+  </script>
+
+  <script>
+    /* ===== أدوات الحالات (بدون localStorage) ===== */
+    function lockAllCards() {
+      document.querySelectorAll('.card').forEach(card => {
+        // خزّن href والعنوان الأصليين
+        if (!card.dataset.originalHref) {
+          const href = card.getAttribute('href');
+          if (href) card.dataset.originalHref = href;
+        }
+        const titleEl = card.querySelector('h2');
+        if (!card.dataset.originalTitle && titleEl) card.dataset.originalTitle = titleEl.textContent;
+
+        // ✅ أزل أي إخفاء بصري للصور مبكرًا
+        card.classList.remove('loading');
+
+        // قفل فوري
+        card.removeAttribute('href');
+        card.classList.add('pending-state');
+      });
+    }
+    function applyCardState(card, state) {
+      const finalState = (state === undefined || state === null) ? 'on' : state;
+      const titleEl = card.querySelector('h2');
+      const img = card.querySelector('img');
+
+      // أزل أي إخفاء بصري
+      card.classList.remove('loading');
+
+      if (finalState === 'off') {
+        // ✅ اجعل صورة العناصر المغلقة تظهر فورًا
+        if (img) {
+          img.setAttribute('loading', 'eager');
+          img.setAttribute('decoding', 'sync');
+          img.setAttribute('fetchpriority', 'high');
+        }
+        card.classList.add('maintenance');
+        card.classList.remove('pending-state');
+        card.removeAttribute('href');
+        if (titleEl) titleEl.textContent = '🚧 مغلق للصيانة';
+      } else {
+        if (card.dataset.originalHref) card.setAttribute('href', card.dataset.originalHref);
+        card.classList.remove('maintenance','pending-state');
+        if (titleEl && card.dataset.originalTitle) titleEl.textContent = card.dataset.originalTitle;
+      }
+    }
+
+    function generateAuthKey() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let key = '';
+      for (let i = 0; i < 36; i++) key += chars.charAt(Math.floor(Math.random() * chars.length));
+      return key;
+    }
+
+    // Firebase
+    const firebaseConfig = {
+          apiKey:"AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
+          authDomain:"z3em-d9b11.firebaseapp.com",
+          projectId:"z3em-d9b11",
+          storageBucket:"z3em-d9b11.firebasestorage.app",
+          messagingSenderId:"236716520945",
+          appId:"1:236716520945:web:a0c336db7dc7079c190050",
+          measurementId:"G-1GG6DE12K6"
+        };
+    let auth = null;
+    let db = null;
+    let firebaseReady = typeof firebase !== 'undefined' && firebase && typeof firebase.initializeApp === 'function';
+
+    if (firebaseReady) {
+      try {
+        if (!firebase.apps || !firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        } else {
+          firebase.app();
+        }
+        auth = typeof firebase.auth === 'function' ? firebase.auth() : null;
+        db = typeof firebase.firestore === 'function' ? firebase.firestore() : null;
+      } catch (e) {
+        console.warn('تعذر تهيئة Firebase، سيتم متابعة العرض بدون اتصال.', e);
+        firebaseReady = false;
+        auth = null;
+        db = null;
+      }
+    } else {
+      console.warn('مكتبة Firebase غير متوفرة، سيتم متابعة العرض بدون اتصال.');
+    }
+
+    const firebaseAvailable = firebaseReady && !!auth && !!db;
+
+    // ===== حارس طلبات Firebase: منع القراءة عند إعادة التحميل السريع =====
+    (function(){
+      try {
+        const KEY = 'index:loadTimes';
+        const now = Date.now();
+        let arr = [];
+        try { arr = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch(_) { arr = []; }
+        if (!Array.isArray(arr)) arr = [];
+        // احتفظ فقط بالمدد الأخيرة خلال 10 ثوانٍ
+        arr = arr.filter(t => typeof t === 'number' && (now - t) < 10000);
+        arr.push(now);
+        try { localStorage.setItem(KEY, JSON.stringify(arr.slice(-10))); } catch(_){ }
+        // إذا تجاوز (>=3) خلال 10 ثوانٍ، فعّل وضع التخطي
+        window.__SKIP_FIREBASE__ = (arr.length >= 3);
+      } catch(_) { window.__SKIP_FIREBASE__ = false; }
+    })();
+    if (!firebaseAvailable) { window.__SKIP_FIREBASE__ = true; }
+
+    function closeResetModal() { resetModal.style.display = 'none'; }
+
+    if (!window.__SKIP_FIREBASE__ && firebaseAvailable && auth && typeof auth.onAuthStateChanged === "function") auth.onAuthStateChanged(user => {
+      if (user) {
+        //loadUserBalance(user.uid);
+      } else {
+        const el = document.getElementById('balanceAmount');
+        if (el) el.textContent = 'يجب تسجيل الدخول اولا';
+      }
+    });
+
+    if (!window.__SKIP_FIREBASE__ && firebaseAvailable && auth && typeof auth.onAuthStateChanged === "function") auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const userRef = db.collection('users').doc(user.uid);
+        const docSnap = await userRef.get();
+
+        if (docSnap.exists) {
+          const data = docSnap.data();
+
+          // تم تعطيل التحقق من الحظر لتحسين سرعة التجربة وإزالة الحواجز
+
+          if (!data.authkey) {
+            const authkey = generateAuthKey();
+            await userRef.set({ authkey }, { merge: true });
+          }
+
+          // تمت إزالة مطالبة رقم الهاتف
+        }
+      } else {
+        const el = document.getElementById('balanceAmount');
+        if (el) el.textContent = 'يجب تسجيل الدخول اولا';
+      }
+    });
+
+    /* ===== تسريع ومنع النافذة الزمنية للدخول ===== */
+    // حمل خريطة الحالات من وثيقة واحدة بصيغة JSON لتقليل القراءات
+    const STATES_TTL_MS = 5 * 60 * 1000; // مدة صلاحية الكاش العادي (5 دقائق)
+    const STATES_CACHE_KEY = 'statesCache';
+
+    function saveStatesCache(map){
+      try { localStorage.setItem(STATES_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), map: map||{} })); } catch(_){}
+    }
+    function readStatesCache(ignoreTTL){
+      try{
+        const raw = localStorage.getItem(STATES_CACHE_KEY);
+        if(!raw) return null;
+        let obj;
+        try { obj = JSON.parse(raw); } catch(_) { obj = null; }
+        // دعم صيغ قديمة/متنوعة
+        if (obj && typeof obj === 'object'){
+          // التحقق من مهلة الكاش إن لزم
+          if(!ignoreTTL){
+            const now = Date.now();
+            if(obj.savedAt && (now - obj.savedAt) > STATES_TTL_MS){ /* منتهي */ }
+          }
+          if (obj.map && typeof obj.map === 'object') return obj.map;
+          if (typeof obj.stateJson === 'string'){
+            try{ const m = JSON.parse(obj.stateJson); if(m && typeof m==='object') return m; }catch(_){ }
+          }
+          // إذا كان الكائن نفسه يبدو خريطة حالات (قيم on/off)
+          const vals = Object.values(obj);
+          if (vals.length && vals.every(v => v === 'on' || v === 'off')) return obj;
+        }
+        // ربما خزّن كنص للخريطة مباشرة
+        try{
+          const m2 = JSON.parse(raw);
+          if (m2 && typeof m2 === 'object') return m2;
+        }catch(_){ }
+        return null;
+      }catch(_){ return null; }
+    }
+    async function loadStatesMap() {
+      if (!firebaseAvailable || !db || typeof db.collection !== 'function') { return { map: {}, fromCache: true }; }
+      const ref = db.collection('config').doc('states');
+      const tryGet = async () => {
+        try { return await ref.get({ source: 'server' }); } catch(_) { return await ref.get(); }
+      };
+      try {
+        let doc = await tryGet();
+        if (!doc.exists) throw new Error('not-found');
+        const data = doc.data() || {};
+        let map = {};
+        if (typeof data.stateJson === 'string') {
+          try { map = JSON.parse(data.stateJson); } catch(_) { map = {}; }
+        } else if (data.map && typeof data.map === 'object') {
+          map = data.map;
+        } else {
+          map = data;
+        }
+        // خزِّن في الكاش للاستخدام لاحقًا عند حظر القراءات
+        try { saveStatesCache(map); } catch(_){}
+        return { map, fromCache: false };
+      } catch (e) {
+        // إن كانت الأذونات تمنع القراءة، يمكن تفعيل الدخول المجهول عند الحاجة
+        try {
+          var ENABLE_ANON = false; // عطِّل افتراضيًا لتجنّب أخطاء 400
+          if (ENABLE_ANON && e && e.code === 'permission-denied' && auth && !auth.currentUser && auth.signInAnonymously) {
+            await auth.signInAnonymously();
+            const doc = await tryGet();
+            if (doc && doc.exists) {
+              const data = doc.data() || {};
+              let map = {};
+              if (typeof data.stateJson === 'string') { try { map = JSON.parse(data.stateJson); } catch(_) { map = {}; } }
+              else if (data.map && typeof data.map === 'object') { map = data.map; }
+              else { map = data; }
+              try { saveStatesCache(map); } catch(_){}
+              return { map, fromCache: false };
+            }
+          }
+        } catch(_) { /* تجاهل */ }
+        return { map: {}, fromCache: true };
+      }
+    }
+
+    function applyCardsVisibility() {
+      const cards = document.querySelectorAll('.card');
+      // أضف انيميشن التحميل مؤقتًا
+      cards.forEach(card => {
+        if (!card.dataset.originalHref) {
+          const href = card.getAttribute('href');
+          if (href) card.dataset.originalHref = href;
+        }
+        const titleEl = card.querySelector('h2');
+        if (!card.dataset.originalTitle && titleEl) {
+          card.dataset.originalTitle = titleEl.textContent;
+        }
+        card.classList.add('pending-state');
+      });
+
+      // طبّق الكاش إن وجد
+      let cached = null;
+      try { cached = readStatesCache(window.__SKIP_FIREBASE__ ? true : false); } catch(_) { cached = null; }
+      if (cached && typeof cached === 'object') {
+        cards.forEach(card => {
+          const pageName = (card.dataset.originalHref || card.getAttribute('href') || '').replace('.html','');
+          const state = Object.prototype.hasOwnProperty.call(cached, pageName) ? cached[pageName] : 'on';
+          // طبّق الإغلاق فقط فورًا، واترك الفتح إلى حين رد الشبكة أو انتهاء المهلة
+          if (state === 'off') applyCardState(card, 'off');
+        });
+        // مهلة أمان لإنهاء الانيميشن إن لم تصل الشبكة سريعًا
+        setTimeout(() => { cards.forEach(card => { if (card.classList.contains('pending-state')) applyCardState(card, 'on'); }); }, 1200);
+      } else {
+        // لا يوجد كاش: لا تترك الانيميشن عالقة
+        setTimeout(() => { cards.forEach(card => applyCardState(card, 'on')); }, 800);
+      }
+
+      // إذا كنا في وضع التخطي لا نقرأ من الشبكة
+      if (window.__SKIP_FIREBASE__) return;
+
+      // حدّث من الشبكة لاحقًا (ويُنهي الانيميشن)
+      loadStatesMap()
+        .then(result => {
+          const map = (result && result.map) ? result.map : (readStatesCache(false) || {});
+          const resolved = map || {};
+          cards.forEach(card => {
+            const pageName = (card.dataset.originalHref || card.getAttribute('href') || '').replace('.html','');
+            const state = Object.prototype.hasOwnProperty.call(resolved, pageName) ? resolved[pageName] : 'on';
+            applyCardState(card, state);
+          });
+        })
+        .catch(() => { /* تجاهل */ });
+    }
+
+    // ابدأ مباشرة دون الانتظار
+    applyCardsVisibility();
+
+    // تمت إزالة التحقق من رقم الهاتف — لا حاجة لطلبه
+
+    // تمت إزالة بانر رقم الهاتف
+
+    // تمت إزالة نافذة إدخال رقم الهاتف
+
+    // تمت إزالة حفظ رقم الهاتف
+
+    // توافق قديم للثيم
+    document.addEventListener('DOMContentLoaded', function () {
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.body.classList.toggle('dark-mode', isDark);
+
+      // البحث + الفلترة
+      const input = document.getElementById('searchInput');
+      const grid = document.getElementById('categoriesContainer');
+      const noResults = document.getElementById('noResults');
+      if(!input || !grid) return;
+
+      const norm = s => (s||'').toString().toLowerCase()
+        .replace(/[ًٌٍَُِّْـ]/g,'')
+        .replace(/[إأآا]/g,'ا')
+        .replace(/ى/g,'ي')
+        .replace(/ة/g,'ه')
+        .replace(/[^\p{L}\p{N}\s]/gu,'')
+        .trim();
+
+      const cards = Array.from(grid.querySelectorAll('.card'));
+      function apply(query){
+        const q = norm(query);
+        let shown = 0;
+        cards.forEach(card => {
+          const title = card.dataset.title || card.querySelector('h2')?.textContent || '';
+          const ok = q === '' || norm(title).includes(q);
+          card.style.display = ok ? '' : 'none';
+          if (ok) shown++;
+        });
+        if (noResults) noResults.style.display = shown ? 'none' : 'block';
+      }
+
+      const KEY = 'home:q';
+      const saved = localStorage.getItem(KEY) || '';
+      if (saved) input.value = saved;
+      apply(saved);
+
+      // الزر محذوف؛ نعتمد على Enter وتحديث حي
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); localStorage.setItem(KEY, input.value); apply(input.value); }
+      });
+      let t;
+      input.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => apply(input.value), 150); });
+
+      // علّم الملاحة أنها تمت من الرئيسية قبل الانتقال
+      document.addEventListener('click', function(e){
+        const a = e.target.closest('a[href$=".html"]');
+        if (a) { try { sessionStorage.setItem('nav:fromHome','1'); } catch(e){} }
+      });
+    });
+  </script>
+  <!-- تمت إزالة ماسح صفحات HTML: أصبح التحميل المسبق للصور عبر Service Worker فقط -->
+  
+  <!-- Inline loader for games/social/software/webdev without redirect -->
+  <script>
+    (function(){
+      var routes = {
+        'games':         { url: 'games.html',         title: 'الألعاب' },
+        'social':        { url: 'social.html',        title: 'مواقع التواصل' },
+        'software':      { url: 'software.html',      title: 'اشتراكات البرامج' },
+        'freefireinbut': { url: 'freefireinbut.html', title: 'فري فاير' },
+        'webdev':        { url: 'webdev.html',        title: 'تطوير مواقع' }
+      };
+
+      var home = {
+        hero: function(){ return document.querySelector('.page-hero'); },
+        ticker: function(){ return document.getElementById('homeTicker'); },
+        homeSearch: function(){ return document.querySelector('body > .search-container'); },
+        grid: function(){ return document.getElementById('categoriesContainer'); },
+        noResults: function(){ return document.getElementById('noResults'); },
+        support: function(){ return document.querySelector('.support-section'); },
+        rights: function(){ return document.querySelector('.support-rights'); }
+      };
+      var inlineBox = document.getElementById('inlinePage');
+
+      function show(el, v){ if(!el) return; el.style.display = v ? '' : 'none'; }
+      function clear(el){ if(!el) return; while(el.firstChild) el.removeChild(el.firstChild); }
+      function scrollTop(){ try{ window.scrollTo({ top:0, behavior:'smooth' }); }catch(_){ window.scrollTo(0,0); } }
+
+      function buildToolbar(title){
+        var bar = document.createElement('div');
+        bar.className = 'inline-toolbar';
+        var back = document.createElement('button'); back.className='inline-back'; back.textContent='رجوع'; back.addEventListener('click', function(){ navigateHome(); });
+        var t = document.createElement('div'); t.className='inline-title'; t.textContent = title||'';
+        bar.appendChild(back); bar.appendChild(t);
+        return bar;
+      }
+
+      function extractContent(html){
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var sc = doc.querySelector('.search-container');
+        var main = doc.querySelector('main');
+        var cats = main ? main.querySelector('.categories') : null;
+        var frag = document.createDocumentFragment();
+        if (sc) frag.appendChild(sc.cloneNode(true));
+        if (cats){
+          var wrap = document.createElement('div');
+          wrap.appendChild(cats.cloneNode(true));
+          var p = document.createElement('p'); p.className='no-results'; p.id='inlineNoResults'; p.textContent='عذراً، لم يتم العثور على نتائج.'; p.style.display='none';
+          wrap.appendChild(p);
+          frag.appendChild(wrap);
+          return frag;
+        }
+        if (main){
+          Array.prototype.forEach.call(main.childNodes, function(n){ frag.appendChild(n.cloneNode(true)); });
+          return frag;
+        }
+        var body = doc.body;
+        if (body){ Array.prototype.forEach.call(body.childNodes, function(n){ frag.appendChild(n.cloneNode(true)); }); }
+        return frag;
+      }
+
+      function attachSearchBehavior(container){
+        try{
+          var input = container.querySelector('.search-container input');
+          var grid = container.querySelector('.categories');
+          var noResults = container.querySelector('#inlineNoResults');
+          if(!input || !grid) return;
+          var cards = Array.prototype.slice.call(grid.querySelectorAll('.card'));
+          function norm(s){ return (s||'').toString().toLowerCase()
+            .replace(/[ًٌٍَُِّْـ]/g,'')
+            .replace(/[إأآا]/g,'ا')
+            .replace(/ى/g,'ي')
+            .replace(/ة/g,'ه')
+            .replace(/[^\p{L}\p{N}\s]/gu,'')
+            .trim(); }
+          function apply(q){
+            var nq = norm(q), shown = 0;
+            cards.forEach(function(card){
+              var titleEl = card.querySelector('h2');
+              var title = (card.dataset && card.dataset.title) || (titleEl ? titleEl.textContent : '') || '';
+              var ok = nq === '' || norm(title).includes(nq);
+              card.style.display = ok ? '' : 'none';
+              if (ok) shown++;
+            });
+            if (noResults) noResults.style.display = shown ? 'none' : 'block';
+          }
+          input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); apply(input.value); } });
+          var t; input.addEventListener('input', function(){ clearTimeout(t); t=setTimeout(function(){ apply(input.value); }, 150); });
+        }catch(_){ }
+      }
+
+      function updateViewForInline(showInline){
+        show(home.hero(), !showInline);
+        show(home.ticker(), !showInline);
+        show(home.homeSearch(), !showInline);
+        show(home.grid(), !showInline);
+        show(home.noResults(), false);
+        show(inlineBox, showInline);
+        // Keep footer (support + rights) visible even in inline view
+        show(home.support(), true);
+        show(home.rights(), true);
+      }
+
+      // Fallback templates in case fetch fails (kept minimal to avoid duplication)
+      var TEMPLATES = {
+        games:
+          '<div class="search-container">\n' +
+            '<input type="text" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" />\n' +
+          '</div>\n' +
+          '<section class="categories">\n' +
+            '<a href="freefireinbut.html" class="card auto" data-title="فري فاير">\n' +
+              '<img draggable="false" src="IMGS/freefire.jpg" alt="فري فاير"/>\n' +
+              '<h2>فري فاير</h2>\n' +
+            '</a>\n' +
+            '<a href="pubg.html" class="card auto" data-title="ببجي تلقائي">\n' +
+              '<img draggable="false" src="IMGS/pubg.jpg" alt="ببجي تلقائي"/>\n' +
+              '<h2>ببجي</h2>\n' +
+            '</a>\n' +
+            '<a href="jawaker.html" class="card auto" data-title="جواكر تلقائي">\n' +
+              '<img draggable="false" src="IMGS/jawaker.jpg" alt="جواكر تلقائي"/>\n' +
+              '<h2>جواكر</h2>\n' +
+            '</a>\n' +
+            '<a href="clashofclans.html" class="card auto" data-title="كلاش اوف كلانس تلقائي">\n' +
+              '<img draggable="false" src="IMGS/clashofclans.jpg" alt="كلاش اوف كلانس تلقائي"/>\n' +
+              '<h2>كلاش اوف كلانس </h2>\n' +
+            '</a>\n' +
+          '</section>',
+        social:
+          '<div class="search-container">\n' +
+            '<input type="text" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" />\n' +
+          '</div>\n' +
+          '<section class="categories">\n' +
+            '<a href="instainbut.html" class="card" data-title="رشق انستا">\n' +
+              '<img draggable="false" src="IMGS/insta.jpg" alt="رشق انستا"/>\n' +
+              '<h2>رشق انستا</h2>\n' +
+            '</a>\n' +
+            '<a href="facebook.html" class="card" data-title="رشق فيس">\n' +
+              '<img draggable="false" src="IMGS/facebook.jpg" alt="رشق فيس"/>\n' +
+              '<h2>رشق فيس</h2>\n' +
+            '</a>\n' +
+            '<a href="tiktok.html" class="card" data-title="رشق تيك توك">\n' +
+              '<img draggable="false" src="IMGS/tiktok.jpg" alt="رشق تيك توك"/>\n' +
+              '<h2>رشق تيك توك</h2>\n' +
+            '</a>\n' +
+          '</section>',
+        software:
+          '<div class="search-container">\n' +
+            '<input type="text" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" />\n' +
+          '</div>\n' +
+          '<section class="categories">\n' +
+            '<a href="canva.html" class="card" data-title="كانفا">\n' +
+              '<img draggable="false" src="IMGS/canva.jpg" alt="كانفا"/>\n' +
+              '<h2>كانفا</h2>\n' +
+            '</a>\n' +
+            '<a href="netflix.html" class="card" data-title="نتفلكس">\n' +
+              '<img draggable="false" src="IMGS/netflix.jpg" alt="نتفلكس"/>\n' +
+              '<h2>نتفلكس</h2>\n' +
+            '</a>\n' +
+            '<a href="chatgpt.html" class="card" data-title="ChatGPT">\n' +
+              '<img draggable="false" src="IMGS/chatgpt.jpg" alt="ChatGPT"/>\n' +
+              '<h2>ChatGPT</h2>\n' +
+            '</a>\n' +
+          '</section>',
+        freefireinbut:
+          '<div class="search-container">\n' +
+            '<input type="text" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" />\n' +
+          '</div>\n' +
+          '<section class="categories">\n' +
+            '<a href="freefireauto.html" class="card auto featured" data-title="فري فاير تلقائي">\n' +
+              '<img draggable="false" src="IMGS/frefireauto.jpg" alt="فري فاير تلقائي"/>\n' +
+              '<h2>فري فاير تلقائي</h2>\n' +
+            '</a>\n' +
+            '<a href="freefireN.html" class="card" data-title="فري فاير نيجيري">\n' +
+              '<img draggable="false" src="IMGS/freefireN.jpg" alt="فري فاير نيجيري"/>\n' +
+              '<h2>فري فاير نيجيري</h2>\n' +
+            '</a>\n' +
+            '<a href="freefire.html" class="card" data-title="فري فاير يدوي">\n' +
+              '<img draggable="false" src="IMGS/freefire.jpg" alt="فري فاير يدوي"/>\n' +
+              '<h2>فري فاير يدوي</h2>\n' +
+            '</a>\n' +
+            '<a href="freefiremembership.html" class="card" data-title="فري فاير يدوي">\n' +
+              '<img draggable="false" src="IMGS/freefire.jpg" alt="فري فاير يدوي"/>\n' +
+              '<h2>فري فاير عضويات</h2>\n' +
+            '</a>\n' +
+          '</section>',
+        webdev:
+          '<div class="search-container">\n' +
+            '<input type="text" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" />\n' +
+          '</div>\n' +
+          '<section class="categories">\n' +
+            '<a href="webdev.html" class="card" data-title="تطوير موقع">\n' +
+              '<img draggable="false" src="https://i.ibb.co/XZHyMGSG/1756247096045.jpg" alt="تطوير موقع"/>\n' +
+              '<h2>تطوير موقع</h2>\n' +
+            '</a>\n' +
+          '</section>'
+      };
+
+      function renderFromTemplate(key){
+        var html = TEMPLATES[key];
+        if (!html) return null;
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = html;
+        var frag = document.createDocumentFragment();
+        // move children to frag to avoid extra wrapper
+        while(wrapper.firstChild){ frag.appendChild(wrapper.firstChild); }
+        // add no-results placeholder
+        var p = document.createElement('p'); p.className='no-results'; p.id='inlineNoResults'; p.textContent='عذراً، لم يتم العثور على نتائج.'; p.style.display='none';
+        frag.appendChild(p);
+        return frag;
+      }
+
+      async function loadInline(key){
+        var r = routes[key]; if(!r) return;
+        updateViewForInline(true);
+        scrollTop();
+        clear(inlineBox);
+        // Load inline templates directly (external list files were removed)
+        var content = renderFromTemplate(key);
+        if (content) {
+          inlineBox.appendChild(content);
+          try{ if (typeof applyCardsVisibility === 'function') applyCardsVisibility(); }catch(_){ }
+          try{ attachSearchBehavior(inlineBox); }catch(_){ }
+          // Hide the page loader after inline content is ready (hash navigation)
+          try {
+            // Clear loader session flags so global guards don’t block hiding
+            sessionStorage.removeItem('nav:loader:expected');
+            sessionStorage.removeItem('nav:loader:showAt');
+          } catch(_){ }
+          try {
+            // Give layout a tick to settle, then hide smoothly
+            requestAnimationFrame(function(){ requestAnimationFrame(function(){
+              if (typeof hidePageLoader === 'function') hidePageLoader();
+            }); });
+          } catch(_){ if (typeof hidePageLoader === 'function') hidePageLoader(); }
+        } else {
+          var err = document.createElement('div'); err.textContent = 'لا يوجد محتوى متاح حالياً.'; inlineBox.appendChild(err);
+          // Ensure loader never gets stuck even on failure
+          try { sessionStorage.removeItem('nav:loader:expected'); sessionStorage.removeItem('nav:loader:showAt'); } catch(_){ }
+          try { if (typeof hidePageLoader === 'function') hidePageLoader(); } catch(_){ }
+        }
+      }
+
+      function navigate(key){
+        if(!routes[key]) return;
+        if (location.hash !== '#/'+key) { history.pushState({key:key}, '', '#/'+key); }
+        try { if (typeof showPageLoader === 'function') showPageLoader(); } catch(_){ }
+        loadInline(key);
+      }
+      function navigateHome(){
+        history.pushState({}, '', '#/');
+        updateViewForInline(false);
+        clear(inlineBox);
+        scrollTop();
+      }
+
+      function initFromHash(){
+        var h = (location.hash||'').replace(/^#\/?/, '');
+        if (!h || h === '/') { updateViewForInline(false); return; }
+        if (routes[h]) { loadInline(h); }
+        else { updateViewForInline(false); }
+      }
+
+      window.addEventListener('hashchange', initFromHash);
+      window.addEventListener('popstate', initFromHash);
+
+      // Intercept clicks on home cards (handle ?allow=1, hashes, etc.)
+      function handleCardNavEvent(e){
+        var a = e.target && e.target.closest ? e.target.closest('a.card') : null;
+        if (!a) return;
+        var href = (a.getAttribute('href')||'').toLowerCase();
+        var path = href.split('#')[0].split('?')[0];
+        if (path.endsWith('games.html'))          { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('games'); return; }
+        if (path.endsWith('social.html'))         { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('social'); return; }
+        if (path.endsWith('software.html'))       { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('software'); return; }
+        if (path.endsWith('webdev.html'))         { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('webdev'); return; }
+        if (path.endsWith('freefireinbut.html'))  { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('freefireinbut'); return; }
+      }
+      document.addEventListener('pointerdown', handleCardNavEvent, true);
+      document.addEventListener('click', handleCardNavEvent, true);
+
+      // Boot from hash if present
+      initFromHash();
+
+      // Expose for back button in toolbar
+      window.navigateHome = navigateHome;
+
+      // Public helper to reload states with loading animation
+      try {
+        window.reloadCardsStates = function () {
+          try { applyCardsVisibility(); } catch(_){}
+          try { applyStatesToPage(); } catch(_){}
+        };
+      } catch(_){}
+    })();
+  </script>
+
+  <!-- WhatsApp Group Join Modal -->
+  <style>
+    /* WhatsApp modal (scoped IDs to avoid conflicts) */
+    #wa-join-modal{position:fixed;inset:0;background-color:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:10000}
+    #wa-join-modal .wa-modal-content{background:var(--modal-bg);color:var(--modal-text);padding:24px 20px;border-radius:12px;max-width:420px;width:92%;box-shadow:var(--modal-shadow);text-align:center;border:1px solid var(--border-strong)}
+    #wa-join-modal h3{margin:0 0 8px;font-size:1.15rem}
+    #wa-join-modal p{margin:0 0 16px;color:var(--muted)}
+    #wa-join-modal .wa-actions{display:flex;gap:10px;justify-content:center}
+    #wa-join-modal .wa-btn{appearance:none;border:1px solid transparent;border-radius:12px;padding:12px 16px;font-size:1rem;cursor:pointer;min-width:120px;transition:transform .12s ease, box-shadow .2s ease, background-color .2s ease, border-color .2s ease}
+    #wa-join-modal .wa-btn:active{transform:translateY(1px)}
+    #wa-join-modal .wa-btn:focus-visible{outline:2px solid #25d36633; outline-offset:2px}
+    /* WhatsApp green primary */
+    #wa-join-modal .wa-primary{background:#25D366;color:#fff;box-shadow:0 6px 16px rgba(37,211,102,.28);display:inline-flex;align-items:center;justify-content:center;gap:8px}
+    #wa-join-modal .wa-primary:hover{background:#22c25e;box-shadow:0 8px 20px rgba(37,211,102,.36)}
+    #wa-join-modal .wa-primary i{font-size:1.1em}
+    /* Ghost button */
+    #wa-join-modal .wa-ghost{background:transparent;color:var(--text);border-color:var(--card-border)}
+    html[data-theme="light"] #wa-join-modal .wa-ghost:hover{background:rgba(0,0,0,.04)}
+    html[data-theme="dark"]  #wa-join-modal .wa-ghost:hover{background:rgba(255,255,255,.08)}
+  </style>
+  <div id="wa-join-modal" role="dialog" aria-modal="true" aria-labelledby="wa-title" aria-describedby="wa-desc">
+    <div class="wa-modal-content">
+      <h3 id="wa-title">انضم إلى قروب واتساب</h3>
+      <p id="wa-desc">انضم لقروب متجر زعيم على واتساب لتصلك آخر العروض والتحديثات.</p>
+      <div class="wa-actions">
+        <a class="wa-btn wa-primary" href="https://chat.whatsapp.com/Lj4JIdlQCqo5sxK400SpuL" target="_blank" rel="noopener noreferrer">
+          <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+          انضم الآن
+        </a>
+        <button type="button" class="wa-btn wa-ghost" id="wa-close-btn">لاحقًا</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var modal = document.getElementById('wa-join-modal');
+      if(!modal) return;
+      var KEY = 'wa_join_once_v1';
+
+      function lockScroll(on){ try { document.body.style.overflow = on ? 'hidden' : ''; } catch(_){} }
+      function open(){ modal.style.display = 'flex'; lockScroll(true); try { localStorage.setItem(KEY, '1'); } catch(_){} }
+      function close(){ modal.style.display = 'none'; lockScroll(false); try { localStorage.setItem(KEY, '1'); } catch(_){} }
+
+      // Open on first visit only
+      var seen = '0';
+      try { seen = localStorage.getItem(KEY) || '0'; } catch(_){ seen = '0'; }
+      if (seen !== '1') {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', open);
+        } else { open(); }
+      }
+
+      // Close handlers
+      var closeBtn = document.getElementById('wa-close-btn');
+      if (closeBtn) closeBtn.addEventListener('click', close);
+      modal.addEventListener('click', function(e){ if(e.target === modal) close(); });
+      document.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
+    })();
+  </script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

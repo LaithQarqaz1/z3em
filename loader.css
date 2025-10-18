@@ -1,0 +1,111 @@
+/* loader.css - مُحسَّن بمظهر عصري وخفيف */
+#preloader {
+  position: fixed;
+  inset: 0;
+  /* لون خلفية قابل للتكيّف مع الثيم */
+  --overlay: rgba(255, 255, 255, 0.35);
+  background: var(--overlay);
+  /* ملاحظة: blur واسع على الموبايل يسبب تقطيع، سنُعطّل لاحقًا للموبايل */
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 12000;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+  will-change: opacity, visibility; /* يقلل التقطّع عند الإخفاء */
+}
+
+/* تعطيل التعليق في حال فشل الجافاسكريبت: إخفاء تلقائي بعد مهلة قصيرة */
+@keyframes preloaderAutoHide { to { opacity: 0; visibility: hidden; } }
+#preloader.auto-hide { animation: preloaderAutoHide 0s linear 1.2s forwards; }
+
+/* الوضع الداكن */
+html[data-theme="dark"] #preloader,
+body.dark-mode #preloader {
+  --overlay: rgba(11, 18, 32, 0.30);
+}
+
+#preloader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* حلقة متدرّجة عصرية بخامة conic-gradient */
+.loader {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  /* ألوان العلامة التجارية (يمكن تعديلها لاحقًا) */
+  --c1: #007BFF; /* أزرق المتجر الأساسي */
+  --c2: #00B3FF; /* سماوي فاتح (احتياطي) */
+  --c3: #38BDF8; /* أكسنت سماوي مطابق بالموقع */
+  /* drop-shadow مكلف على الموبايل؛ سيتم تعطيله في وسائط الموبايل */
+  filter: drop-shadow(0 6px 18px rgba(59, 130, 246, 0.35));
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  display: grid;               /* تمركز أي محتوى داخلي */
+  place-items: center;         /* يضمن توسيط صورة اللودر */
+  /* اجعل الصورة الخلفية تُحمّل مبكرًا جدًا مع CSS */
+  background-image: url('https://i.ibb.co/svXFyxQk/Chat-GPT-Image-9-2025-06-11-56.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 72px 72px;
+}
+
+/* درجات أفتح قليلاً في الوضع الداكن لضمان التباين */
+html[data-theme="dark"] .loader,
+body.dark-mode .loader {
+  --c1: #4EA8FF;
+  --c3: #7DD3FC;
+}
+
+.loader::before,
+.loader::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* تفريغ المركز لعمل حلقة بسمك ~8px */
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 7px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 7px));
+}
+
+/* الحلقة الخارجية: قوس ملون طويل */
+.loader::before {
+  background: conic-gradient(from 0deg, var(--c1) 0 140deg, transparent 140deg 360deg);
+  animation: ring-spin-a 0.8s linear infinite;
+}
+
+/* الحلقة الداخلية: أصغر وتدور عكسياً بلون آخر */
+.loader::after {
+  inset: 10px; /* تصغير لتصبح حلقة داخلية */
+  background: conic-gradient(from 180deg, var(--c3) 0 110deg, transparent 110deg 360deg);
+  animation: ring-spin-b 0.9s linear infinite reverse;
+}
+
+#preloader.hidden .loader { transform: scale(0.86); opacity: 0; }
+
+@keyframes ring-spin-a { to { transform: rotate(1turn); } }
+@keyframes ring-spin-b { to { transform: rotate(1turn); } }
+
+/* مراعاة تقليل الحركة */
+@media (prefers-reduced-motion: reduce) {
+  .loader::before { animation-duration: 1.4s; }
+  .loader::after  { animation-duration: 1.6s; }
+}
+
+/* صورة اللودر الوسطية */
+.loader img.loader-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 12px;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* (تمت إزالة تخصيصات الموبايل لاستعادة السلوك السابق) */
+/* تحسين الأداء على الشاشات الصغيرة: إلغاء تأثيرات مكلفة */
+@media (max-width: 480px) {
+  #preloader { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .loader { filter: none; }
+}

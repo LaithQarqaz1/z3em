@@ -1,0 +1,1128 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>الإيداع</title>
+  <link rel="icon" href="https://i.ibb.co/zHC1tQ8b/1757362837638.png" type="image/png">
+
+  <!-- تهيئة الثيم مبكرًا (منع اللمعة عند التحميل) -->
+  <script>
+    (function(){
+      var theme = 'dark';
+      try{
+        var t = localStorage.getItem('theme');
+        if(!t){ t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'; }
+        theme = (t==='light') ? 'light' : 'dark';
+      }catch(e){ theme='dark'; }
+      document.documentElement.setAttribute('data-theme', theme);
+      try{
+        var metaCS=document.querySelector('meta[name="color-scheme"]'); if(!metaCS){ metaCS=document.createElement('meta'); metaCS.name='color-scheme'; document.head.appendChild(metaCS);} metaCS.setAttribute('content', theme==='dark'?'dark light':'light dark');
+        var metaTC=document.querySelector('meta[name="theme-color"]'); if(!metaTC){ metaTC=document.createElement('meta'); metaTC.name='theme-color'; document.head.appendChild(metaTC);} metaTC.setAttribute('content', theme==='dark'?'#0b1220':'#f9f9f9');
+      }catch(e){}
+      var s=document.createElement('style'); s.id='critical-theme'; s.textContent='html{background:'+(theme==='dark'?'#0b1220':'#f9f9f9')+';color:'+(theme==='dark'?'#e6edf3':'#333')+'} body{background:inherit;color:inherit;margin:0}'; document.head.appendChild(s);
+    })();
+  </script>
+  <meta name="color-scheme" content="dark light">
+
+  <!-- حارس مبكر: منع فتح الصفحة مباشرةً أو إن كانت البطاقة مغلقة -->
+  <script>
+    (function(){
+      try{
+        var base = (location.pathname.split('/').pop() || '');
+        var page = base.replace(/\.html$/,'');
+        var redirectTo = 'index.html';
+
+        // 1) افحص كاش حالات البطاقات (مملوء من الصفحة الرئيسية)
+        try{
+          var raw = localStorage.getItem('statesCache');
+          if (raw){
+            var obj = JSON.parse(raw);
+            var map = obj && obj.map ? obj.map : null;
+            if (map && page && map[page] === 'off'){
+              try{ sessionStorage.setItem('nav:reason','closed:'+page); }catch(_){ }
+              return window.location.replace(redirectTo);
+            }
+          }
+        }catch(_){/* ignore */}
+
+        // 2) امنع الدخول المباشر (ليس من داخل الموقع)
+        var nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')) || [];
+        var type = nav[0] ? nav[0].type : (performance.navigation ? (performance.navigation.type === 1 ? 'reload' : (performance.navigation.type === 2 ? 'back_forward' : '')) : '');
+        var isReload = type === 'reload';
+        var isBF = type === 'back_forward';
+        var fromHome = false; try{ fromHome = sessionStorage.getItem('nav:fromHome') === '1'; }catch(_){ }
+        var refOk = false; try{ var rr=document.referrer; if(rr){ var uu=new URL(rr); refOk=(uu.origin===location.origin);} }catch(_){ }
+        var paramsAllow = false; try{ paramsAllow=(new URLSearchParams(location.search)).has('allow'); }catch(_){ }
+        var guardOff = false; try{ guardOff=localStorage.getItem('nav:guardOff')==='1'; }catch(_){ }
+
+        if (!fromHome && !isReload && !isBF && !refOk && !paramsAllow && !guardOff){
+          try{ sessionStorage.setItem('nav:redirectedFrom', base); }catch(_){ }
+          return window.location.replace(redirectTo);
+        }
+        if (fromHome){ try{ sessionStorage.removeItem('nav:fromHome'); }catch(_){} }
+      }catch(e){ window.location.replace('index.html'); }
+    })();
+  </script>
+
+  <!-- خطوط وأيقونات -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+
+  <!-- Firebase (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+  (function(){
+    function applyCardState(card, state){
+      var finalState = (state == null) ? 'on' : state;
+      var titleEl = card.querySelector ? card.querySelector('h2') : null;
+      var img = card.querySelector ? card.querySelector('img') : null;
+      try{ card.classList.remove('loading'); }catch(_){ }
+      if (finalState === 'off'){
+        if (img){ try{ img.setAttribute('loading','eager'); img.setAttribute('decoding','sync'); img.setAttribute('fetchpriority','high'); }catch(_){ } }
+        try{ card.classList.add('maintenance'); card.classList.remove('pending-state'); }catch(_){ }
+        try{ card.removeAttribute('href'); }catch(_){ }
+        if (titleEl){ try{ titleEl.textContent = '🚧 مغلق للصيانة'; }catch(_){ } }
+      } else {
+        try{
+          if (card.dataset && card.dataset.originalHref){ card.setAttribute('href', card.dataset.originalHref); }
+          card.classList.remove('maintenance','pending-state');
+          if (titleEl && card.dataset && card.dataset.originalTitle){ titleEl.textContent = card.dataset.originalTitle; }
+        }catch(_){ }
+      }
+    }
+    function prepCard(card){
+      try{
+        if (!card.dataset.originalHref){ var href = card.getAttribute('href'); if (href) card.dataset.originalHref = href; }
+        var t = card.querySelector && card.querySelector('h2');
+        if (t && !card.dataset.originalTitle){ card.dataset.originalTitle = t.textContent || ''; }
+      }catch(_){ }
+    }
+    function getPageNameFromCard(card){
+      try{
+        var href = (card.dataset && card.dataset.originalHref) || card.getAttribute('href') || '';
+        href = href.split('?')[0].split('#')[0];
+        return href.replace(/\.html$/,'');
+      }catch(_){ return ''; }
+    }
+    var STATES_TTL_MS = 5*60*1000;
+    var STATES_CACHE_KEY = 'statesCache';
+    function saveStatesCache(map){ try{ localStorage.setItem(STATES_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), map: map||{} })); }catch(_){ } }
+    function readStatesCache(ignoreTTL){
+      try{
+        var raw = localStorage.getItem(STATES_CACHE_KEY);
+        if(!raw) return null;
+        var obj; try{ obj = JSON.parse(raw); }catch(_){ obj=null; }
+        if (obj && typeof obj === 'object'){
+          if(!ignoreTTL){ var now = Date.now(); if(obj.savedAt && (now-obj.savedAt)>STATES_TTL_MS){ /* expired */ } }
+          if (obj.map && typeof obj.map === 'object') return obj.map;
+          if (typeof obj.stateJson === 'string'){ try{ var m=JSON.parse(obj.stateJson); if(m && typeof m==='object') return m; }catch(_){ } }
+          var vals = Object.values(obj); if (vals.length && vals.every(function(v){return v==='on'||v==='off';})) return obj;
+        }
+        try{ var m2 = JSON.parse(raw); if (m2 && typeof m2==='object') return m2; }catch(_){ }
+        return null;
+      }catch(_){ return null; }
+    }
+    function parseStatesDoc(data){
+      var map = {};
+      try{
+        if (typeof data.stateJson === 'string') { map = JSON.parse(data.stateJson)||{}; }
+        else if (data.map && typeof data.map==='object'){ map = data.map; }
+        else { map = data||{}; }
+      }catch(_){ map = {}; }
+      return map;
+    }
+    async function loadStatesMap(){
+      try{
+        if (typeof firebase==='undefined' || !firebase.firestore) return null;
+        var ref = firebase.firestore().collection('config').doc('states');
+        var snap = await ref.get({ source:'server' }).catch(function(){ return ref.get(); });
+        if (!snap || !snap.exists) return null;
+        var map = parseStatesDoc(snap.data()||{});
+        saveStatesCache(map);
+        return map;
+      }catch(_){ return null; }
+    }
+    function applyStatesToPage(){
+      try{
+        var cards = Array.prototype.slice.call(document.querySelectorAll('a.card, .card[href]'));
+        if (!cards.length) return;
+        cards.forEach(prepCard);
+        if (window.__SKIP_FIREBASE__){ try{ cards.forEach(function(card){ try{ card.removeAttribute('href'); card.classList.add('pending-state'); }catch(_){ } }); }catch(_){ } var cached = readStatesCache(true);
+          if (cached){ cards.forEach(function(card){ var name=getPageNameFromCard(card); var s=(name && cached.hasOwnProperty(name))? cached[name] : 'on'; applyCardState(card,s); }); }
+          return;
+        }
+        loadStatesMap().then(function(map){ if(!map){ map = readStatesCache(false)||{}; } cards.forEach(function(card){ var name=getPageNameFromCard(card); var s=(name && map && map.hasOwnProperty(name))? map[name] : 'on'; applyCardState(card,s); }); });
+      }catch(_){ }
+    }
+    if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyStatesToPage); else try{ applyStatesToPage(); }catch(_){ }
+  })();
+  </script>
+
+  <!-- Turnstile (Client) -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+  <!-- ملفات الهيدر لديك (اختياري) -->
+  <link rel="stylesheet" href="header.css"/>
+  <script src="header.js" defer></script>
+  <!-- Loader assets -->
+  <link rel="stylesheet" href="loader.css">
+  <script src="loader.js" defer></script>
+
+  <!-- Theme tokens + dark overrides -->
+  <style>
+    :root {
+      --bg:#f9f9f9; --text:#111827; --muted:#6b7280;
+      --card-bg:#ffffff; --card-text:var(--text); --card-border:#e5e7eb;
+      --input-bg:#ffffff; --input-text:var(--text);
+      --btn-bg:#0ea5e9; --btn-bg-hover:#0284c7; --btn-text:#ffffff;
+      --elev-shadow:0 2px 8px rgba(0,0,0,.08);
+      --skeleton:#f1f5f9;
+    }
+    html[data-theme="dark"] {
+      --bg:#0b1220; --text:#e6edf3; --muted:#94a3b8;
+      --card-bg:#0f172a; --card-text:var(--text); --card-border:#1f2937;
+      --input-bg:#0b1220; --input-text:var(--text);
+      --btn-bg:#0284c7; --btn-bg-hover:#0ea5e9; --btn-text:#ffffff;
+      --elev-shadow:0 12px 36px rgba(0,0,0,.45);
+      --skeleton:#162032;
+    }
+    /* Base */
+    html[data-theme="dark"] body{ background:var(--bg) !important; color:var(--text) !important; }
+    /* Search */
+    html[data-theme="dark"] .search-container input[type="text"]{ background:var(--input-bg) !important; color:var(--input-text) !important; border-color:var(--card-border) !important; }
+    html[data-theme="dark"] .search-container input[type="text"]:focus{ box-shadow:0 0 6px rgba(56,189,248,.35) !important; border-color:#38bdf8 !important; }
+    html[data-theme="dark"] .search-container button{ background:var(--btn-bg) !important; color:var(--btn-text) !important; }
+    html[data-theme="dark"] .search-container button:hover{ background:var(--btn-bg-hover) !important; }
+    /* Cards */
+    html[data-theme="dark"] .card{ background:var(--card-bg) !important; color:var(--card-text) !important; border:1px solid var(--card-border) !important; box-shadow:var(--elev-shadow) !important; }
+    html[data-theme="dark"] .card img{ background-color:var(--skeleton) !important; }
+    /* Misc */
+    html[data-theme="dark"] .no-results{ color:var(--muted) !important; }
+    html[data-theme="dark"] .where{ color:#7dd3fc !important; }
+  </style>
+
+  <style>
+/* ========== Modal ========== */
+.modal {
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none;               /* ← مخفية افتراضيًا */
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+.modal.open {                  /* ← أضِف/احذف .open من JS */
+  display: flex;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+/* ========== Base ========== */
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Cairo', sans-serif;
+  margin: 0;
+  background: #f9f9f9;
+  color: #333;
+  direction: rtl;
+}
+main {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 0 15px;
+}
+
+/* شريط الأدوات أعلى القائمة (اختياري) */
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;max-width:1000px;margin:0 auto 12px}
+.back-btn{display:none;background:#e9eef5;border:none;padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:700;color:#1f2937}
+.back-btn:hover{filter:brightness(.98)}
+.where{font-weight:800;color:#0077cc}
+
+/* ========== Search ========== */
+.search-container {
+  margin: 20px auto;
+  max-width: 1000px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 0;
+}
+.search-container input[type="text"] {
+  flex: 1;
+  padding: 12px 15px;
+  border: 2px solid #0077cc;
+  border-radius: 25px;
+  font-size: 1rem;
+  outline: none;
+  transition: 0.3s;
+  background:#fff;
+}
+.search-container input[type="text"]:focus {
+  box-shadow: 0 0 5px rgba(0, 119, 204, 0.5);
+  border-color: #005fa3;
+}
+.search-container button {
+  background-color: #0077cc;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 25px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.search-container button:hover { background-color: #005fa3; }
+
+/* ========== Grid (Responsive Cards) ========== */
+.categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, max-content));
+  gap: 20px;
+  justify-content: start;
+  max-width: 1000px;
+  margin: auto;
+}
+
+/* ========== Card ========== */
+.card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  text-align: center;
+  padding: 16px;
+  text-decoration: none;
+  color: #333;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+
+/* صورة مربعة دائمًا */
+.card img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  object-fit: cover; object-position: center;
+  border-radius: 8px;
+  user-select: none;
+  background-color: #f0f0f0;
+  display: block;
+  margin: 0 auto;
+}
+.card h2 {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.no-results {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #888;
+  margin-top: 30px;
+}
+
+/* ========== Maintenance / Loading ========== */
+.card.maintenance { background-color: #e0e0e0 !important; pointer-events: none; opacity: 0.7; }
+.card.maintenance h2 { color: #a00; }
+.card.maintenance img { filter: grayscale(100%); }
+
+.card.loading { position: relative; background: #f0f0f0; overflow: hidden; pointer-events: none; }
+.card.loading img,.card.loading h2 { visibility: hidden; }
+.card.loading::after {
+  content: '';
+  position: absolute; top: 0; right: -150px; width: 100px; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer { 0%{ right:-150px } 100%{ right:100% } }
+
+/* ========== Grid overrides (ثابتة) ========== */
+.categories { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 20px; justify-content: center; }
+@media (max-width: 992px) {
+  .categories { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+}
+@media (max-width: 768px) {
+  .categories { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 12px; }
+  .card { padding: 12px !important; }
+  .card h2 { font-size: .9rem !important; }
+}
+@media (max-width: 480px) {
+  .categories { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px; }
+  .card { padding: 10px !important; }
+  .card h2 { font-size: .9rem !important; }
+  .search-container { flex-direction: column; }
+  .search-container input, .search-container button { width: 100%; }
+  .modal-content { padding: 20px; max-width: 340px; }
+}
+
+/* ===== Dark Mode ===== */
+body.dark-mode { background:#0b1220; color:#e6edf3; }
+body.dark-mode .search-container input[type="text"]{ background:#0b1220; color:#e6edf3; border-color:#334155; }
+body.dark-mode .search-container input[type="text"]:focus{ border-color:#38bdf8; box-shadow:0 0 6px rgba(56,189,248,.35); }
+body.dark-mode .search-container button{ background:#0369a1; }
+body.dark-mode .search-container button:hover{ background:#0ea5e9; }
+body.dark-mode .card{ background:#1a2234; color:#e6edf3; border:1px solid #334155; box-shadow:0 2px 10px rgba(0,0,0,.35); }
+body.dark-mode .card h2{ color:#e6edf3; }
+body.dark-mode .card.loading{ background:#162032; }
+body.dark-mode .card.loading::after{ background: linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent); }
+body.dark-mode .no-results{ color:#94a3b8; }
+body.dark-mode .modal-content{ background:#111827; color:#e6edf3; box-shadow:0 10px 30px rgba(0,0,0,.5); }
+
+/* ==== Modal (نافذة التقديم) محسّن ==== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+.modal.open { display: flex; }
+
+.modal-content {
+  background: #fff;
+  padding: 24px;
+  border-radius: 14px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
+/* الهيدر */
+.modal-header { display:flex; align-items:center; justify-content:space-between; }
+.modal-title { font-size:1.2rem; font-weight:800; color:#0077cc; }
+.modal .close { background:transparent; border:none; font-size:1.5rem; cursor:pointer; color:#444; }
+.modal .close:hover { color:#cc0000; }
+
+/* البادجات */
+.badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:#eef6ff; color:#1e40af; border:1px solid #c7ddff;
+  padding:6px 10px; border-radius:9999px; font-size:.85rem;
+}
+
+/* الحقول والمعلومات */
+.info-list { display:grid; gap:10px; }
+.info-item { background:#f8fafc; border:1px solid #e6eef7; border-radius:10px; padding:10px; font-size:.95rem; }
+.hint { color:#667085; font-size:.9rem; }
+
+      /* الحاسبة */
+      .calc { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.calc .field { background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; padding:10px; }
+.calc label { display:block; font-size:.85rem; font-weight:600; color:#475467; margin-bottom:4px; }
+.calc input { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; font-size:1rem; outline:none; }
+.calc input:focus { border-color:#0077cc; box-shadow:0 0 0 4px rgba(0,119,204,.25); }
+
+/* سعر الصرف */
+.rate-line { display:flex; flex-wrap:wrap; align-items:center; gap:10px; font-size:.95rem; }
+.rate-line .chip { background:#f1f5f9; border:1px solid #e2e8f0; border-radius:9999px; padding:6px 10px; }
+
+      /* أزرار الإجراء */
+      .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+      .btn { border:none; border-radius:10px; padding:10px 14px; cursor:pointer; font-weight:700; font-size:.95rem; }
+      .btn-primary { background:#0077cc; color:#fff; }
+      .btn-primary:hover { background:#005fa3; }
+      .btn-outline { background:#fff; border:1px solid #cbd5e1; }
+      .btn-outline:hover { background:#f9fafb; }
+      .btn[disabled] { opacity:.6; cursor:not-allowed; }
+
+      /* حالة نجاح لزر إثبات الدفع */
+      #proofTrigger.success { background:#16a34a; color:#fff; border-color:#15803d; }
+      body.dark-mode #proofTrigger.success { background:#16a34a; color:#fff; border-color:#166534; }
+
+      /* السماح بالنسخ داخل نافذة الإيداع للجوال عند تحديد النص */
+      .modal, .modal * { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+
+/* المعاينة */
+.preview { font-size:.9rem; color:#1d4ed8; word-break:break-all; }
+
+/* Responsive */
+@media (max-width: 480px) {
+  .modal-content { padding:18px; max-width:340px; }
+  .calc { grid-template-columns:1fr; }
+  .actions { flex-direction:column; }
+  .btn, .btn-primary, .btn-outline { width:100%; }
+}
+
+/* Dark Mode */
+body.dark-mode .modal-content { background:#111827; color:#e6edf3; }
+body.dark-mode .modal-title { color:#7dd3fc; }
+body.dark-mode .info-item { background:#0f172a; border-color:#334155; }
+body.dark-mode .calc .field { background:#0f172a; border-color:#334155; }
+body.dark-mode .calc label { color:#cbd5e1; }
+body.dark-mode .calc input { background:#0b1220; color:#e6edf3; border-color:#334155; }
+body.dark-mode .calc input:focus { border-color:#38bdf8; box-shadow:0 0 0 4px rgba(56,189,248,.35); }
+body.dark-mode .rate-line .chip { background:#0f172a; border-color:#334155; color:#e6edf3; }
+body.dark-mode .btn-outline { background:#0b1220; color:#e6edf3; border-color:#334155; }
+body.dark-mode .btn-primary { background:linear-gradient(135deg,#0ea5e9,#0369a1); }
+
+
+/* ===== تصغير نافذة التقديم على الهواتف ===== */
+@media (max-width: 480px) {
+  .modal { 
+    padding: 8px;
+    /* دعم نوتش iOS */
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .modal-content {
+    width: 100%;
+    max-width: 92vw;           /* أصغر من عرض الشاشة قليلاً */
+    padding: 12px 14px;        /* تقليل الحشو */
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25);
+
+    max-height: calc(100vh - 24px); /* لا تتجاوز ارتفاع الشاشة */
+    overflow-y: auto;               /* تمرير داخلي عند الطول الكبير */
+    -webkit-overflow-scrolling: touch;
+    gap: 10px;                      /* فجوات أصغر بين العناصر */
+  }
+
+  /* هيدر المودال أكثر إحكامًا */
+  .modal-header {
+    position: sticky; top: 0; z-index: 1;
+    background: inherit;            /* يطابق خلفية المودال */
+    margin: -12px -14px 8px;        /* تمديد الخلفية للحواف */
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+  .modal-title { font-size: 1rem; }
+  .badge { padding: 4px 8px; font-size: .8rem; }
+
+  /* الحاسبة عمود واحد وأحجام أصغر */
+  .calc { grid-template-columns: 1fr; gap: 8px; }
+  .calc .field { padding: 8px; border-radius: 10px; }
+  .calc label { font-size: .8rem; margin-bottom: 3px; }
+  .calc input {
+    padding: 8px 10px;
+    font-size: 16px;   /* يمنع تكبير iOS التلقائي */
+  }
+
+  /* سطر السعر */
+  .rate-line { gap: 6px; font-size: .85rem; }
+  .rate-line .chip { padding: 4px 8px; }
+
+  /* صناديق المعلومات */
+  .info-item { padding: 8px; font-size: .9rem; }
+
+  /* الأزرار بعرض كامل */
+  .actions { flex-direction: column; gap: 8px; margin-top: 6px; }
+  .btn, .btn-primary, .btn-outline { width: 100%; padding: 10px 12px; font-size: .95rem; }
+
+  /* عرض اسم الملف الطويل بدون كسر التصميم */
+  .preview { font-size: .85rem; overflow-wrap: anywhere; }
+}
+
+/* تباين مناسب للوضع الداكن عند التثبيت */
+@media (max-width: 480px) {
+  body.dark-mode .modal-header {
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+}
+/* ===== تحسينات نافذة التقديم على الكمبيوتر ===== */
+@media (min-width: 1024px) {
+  .modal { 
+    padding: 24px; 
+  }
+
+  .modal-content {
+    width: 100%;
+    max-width: 620px;            /* عرض مريح على الديسكتوب */
+    padding: 20px 22px;
+    border-radius: 12px;
+    box-shadow: 0 10px 36px rgba(0,0,0,.25);
+
+    /* لا تتجاوز 88% من ارتفاع الشاشة مع تمرير داخلي */
+    max-height: min(88vh, 860px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+  }
+
+  /* هيدر مثبت داخل المودال */
+  .modal-header {
+    position: sticky; top: 0; z-index: 1;
+    background: inherit;
+    margin: -20px -22px 12px;   /* تمديد الهيدر للحواف */
+    padding: 14px 22px 12px;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+
+  .modal-title { font-size: 1.25rem; }
+  .badge { padding: 6px 10px; font-size: .85rem; }
+
+  /* الحاسبة صفّان على الديسكتوب */
+  .calc { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .calc .field { padding: 10px; }
+  .calc label { font-size: .9rem; }
+  .calc input { font-size: 1rem; padding: 10px 12px; }
+
+  /* معلومات أوضح قليلاً */
+  .info-item { padding: 12px; font-size: 1rem; }
+  .rate-line { font-size: .95rem; gap: 10px; }
+  .rate-line .chip { padding: 6px 10px; }
+
+  /* أزرار أفقية */
+  .actions {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .btn { min-width: 180px; }
+  .preview { font-size: .9rem; }
+}
+
+/* شاشات كبيرة جداً */
+@media (min-width: 1440px) {
+  .modal-content { max-width: 700px; }
+}
+
+/* تباين مناسب للوضع الداكن على الديسكتوب */
+@media (min-width: 1024px) {
+  body.dark-mode .modal-header {
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+}
+
+  /* === OM-style modal tweaks === */
+.modal-content { border-radius: 18px; }
+.modal-header { display:flex; align-items:center; justify-content:space-between; }
+.modal-title { font-weight:800; font-size:1.25rem; letter-spacing:.5px; }
+.calc { display:flex; flex-direction:column; gap:12px; margin-top:10px; }
+.calc .field { display:flex; flex-direction:column; gap:6px; }
+.calc .field input { border:1px solid #334155; background:#0b1220; color:#e6edf3; border-radius:14px; padding:12px 14px; }
+.rate-line { margin-top:6px; color:#94a3b8; display:flex; align-items:center; gap:8px; }
+#methodInfo { margin:14px 0; background:rgba(2,6,23,.5); color:#e6edf3; border:1px solid #334155; border-radius:14px; padding:12px; text-align:right }
+#methodInfo .info-item{ background:transparent; border:none; padding:6px 0; }
+.actions { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+.btn { border-radius:14px; padding:12px 16px; font-weight:800; cursor:pointer; border:1px solid transparent }
+.btn-outline { background:#0b1220; color:#e6edf3; border-color:#334155; display:inline-flex; align-items:center; gap:8px; justify-content:center }
+.btn-primary { background:#0ea5e9; color:#fff; }
+.btn-primary:hover { filter:brightness(.95); }
+.hint { margin-top:8px; font-size:.9rem; color:#22c55e; font-weight:700; }
+.preview { margin-top:6px; font-size:.9rem; }
+
+/* Light mode adjustments */
+body:not(.dark-mode) .calc .field input { background:#f3f4f6; color:#111827; border-color:#e5e7eb; }
+body:not(.dark-mode) #methodInfo { background:#f8fafc; color:#111827; border-color:#e5e7eb; }
+body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-color:#e5e7eb; }
+/* utility: generic hidden class to support JS toggling */
+.hidden { display:none !important; }
+/* تأكيد إخفاء شارة العملة القديمة */
+#fxBadge{ display:none !important; }
+/* remove number input spinners inside deposit modal */
+.calc input[type="number"]::-webkit-outer-spin-button,
+.calc input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.calc input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.calc .field{ position:relative; margin:10px 0; }
+.calc .field > label{ position:absolute; inset-inline-end:18px; top:50%; transform:translateY(-50%); pointer-events:none; font-weight:800; color:#cbd5e1; }
+.calc .field::before{ content: attr(data-cur); position:absolute; inset-inline-start:18px; top:50%; transform:translateY(-50%); font-style:italic; color:#d1d5db; opacity:.95; }
+.calc .field.green input{ background:#06381f; border-color:#14532d; color:#e6fffb; }
+.calc .field.green > label{ color:#bbf7d0; }
+.calc .field.green::before{ color:#a7f3d0; }</style>
+</head>
+<body>
+  <!-- Page preloader overlay -->
+  <div id="preloader"><div class="loader"></div></div>
+
+  <div id="headerContainer"></div>
+  <div id="sidebarContainer"></div>
+
+  <main>
+    <div class="toolbar">
+      <button id="backBtn" class="back-btn"><i class="fa fa-arrow-right"></i> رجوع</button>
+      <div class="where" id="whereText">الدول المتاحة للإيداع</div>
+      <div style="width:120px"></div>
+    </div>
+
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="ابحث داخل القائمة الحالية." aria-label="بحث"/>
+    </div>
+
+    <section class="categories" id="grid"></section>
+    <p class="no-results" id="noResults" style="display:none;">لا توجد نتائج مطابقة.</p>
+  </main>
+
+  <!-- مودال تفاصيل طريقة الدفع -->
+  <div class="modal" id="methodModal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <!-- عنوان وسعر أعلى المودال كعناصر عادية -->
+      <div class="modal-title" id="modalTitle">تفاصيل التحويل</div>
+      <div class="rate-line">
+        <div class="mini"><i class="fa-regular fa-circle-question"></i> السعر الحالي:</div>
+        <div class="chip" id="rateLine">—</div>
+      </div>
+      <div id="fxBadge" class="badge hidden"><i class="fa-solid fa-coins"></i><span id="fxText"></span></div>
+
+      <!-- الحاسبة أعلى المودال -->
+      <div class="calc">
+        <div class="field">
+          <label for="sendJOD">سيدفع (—)</label> <!-- سنضبط العملة لاحقًا -->
+          <input type="number" id="sendJOD" min="0" step="0.01" placeholder="0.00"/>
+        </div>
+        <div class="field">
+          <label for="recvCUR">سيُضاف (دينار أردني JOD)</label>
+          <input type="number" id="recvCUR" min="0" step="0.01" placeholder="0.00" />
+        </div>
+      </div>
+
+      <div id="methodInfo" class="info-list"></div>
+
+            <div class="actions">
+        <input type="file" id="proofFile" accept="image/*" style="display:none" />
+        <label for="proofFile" class="btn btn-outline" id="proofTrigger">اثبات الدفع <i class="fa-solid fa-paperclip"></i></label>
+        <button id="submitDepositBtn" class="btn btn-primary" disabled>طلب</button>
+        <button id="closeModal" class="btn btn-outline">اغلاق</button>
+      </div>
+
+      <!-- Turnstile: رندر ضمني (Implicit) -->
+      <div class="turnstile-wrap">
+        <div class="cf-turnstile"
+             data-sitekey="0x4AAAAAABq9AqqUTLKhgB-u"
+             data-callback="onTurnstileSuccess"
+             data-expired-callback="onTurnstileExpired">
+        </div>
+      </div>
+
+      <div class="hint">مراجعة الطلبات يدوية وتستغرق وقت بين دقيقة الى ساعتين في اوقات العمل.</div>
+      <div id="proofPreview" class="preview"></div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Simple preloader controls for this page =====
+    function showPreloader(){
+      const pre = document.getElementById('preloader');
+      if(!pre) return; pre.classList.remove('hidden'); pre.style.display='flex'; pre.style.opacity='1';
+    }
+    function hidePreloader(){
+      const pre = document.getElementById('preloader');
+      if(!pre) return; pre.classList.add('hidden'); setTimeout(()=>{ pre.style.display='none'; }, 450);
+    }
+    /* ========================= إعداد عام ========================= */
+    const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
+    const IMGBB_API_KEY = "491f01510f766147819e077c95c497a5";
+
+    // Firebase (كما هو)
+    const firebaseConfig = {
+          apiKey:"AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
+          authDomain:"z3em-d9b11.firebaseapp.com",
+          projectId:"z3em-d9b11",
+          storageBucket:"z3em-d9b11.firebasestorage.app",
+          messagingSenderId:"236716520945",
+          appId:"1:236716520945:web:a0c336db7dc7079c190050",
+          measurementId:"G-1GG6DE12K6"
+        };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    /* ========================= Turnstile ========================= */
+    window.turnstileToken = null;
+    window.onTurnstileSuccess = function(token){
+      window.turnstileToken = token;
+      if (currentProofFile && !uploadedProofUrl) autoUploadProof().catch(console.error);
+      updateSubmitState();
+    };
+    window.onTurnstileExpired = function(){
+      window.turnstileToken = null;
+      uploadedProofUrl = null;
+      updateSubmitState();
+      try { updateProofUI(); } catch(_){ }
+    };
+
+    /* ========================= عناصر DOM ========================= */
+    const grid = document.getElementById('grid');
+    const searchInput = document.getElementById('searchInput');
+    const noResults = document.getElementById('noResults');
+    const backBtn = document.getElementById('backBtn');
+    const whereText = document.getElementById('whereText');
+
+    const methodModal = document.getElementById('methodModal');
+    const closeModal = document.getElementById('closeModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const methodInfo = document.getElementById('methodInfo');
+
+    const proofFile = document.getElementById('proofFile');
+    const proofTrigger = document.getElementById('proofTrigger');
+    const submitDepositBtn = document.getElementById('submitDepositBtn');
+    const proofPreview = document.getElementById('proofPreview');
+
+    const fxBadge = document.getElementById('fxBadge');
+    const fxText  = document.getElementById('fxText');
+    const rateLine = document.getElementById('rateLine');
+    const sendJOD = document.getElementById('sendJOD'); // مبلغ الدفع بعملة الطريقة
+    const recvCUR = document.getElementById('recvCUR'); // ما سيُضاف بالدينار
+
+    /* ========================= حالة وتنقّل ========================= */
+    let currentCountry = null; // { id, data }
+    let countries = [];
+    let methods = [];
+    let currentMethod = null;
+    let currentProofFile = null;
+    let uploadedProofUrl = null;
+
+    // قيم FX القادمة من الخادم
+    let fxCurrency = null;      // عملة الطريقة (مثلاً USD)
+    let fxRatePerJOD = null;    // 1 JOD -> كم CUR
+
+    /* ========================= أدوات UI ========================= */
+    function cardSkeleton(count=1){
+      grid.innerHTML='';
+      for(let i=0;i<count;i++){
+        const div=document.createElement('div');
+        div.className='card loading';
+        div.innerHTML='<img alt=""/><h2>—</h2>';
+        grid.appendChild(div);
+      }
+    }
+    function clearGrid(){ grid.innerHTML=''; }
+    function showNoResults(show){ noResults.style.display = show ? 'block' : 'none'; }
+    function openModal(){ methodModal.classList.add('open'); }
+    function closeModalFn(){
+      methodModal.classList.remove('open');
+      currentMethod = null;
+      sendJOD.value = '';
+      recvCUR.value = '';
+      fxCurrency = null;
+      fxRatePerJOD = null;
+      fxBadge.classList.add('hidden');
+      fxText.textContent = '';
+      rateLine.textContent = '—';
+      currentProofFile = null;
+      uploadedProofUrl = null;
+      proofFile.value = '';
+      proofPreview.textContent = '';
+      updateSubmitState();
+      try { if (window.turnstile) turnstile.reset(); } catch(_){}
+      try { updateProofUI(); } catch(_){ }
+    }
+
+    /* ========================= رسم القوائم ========================= */
+    function renderCountries(list){
+      clearGrid();
+      list.forEach(c=>{
+        const a=document.createElement('a');
+        a.href='javascript:void(0)';
+        a.className='card';
+        a.dataset.title=c.data.name||'';
+        a.innerHTML=`
+          <img src="${c.data.imageUrl||''}" alt="${c.data.name||''}">
+          <h2>${c.data.name||''}</h2>`;
+        a.addEventListener('click',()=>enterCountry(c));
+        grid.appendChild(a);
+      });
+      showNoResults(list.length===0);
+    }
+
+    /* ========================= بحث ========================= */
+    function applySearch(){
+      const q=(searchInput.value||'').trim().toLowerCase();
+      const list=currentCountry?methods:countries;
+      const filtered=list.filter(x=>(x.data.name||'').toLowerCase().includes(q));
+      currentCountry?renderMethods(filtered):renderCountries(filtered);
+    }
+    searchInput.addEventListener('input', applySearch);
+
+    /* ========================= جلب الدول & الطرق ========================= */
+    function watchCountries(){
+      cardSkeleton();
+      return db.collection('depositCountries')
+        .where('active','==', true)
+        .orderBy('order','asc')
+        .onSnapshot(snap=>{
+          countries=snap.docs.map(d=>({id:d.id,data:d.data()}));
+          if(!currentCountry){ renderCountries(countries); applySearch(); }
+        }, err=>{ console.error('countries onSnapshot error:', err); });
+    }
+
+    async function enterCountry(c){
+      currentCountry=c;
+      whereText.textContent=`طرق الدفع — ${c.data.name}`;
+      backBtn.style.display='inline-block';
+      cardSkeleton();
+
+      const snap=await db.collection('depositCountries').doc(c.id)
+                    .collection('methods')
+                    .where('active','==', true)
+                    .orderBy('name','asc')
+                    .get();
+
+      methods=snap.docs.map(d=>({id:d.id,data:d.data()}));
+      renderMethods(methods);
+    }
+
+    function goBack(){
+      currentCountry=null;
+      whereText.textContent='الدول المتاحة للإيداع';
+      backBtn.style.display='none';
+      renderCountries(countries);
+    }
+    backBtn.addEventListener('click', goBack);
+
+    /* ========================= فتح المودال + FX (من الخادم) ========================= */
+    async function fetchFx(countryId, methodId){
+      const url = `${WORKER_BASE}/deposit/fx?countryId=${encodeURIComponent(countryId)}&methodId=${encodeURIComponent(methodId)}`;
+      const res = await fetch(url, { method:'GET' });
+      const data = await res.json();
+      if (!res.ok || data.success !== true) throw new Error(data.error || 'تعذر جلب سعر الصرف');
+      return { currencyCode: data.currencyCode, ratePerJOD: Number(data.ratePerJOD) };
+    }
+
+    function format4(n){
+      const s=(Math.round(n*10000)/10000).toFixed(4);
+      return s.replace(/\.?0+$/,'');
+    }
+
+    async function openMethod(m){
+      showPreloader();
+      currentMethod = m;
+      modalTitle.textContent = (m.data.name||"" ).toUpperCase();
+      methodInfo.innerHTML='';
+
+      // جلب السعر من الخادم فقط
+      try{
+        const fx = await fetchFx(currentCountry.id, m.id);
+        fxCurrency = fx.currencyCode;
+        fxRatePerJOD = fx.ratePerJOD; // 1 JOD -> CUR
+      }catch(e){
+        fxCurrency = null; fxRatePerJOD = null;
+        rateLine.textContent = 'فشل جلب السعر من الخادم';
+        fxBadge.classList.add('hidden');
+        sendJOD.value = ''; recvCUR.value='';
+        updateSubmitState();
+        openModal();
+        hidePreloader();
+        return;
+      }
+
+      // عناوين الحقول واتجاه العملية: يدفع بعملة الطريقة → يُضاف JOD
+      
+      document.querySelector("label[for=\"sendJOD\"]").textContent = `سيدفع (${fxCurrency})`;
+      document.querySelector("label[for=\"recvCUR\"]").textContent = 'سيُضاف (دينار أردني JOD)';
+      const priceText = `1 ${fxCurrency} = ${format4(1 / fxRatePerJOD)} JOD`;
+      fxText.textContent  = priceText;
+      rateLine.textContent= priceText;
+      fxBadge.classList.remove('hidden');
+      // التفاصيل
+      const info=m.data.info||{};
+      const fields=[
+        ["البنك", info.bank],
+        ["اسم المستفيد", info.accountName],
+        ["رقم الحساب", info.accountNumber],
+        ["IBAN", info.iban],
+        ["الرقم/المعرّف", info.wallet],
+        ["", info.note]
+      ].filter(([_,v])=>v);
+      methodInfo.innerHTML = fields.length
+        ? fields.map(([k,v])=>`<div class="info-item"><strong>${k}</strong> <div>${v}</div></div>`).join('')
+        : '<div class="info-item">لا توجد تفاصيل متاحة.</div>';
+
+      // الحاسبة (عرض فقط)
+      sendJOD.oninput = ()=>{
+        const v = Number(sendJOD.value);
+        recvCUR.value = (!fxRatePerJOD || !isFinite(v) || v<=0) ? '' : (v / fxRatePerJOD).toFixed(2);
+        updateSubmitState();
+      };
+      recvCUR.oninput = ()=>{
+        const v = Number(recvCUR.value);
+        sendJOD.value = (!fxRatePerJOD || !isFinite(v) || v<=0) ? '' : (v * fxRatePerJOD).toFixed(2);
+        updateSubmitState();
+      };
+
+      updateSubmitState();
+      openModal();
+      hidePreloader();
+    }
+
+    function amountsValid(){
+      const pay = Number(sendJOD.value);
+      return isFinite(pay) && pay > 0 && !!fxRatePerJOD && !!fxCurrency;
+    }
+
+    /* ========================= اختيار ملف + رفع تلقائي (بدون تسجيل) ========================= */
+    const proofFileEl = document.getElementById('proofFile');
+
+    function updateProofUI(){
+      try{
+        if (!proofTrigger) return;
+        if (uploadedProofUrl){
+          proofTrigger.classList.add('success');
+          proofTrigger.innerHTML = '<i class="fa-solid fa-check"></i>';
+        } else {
+          proofTrigger.classList.remove('success');
+          proofTrigger.innerHTML = 'اثبات الدفع <i class="fa-solid fa-paperclip"></i>';
+        }
+      }catch(_){ }
+    }
+
+    proofFileEl.addEventListener('change', async ()=>{
+      currentProofFile = proofFileEl.files && proofFileEl.files[0] ? proofFileEl.files[0] : null;
+      uploadedProofUrl = null;
+      proofPreview.textContent = currentProofFile ? `جاري رفع: ${currentProofFile.name}` : '';
+      updateProofUI();
+      if (currentProofFile) {
+        if (window.turnstileToken) {
+          try { await autoUploadProof(); } catch(e){ console.error(e); }
+        }
+      }
+      updateSubmitState();
+    });
+
+    async function autoUploadProof(){
+      if(!currentProofFile) throw new Error('اختر صورة أولاً.');
+      if(!window.turnstileToken) throw new Error('تحقق الأمان مطلوب — أكمل Turnstile.');
+
+      const fd = new FormData();
+      fd.append('image', currentProofFile);
+
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(IMGBB_API_KEY)}`, {
+        method: 'POST', body: fd
+      });
+      const data = await res.json();
+      if(!res.ok || !data?.success) throw new Error(data?.error?.message || 'فشل رفع الإثبات');
+
+      uploadedProofUrl = data.data?.url || data.data?.display_url;
+      if(!uploadedProofUrl) throw new Error('ImgBB لم يُرجع رابطًا صالحًا.');
+
+      proofPreview.innerHTML = `تم الرفع: <a href="${uploadedProofUrl}" target="_blank" rel="noopener">فتح الرابط</a>`;
+      updateProofUI();
+      updateSubmitState();
+    }
+
+    function updateSubmitState(){
+      const okPay   = amountsValid();
+      const okProof = !!uploadedProofUrl;
+      const okToken = !!window.turnstileToken;
+      const okMeta  = !!currentMethod && !!currentCountry;
+      submitDepositBtn.disabled = !(okPay && okProof && okToken && okMeta);
+    }
+
+    /* ========================= تقديم طلب الإيداع — يتطلب تسجيل دخول ========================= */
+    async function getIdTokenOrThrow(){
+      const user = auth.currentUser;
+      if(!user) throw new Error('يجب تسجيل الدخول أولاً.');
+      return await user.getIdToken(true);
+    }
+
+    async function handleSubmitDeposit(country, method){
+      if(!amountsValid()) return alert('أدخل المبلغ أولاً.');
+      if(!uploadedProofUrl) return alert('من فضلك ارفع الإثبات أولاً.');
+      if(!window.turnstileToken) return alert('تحقق الأمان مطلوب — أكمل Turnstile.');
+
+      try{
+        const idToken = await getIdTokenOrThrow(); // الإرسال ما زال يتطلب تسجيل الدخول
+
+        const payAmount = Number(sendJOD.value); // ما سيدفعه العميل بعملة الطريقة
+        const body = {
+          countryId: country?.id || "",
+          countryName: country?.data?.name || country?.name || "",
+          methodId: method?.id || "",
+          methodName: method?.data?.name || method?.name || "",
+          payAmount,                       // السيرفر يحسب الباقي
+          proofUrl: uploadedProofUrl,
+          turnstileToken: window.turnstileToken
+        };
+
+        const res = await fetch(`${WORKER_BASE}/deposit/submit`, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if(!res.ok || !data.success) throw new Error(data.error || 'فشل تقديم الطلب');
+
+        alert(`تم تقديم طلب الإيداع بنجاح.\nالكود: ${data.depositCode}\nسيدفع: ${data.amountCurrency} ${data.currency}\nسيُضاف: ${data.amountJOD} JOD\n(السعر من الخادم: 1 JOD = ${data.ratePerJOD} ${data.currency})`);
+        closeModalFn();
+      }catch(err){
+        console.error(err);
+        alert(err.message || 'فشل تقديم الطلب');
+      }
+    }
+
+    /* ========================= تشغيل ========================= */
+    function openMethodBound(m){
+      submitDepositBtn.onclick = ()=>handleSubmitDeposit(currentCountry, m);
+      openMethod(m);
+    }
+
+    function renderMethods(list){
+      clearGrid();
+      list.forEach(m=>{
+        const a=document.createElement('a');
+        a.href='javascript:void(0)';
+        a.className='card';
+        a.dataset.title=m.data.name||'';
+        a.innerHTML=`
+          <img src="${m.data.logoUrl||''}" alt="${m.data.name||''}">
+          <h2>${m.data.name||''}</h2>`;
+        a.addEventListener('click',()=>openMethodBound(m));
+        grid.appendChild(a);
+      });
+      showNoResults(list.length===0);
+    }
+
+    closeModal.addEventListener('click', closeModalFn);
+    methodModal.addEventListener('click', (e)=>{ if(e.target===methodModal) closeModalFn(); });
+
+    watchCountries();
+
+    (function(){
+      try {
+        if(localStorage.getItem('theme') === 'dark'){
+          document.body.classList.add('dark-mode');
+        }
+      }catch(e){}
+    })();
+  </script>
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
