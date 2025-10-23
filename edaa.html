@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8"/>
@@ -998,6 +998,48 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     }
     function setHashForCountry(id, replace){
       const url = buildCountryHash(id);
+    // ====== تأكيد الإيداع: تحميل CSS من الباك-إند + عرض نافذة ======
+    let __CONFIRM_CSS_ADDED = false;
+    async function ensureConfirmCss(idToken){
+      if (__CONFIRM_CSS_ADDED) return true;
+      try{
+        const res = await fetch(`${WORKER}/ui/confirm.css`, { headers: { Authorization: 'Bearer '+idToken }});
+        if(!res.ok){ __CONFIRM_CSS_ADDED=false; return false; }
+        const css = await res.text();
+        const st = document.createElement('style'); st.id='zconfirm-style'; st.textContent = css;
+        document.head.appendChild(st); __CONFIRM_CSS_ADDED = true; return true;
+      }catch(e){ __CONFIRM_CSS_ADDED=false; return false; }
+    }
+
+    function zEscHtml(s){
+      try{ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }catch(_){ return String(s||''); }
+    }
+
+    function showDepositConfirm({ code, paid, addedUSD, fx, extra }){
+      try{ const old = document.getElementById('zconfirm'); if (old) old.remove(); }catch(_){ }
+      const overlay = document.createElement('div'); overlay.className='zconfirm-overlay'; overlay.id='zconfirm';
+      overlay.innerHTML = `
+        <div class="zconfirm-modal" role="dialog" aria-label="تأكيد الطلب">
+          <div class="zconfirm-header">
+            <span class="zbadge">✓</span>
+            <h3 class="zconfirm-title">تم تقديم طلب الإيداع بنجاح</h3>
+          </div>
+          <div class="zconfirm-body">
+            <div class="zrow"><div class="zlabel">الكود</div><div class="zvalue zmono">${zEscHtml(code||'—')}</div></div>
+            <div class="zrow"><div class="zlabel">سيدفع</div><div class="zvalue">${zEscHtml(paid||'—')}</div></div>
+            <div class="zrow"><div class="zlabel">سيُضاف (USD)</div><div class="zvalue">${zEscHtml(addedUSD||'—')}</div></div>
+            ${fx? `<div class="zfx">السعر من الخادم: ${zEscHtml(fx)}</div>`:''}
+            ${extra? `<div class="zfx">${zEscHtml(extra)}</div>`:''}
+          </div>
+          <div class="zconfirm-footer">
+            <button class="zbtn zbtn-primary" id="zconfirm-ok">حسنًا</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      function close(){ try{ overlay.remove(); }catch(_){ } }
+      overlay.addEventListener('click', (e)=>{ if(e.target===overlay) close(); });
+      document.getElementById('zconfirm-ok').addEventListener('click', close);
+    }
       try{ replace ? history.replaceState(null,'',url) : history.pushState(null,'',url); }
       catch(_){ try{ location.hash = url; }catch(__){} }
     }
@@ -1297,17 +1339,43 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
         const data = await res.json();
         if(!res.ok || !data.success) throw new Error(data.error || 'فشل تقديم الطلب');
 
-        // احسب ما سيُضاف بالدولار إن كان سعر USD متاحًا
-        let addedUSDLine = '';
-        try{
-          if (usdPerJOD && Number.isFinite(Number(usdPerJOD))) {
-            const usdAdded = Number(data.amountJOD) * Number(usdPerJOD);
-            if (Number.isFinite(usdAdded)) addedUSDLine = `\nسيُضاف (بالدولار): ${usdAdded.toFixed(2)} USD`;
-          }
-        }catch(_){ addedUSDLine = ''; }
+        // احسب ما سيُضاف بالدولار
+        let usdAdded = null;
+        if (data && typeof data.amountUSD === 'number') {
+          usdAdded = Number(data.amountUSD);
+        } else {
+          try{
+            if (usdPerJOD && Number.isFinite(Number(usdPerJOD))) {
+              const calc = Number(data.amountJOD) * Number(usdPerJOD);
+              if (Number.isFinite(calc)) usdAdded = calc;
+            }
+          }catch(_){ usdAdded = null; }
+        }
 
-        alert(`تم تقديم طلب الإيداع بنجاح.\nالكود: ${data.depositCode}\nسيدفع: ${data.amountCurrency} ${data.currency}\nسيُضاف (دينار): ${data.amountJOD} JOD${addedUSDLine}\n(السعر من الخادم: 1 JOD = ${data.ratePerJOD} ${data.currency})`);
-        closeModalFn();
+        const usdLine = (usdAdded!=null && Number.isFinite(usdAdded)) ? `سيُضاف (دولار): ${usdAdded.toFixed(2)} USD` : '';
+        const usdRateLine = (typeof data.usdPerJOD === 'number' && data.usdPerJOD>0)
+          ? `\n(1 JOD = ${Number(data.usdPerJOD).toFixed(4)} USD)`
+          : '';
+        const fxLine = (typeof data.ratePerUSD === 'number' && data.ratePerUSD>0)
+          ? `(السعر من الخادم: 1 USD = ${Number(data.ratePerUSD).toFixed(4)} ${data.currency})`
+          : ((typeof data.ratePerJOD === 'number' && data.ratePerJOD>0)
+              ? `(السعر من الخادم: 1 JOD = ${Number(data.ratePerJOD).toFixed(4)} ${data.currency})`
+              : '');
+
+        // عرض نافذة تأكيد عصرية — CSS يُجلب من الباك-إند المحمي
+        try { await ensureConfirmCss(idToken); } catch(_){ }
+        showDepositConfirm({
+          code: data.depositCode,
+          paid: `${data.amountCurrency} ${data.currency}`,
+          addedUSD: (usdAdded!=null && Number.isFinite(usdAdded)) ? usdAdded.toFixed(2)+ ' USD' : '—',
+          fx: (function(){
+            if (typeof data.ratePerUSD === 'number' && data.ratePerUSD>0) return `1 USD = ${Number(data.ratePerUSD).toFixed(4)} ${data.currency}`;
+            if (typeof data.ratePerJOD === 'number' && data.ratePerJOD>0) return `1 JOD = ${Number(data.ratePerJOD).toFixed(4)} ${data.currency}`;
+            return '';
+          })(),
+          extra: (typeof data.usdPerJOD === 'number' && data.usdPerJOD>0) ? `1 JOD = ${Number(data.usdPerJOD).toFixed(4)} USD` : ''
+        });
+        try { closeModalFn(); } catch(_){ }
       }catch(err){
         console.error(err);
         alert(err.message || 'فشل تقديم الطلب');

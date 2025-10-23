@@ -361,7 +361,13 @@
       const paidVal = (data.amountCurrency!=null)? Number(data.amountCurrency) : (data.client_payAmount!=null? Number(data.client_payAmount) : (data.payAmount!=null? Number(data.payAmount): null));
       const paidCur = data.currency || '';
       const paid = (paidVal!=null)? (paidVal.toFixed(2) + (paidCur? (' '+paidCur):'')) : '';
-      const added = (data.amountJOD!=null)? (Number(data.amountJOD).toFixed(2) + ' $') : '';
+      // المبلغ الذي سيُضاف للمحفظة بالدولار دائمًا
+      const addedVal = (data.amountUSD!=null)? Number(data.amountUSD)
+                      : (data.addedUSD!=null)? Number(data.addedUSD)
+                      : (data.addedAmount!=null)? Number(data.addedAmount)
+                      : (data.added!=null)? Number(data.added)
+                      : null;
+      const added = (addedVal!=null && isFinite(addedVal)) ? (addedVal.toFixed(2) + ' USD') : '';
       const ts = data.createdAt || data.computedAt || data.timestamp || '';
       const method = data.methodName || data.method || '';
       const country= data.countryName || data.country || '';
