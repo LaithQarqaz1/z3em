@@ -2,7 +2,7 @@
 // 1) Warm loader image cache ASAP
 (function(){
   try{
-    var LOADER_IMG = "https://i.ibb.co/svXFyxQk/Chat-GPT-Image-9-2025-06-11-56.png";
+    var LOADER_IMG = "loading.png";
     if (document.head && !document.querySelector("link[rel='preload'][as='image'][href='"+LOADER_IMG+"']")) {
       var l = document.createElement('link'); l.rel='preload'; l.as='image'; l.href=LOADER_IMG; document.head.appendChild(l);
     }
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // Ensure inner logo <img> exists (for non-CSS-only environments)
   try{
-    var LOADER_IMG = "https://i.ibb.co/svXFyxQk/Chat-GPT-Image-9-2025-06-11-56.png";
+    var LOADER_IMG = "loading.png";
     var ring = pre.querySelector('.loader');
     if (ring && !ring.querySelector('img.loader-logo')){
       var img = document.createElement('img');

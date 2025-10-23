@@ -195,7 +195,7 @@
         <div class="info-card col-6"><div class="label"><i class="fa-solid fa-signal"></i> المستوى</div><div class="value"><span id="level" class="copyable badge"></span></div></div>
         <div class="info-card col-6"><div class="label"><i class="fa-regular fa-envelope"></i> البريد</div><div class="value"><span id="email" class="copyable"></span></div></div>
         <div class="info-card col-6"><div class="label"><i class="fa-solid fa-mobile-screen"></i> الهاتف</div><div class="value"><span id="phone" class="copyable"></span></div></div>
-        <div class="info-card col-6"><div class="label"><i class="fa-solid fa-wallet"></i> الرصيد</div><div class="value"><span id="balance" class="copyable"></span><span class="badge">$</span></div></div>
+        <div class="info-card col-6"><div class="label"><i class="fa-solid fa-wallet"></i> الرصيد</div><div class="value"><span id="balance" class="copyable"></span></div></div>
         <div class="info-card col-6"><div class="label"><i class="fa-solid fa-coins"></i> إجمالي الإنفاق</div><div class="value"><span id="totalspent" class="copyable"></span><span class="badge">$</span></div></div>
         <div class="info-card col-12"><div class="label"><i class="fa-regular fa-hashtag"></i> معرف المستخدم</div><div class="value"><span id="webuid" class="copyable"></span></div></div>
       </div>
@@ -335,11 +335,51 @@
       }
     }
 
+    // تنسيق وإظهار الرصيد وفق سعر الصرف المختار (يُحفظ تلقائيًا في localStorage عبر header.js)
+    let BAL_BASE_USD = null; // القيمة الأساسية بالدولار من قاعدة البيانات/الكاش
+
+    function formatBalance(valueUsd){
+      const v = Number(valueUsd||0);
+      if (typeof window.formatCurrencyFromJOD === 'function'){
+        // ملاحظة: الدالة في header.js اسمها FromJOD لكنها تعتمد STORE_BASE_CODE='USD'
+        return window.formatCurrencyFromJOD(v);
+      }
+      return v.toFixed(2) + ' $';
+    }
+
+    function renderBalance(valueUsd){
+      BAL_BASE_USD = Number(valueUsd||0);
+      try { window.__BAL_BASE__ = BAL_BASE_USD; } catch {}
+      const txt = formatBalance(BAL_BASE_USD);
+      const el = document.getElementById('balance');
+      if (el){ el.textContent = txt; el.dataset.copy = txt; }
+    }
+
+    function tryRenderCachedBalance(uid){
+      try{
+        const s = localStorage.getItem(`balance:cache:${uid}`);
+        const n = Number(s);
+        if (Number.isFinite(n)) renderBalance(n);
+      }catch{}
+    }
+
+    // التفاعل مع تغيّرات العملة والرصيد العامة (من header.js)
+    window.addEventListener('currency:change', ()=>{ if (BAL_BASE_USD!=null) renderBalance(BAL_BASE_USD); });
+    window.addEventListener('currency:rates:change', ()=>{ if (BAL_BASE_USD!=null) renderBalance(BAL_BASE_USD); });
+    window.addEventListener('balance:change', (ev)=>{
+      const val = ev && ev.detail && Number(ev.detail.value);
+      if (Number.isFinite(val)) renderBalance(val);
+    });
+
     // تحميل بيانات المستخدم
     auth.onAuthStateChanged(async (user)=>{
       if(!user){ location.href="login.html"; return }
       email.textContent=user.email||"--";
       const uid=user.uid;
+
+      // اعرض الرصيد من الكاش فورًا ثم حدّث من Firestore
+      tryRenderCachedBalance(uid);
+
       const doc=await db.collection("users").doc(uid).get();
       if(doc.exists){
         const d=doc.data();
@@ -347,15 +387,16 @@
         level.textContent=d.level||"--";
         totalspent.textContent=(d.totalspent??0).toString();
         phone.textContent=d.phone||"--";
-        balance.textContent=(d.balance??0).toFixed(2);
         webuid.textContent=d.webuid||"--";
+
+        // خزّن وعرِض الرصيد الأساسي بالدولار مع تطبيق العملة المختارة
+        renderBalance(d.balance??0);
 
         username.dataset.copy=username.textContent;
         level.dataset.copy=level.textContent;
         email.dataset.copy=email.textContent;
         phone.dataset.copy=phone.textContent;
         webuid.dataset.copy=webuid.textContent;
-        balance.dataset.copy=balance.textContent;
         totalspent.dataset.copy=totalspent.textContent;
       }
     });

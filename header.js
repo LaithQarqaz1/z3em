@@ -90,7 +90,7 @@
 // Preload image asset used elsewhere
 (function(){
   try {
-    const imgHref = 'https://i.ibb.co/svXFyxQk/Chat-GPT-Image-9-2025-06-11-56.png';
+    const imgHref = 'loading.png';
     if (document.head && !document.querySelector("link[rel='preconnect'][href='https://i.ibb.co']")){
       const ln = document.createElement('link'); ln.rel = 'preconnect'; ln.href = 'https://i.ibb.co'; ln.crossOrigin = ''; document.head.appendChild(ln);
     }
@@ -671,7 +671,7 @@ header.appendChild(hamburger);
 
 // Logo
 const logo = document.createElement('img');
-logo.src = 'https://i.ibb.co/C3TWgd6n/1.gif';
+logo.src = 'store.gif';
 logo.alt = 'متجر زعيم';
 logo.className = 'header-logo';
 logo.setAttribute('fetchpriority','high');

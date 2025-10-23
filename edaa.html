@@ -4,7 +4,10 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>الإيداع</title>
-  <link rel="icon" href="https://i.ibb.co/zHC1tQ8b/1757362837638.png" type="image/png">
+<link rel="icon" href="emp.png" type="image/png">
+  <link rel="apple-touch-icon" href="emp.png" sizes="180x180">
+  <meta property="og:image" content="emp.png">
+  <meta name="twitter:image" content="emp.png">
 
   <!-- تهيئة الثيم مبكرًا (منع اللمعة عند التحميل) -->
   <script>
@@ -246,11 +249,15 @@ main {
   padding: 0 15px;
 }
 
-/* شريط الأدوات أعلى القائمة (اختياري) */
-.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;max-width:1000px;margin:0 auto 12px}
-.back-btn{display:none;background:#e9eef5;border:none;padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:700;color:#1f2937}
-.back-btn:hover{filter:brightness(.98)}
-.where{font-weight:800;color:#0077cc}
+/* شريط الأدوات أعلى القائمة (مبسّط ومركزي) */
+.toolbar{display:flex;justify-content:center;align-items:center;gap:10px;max-width:1000px;margin:0 auto 12px;padding:0}
+.toolbar::after{content:none}
+/* إخفاء زر الرجوع والنود الفارغة للموازنة */
+.back-btn{display:none !important}
+.toolbar > div:last-child{display:none}
+.toolbar > div[style*="width:120px"]{display:none}
+/* العنوان بشكل بسيط ومحاذاة وسط */
+.where{font-weight:800;color:#0077cc;text-align:center}
 
 /* ========== Search ========== */
 .search-container {
@@ -612,18 +619,27 @@ body.dark-mode .btn-primary { background:linear-gradient(135deg,#0ea5e9,#0369a1)
 }
 
   /* === OM-style modal tweaks === */
-.modal-content { border-radius: 18px; }
+.modal-content { 
+  border-radius: 18px; 
+  background: linear-gradient(180deg, rgba(2,6,23,.92), rgba(2,6,23,.86));
+  border: 1px solid #334155;
+  color: #e6edf3;
+  backdrop-filter: blur(6px);
+}
 .modal-header { display:flex; align-items:center; justify-content:space-between; }
-.modal-title { font-weight:800; font-size:1.25rem; letter-spacing:.5px; }
+.modal-title { font-weight:800; font-size:1.35rem; letter-spacing:.3px; text-align:center; width:100%; }
 .calc { display:flex; flex-direction:column; gap:12px; margin-top:10px; }
 .calc .field { display:flex; flex-direction:column; gap:6px; }
-.calc .field input { border:1px solid #334155; background:#0b1220; color:#e6edf3; border-radius:14px; padding:12px 14px; }
-.rate-line { margin-top:6px; color:#94a3b8; display:flex; align-items:center; gap:8px; }
+.calc .field input { border:1px solid #334155; background:#0b1220; color:#e6edf3; border-radius:16px; padding:14px 56px; direction:ltr; text-align:end; font-variant-numeric:tabular-nums; box-shadow:0 1px 0 rgba(255,255,255,.03) inset; }
+.rate-line { margin-top:6px; color:#94a3b8; display:flex; align-items:center; gap:8px; justify-content:center; }
+.rate-line .mini{opacity:.9}
+.rate-line .chip{ background:rgba(148,163,184,.12); color:#cbd5e1; border:1px solid #334155; border-radius:999px; padding:6px 10px; font-weight:700 }
 #methodInfo { margin:14px 0; background:rgba(2,6,23,.5); color:#e6edf3; border:1px solid #334155; border-radius:14px; padding:12px; text-align:right }
 #methodInfo .info-item{ background:transparent; border:none; padding:6px 0; }
 .actions { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
 .btn { border-radius:14px; padding:12px 16px; font-weight:800; cursor:pointer; border:1px solid transparent }
 .btn-outline { background:#0b1220; color:#e6edf3; border-color:#334155; display:inline-flex; align-items:center; gap:8px; justify-content:center }
+.btn-outline:hover{ border-color:#475569 }
 .btn-primary { background:#0ea5e9; color:#fff; }
 .btn-primary:hover { filter:brightness(.95); }
 .hint { margin-top:8px; font-size:.9rem; color:#22c55e; font-weight:700; }
@@ -647,6 +663,78 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
 .calc .field.green input{ background:#06381f; border-color:#14532d; color:#e6fffb; }
 .calc .field.green > label{ color:#bbf7d0; }
 .calc .field.green::before{ color:#a7f3d0; }</style>
+  <style>
+    /* تحسينات نافذة الإيداع: تمرير، ثيم فاتح/داكن، حقول عصرية */
+    .modal { backdrop-filter: blur(2px); }
+    .modal.open .modal-content { animation: modalSlideUp .22s ease-out both; }
+    @keyframes modalSlideUp { from { transform: translateY(14px); opacity:.0; } to { transform: translateY(0); opacity:1; } }
+
+    /* محتوى المودال: تمرير داخلي على كل المقاسات */
+    #methodModal .modal-content { position: relative; overflow: hidden; max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain; scroll-behavior: smooth; }
+    #methodModal .modal-content::before { content:""; position:absolute; inset-inline:0; inset-block-start:0; height:4px; background:linear-gradient(90deg,#06b6d4,#0ea5e9,#22c55e); opacity:.9; }
+
+    /* زر إغلاق عائم */
+    .modal-x { position:absolute; inset-inline-end:10px; inset-block-start:10px; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; cursor:pointer; border:1px solid transparent; background:transparent; }
+    html[data-theme="dark"] .modal-x { border-color:#334155; background:rgba(2,6,23,.45); color:#cbd5e1; }
+    html[data-theme="dark"] .modal-x:hover { background:rgba(2,6,23,.7); }
+    html[data-theme="light"] .modal-x { border-color:#e5e7eb; background:#ffffff; color:#334155; }
+    html[data-theme="light"] .modal-x:hover { background:#f8fafc; }
+
+    /* ثيم المودال */
+    html[data-theme="dark"] #methodModal .modal-content { background: linear-gradient(180deg, rgba(2,6,23,.92), rgba(2,6,23,.86)); border: 1px solid #334155; color: #e6edf3; box-shadow:0 12px 36px rgba(0,0,0,.45); }
+    html[data-theme="light"] #methodModal .modal-content { background:#ffffff; border:1px solid #e5e7eb; color:#111827; box-shadow:0 18px 40px rgba(0,0,0,.12); }
+
+    /* عنوان */
+    .modal-title { text-align:center; margin-top:6px; font-size:1.35rem; font-weight:800; letter-spacing:.2px; background:linear-gradient(90deg,#7dd3fc,#22d3ee,#a7f3d0); -webkit-background-clip:text; background-clip:text; color:transparent; }
+
+    /* السعر — مخفي بناءً على طلبك */
+    .rate-line { display:none !important; }
+
+    /* تفاصيل الطريقة */
+    #methodInfo.info-list { border-radius:14px; padding:12px; }
+    html[data-theme="dark"] #methodInfo.info-list { border:1px solid #334155; background:rgba(2,6,23,.45); }
+    html[data-theme="light"] #methodInfo.info-list { border:1px solid #e6eef7; background:#f8fafc; }
+    #methodInfo .info-item { display:flex; justify-content:space-between; align-items:center; background:transparent; border:none; padding:8px 0; }
+    #methodInfo .info-item + .info-item { border-top:1px dashed rgba(148,163,184,.25); }
+    html[data-theme="dark"] #methodInfo .info-item strong { color:#93c5fd; }
+    html[data-theme="light"] #methodInfo .info-item strong { color:#1d4ed8; }
+
+    /* الحقول العصرية — صف واحد صغير */
+    #methodModal .calc { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-top:8px; align-items:flex-start; }
+    #methodModal .calc .field { position:relative; margin:0; border:1px solid transparent; border-radius:14px; padding:6px; }
+    html[data-theme="dark"] #methodModal .calc .field { border-color:#334155; background:rgba(2,6,23,.45); box-shadow:0 1px 0 rgba(255,255,255,.03) inset; }
+    html[data-theme="light"] #methodModal .calc .field { border-color:#e5e7eb; background:#ffffff; }
+    #methodModal .calc .field:focus-within { box-shadow:0 0 0 4px rgba(56,189,248,.22); border-color:#38bdf8; }
+
+    #methodModal .calc .field input { width:100%; height:32px; border-radius:10px; padding:0 64px; font-weight:800; font-size:.95rem; direction:ltr; text-align:end; font-variant-numeric:tabular-nums; outline:none; border:0; background:transparent; color:inherit; }
+    #methodModal .calc .field input::placeholder { opacity:.5; }
+
+    /* شارة العملة داخل الحقل ككبسولة على اليمين */
+    #methodModal .calc .field::before { content: attr(data-cur); position:absolute; inset-inline-start:8px; top:50%; transform:translateY(-50%); padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:800; letter-spacing:.3px; }
+    html[data-theme="dark"] #methodModal .calc .field::before { background:rgba(148,163,184,.12); border:1px solid #334155; color:#cbd5e1; }
+    html[data-theme="light"] #methodModal .calc .field::before { background:#eef2f7; border:1px solid #e5e7eb; color:#475569; }
+
+    /* لاصق التسمية أعلى الحقل */
+    #methodModal .calc .field > label { position:absolute; inset-inline-end:12px; top:-10px; padding:0 8px; border-radius:999px; font-size:.75rem; font-weight:800; line-height:1.6; }
+    html[data-theme="dark"] #methodModal .calc .field > label { background:#0b1220; color:#cbd5e1; }
+    html[data-theme="light"] #methodModal .calc .field > label { background:#ffffff; color:#475569; }
+
+    /* أزرار */
+    .btn-primary { background:linear-gradient(135deg,#0ea5e9,#0369a1); border:0; }
+    .btn-primary:hover { filter:brightness(.98); }
+    .btn-outline { border-radius:14px; }
+
+    @media (max-width:480px){
+      #methodModal .calc .field input { padding: 0 40px; height: 42px; font-size:.95rem; }
+      .modal-x { width:40px; height:40px; inset-inline-end:8px; inset-block-start:8px; }
+      .modal-title { font-size:1.2rem; margin-top:2px; }
+    }
+    /* عنوان أعلى الصفحة — رجوع للتصميم البسيط ومركز */
+    .toolbar .where{ background:none !important; -webkit-background-clip:initial; background-clip:initial; font-size:1.05rem; padding:0; border-radius:0; text-align:center; }
+    html[data-theme="light"] .toolbar .where{ color:#0077cc !important; }
+    html[data-theme="dark"]  .toolbar .where{ color:#7dd3fc !important; }
+    @media (max-width:480px){ .toolbar .where{ font-size:1rem; } }
+  </style>
 </head>
 <body>
   <!-- Page preloader overlay -->
@@ -672,8 +760,11 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
 
   <!-- مودال تفاصيل طريقة الدفع -->
   <div class="modal" id="methodModal" role="dialog" aria-modal="true">
-    <div class="modal-content">
-      <!-- عنوان وسعر أعلى المودال كعناصر عادية -->
+    <div class="modal-content" role="document">
+      <!-- زر إغلاق عائم بدون ترويسة -->
+      <button type="button" class="modal-x" aria-label="إغلاق" onclick="try{ closeModalFn(); }catch(_){}">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
       <div class="modal-title" id="modalTitle">تفاصيل التحويل</div>
       <div class="rate-line">
         <div class="mini"><i class="fa-regular fa-circle-question"></i> السعر الحالي:</div>
@@ -683,12 +774,12 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
 
       <!-- الحاسبة أعلى المودال -->
       <div class="calc">
-        <div class="field">
+        <div class="field" id="fieldPay">
           <label for="sendJOD">سيدفع (—)</label> <!-- سنضبط العملة لاحقًا -->
           <input type="number" id="sendJOD" min="0" step="0.01" placeholder="0.00"/>
         </div>
-        <div class="field">
-          <label for="recvCUR">سيُضاف (دينار أردني JOD)</label>
+        <div class="field" id="fieldRecv">
+          <label for="recvCUR">سيُضاف (دولار أمريكي USD)</label>
           <input type="number" id="recvCUR" min="0" step="0.01" placeholder="0.00" />
         </div>
       </div>
@@ -705,13 +796,13 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       <!-- Turnstile: رندر ضمني (Implicit) -->
       <div class="turnstile-wrap">
         <div class="cf-turnstile"
-             data-sitekey="0x4AAAAAABq9AqqUTLKhgB-u"
+             data-sitekey="0x4AAAAAAB6SSL-8W0hsAOMn"
              data-callback="onTurnstileSuccess"
              data-expired-callback="onTurnstileExpired">
         </div>
       </div>
 
-      <div class="hint">مراجعة الطلبات يدوية وتستغرق وقت بين دقيقة الى ساعتين في اوقات العمل.</div>
+      <div class="hint">مراجعة الطلبات يدوية وقد تستغرق من دقيقة إلى ساعتين في أوقات العمل.</div>
       <div id="proofPreview" class="preview"></div>
     </div>
   </div>
@@ -727,8 +818,9 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       if(!pre) return; pre.classList.add('hidden'); setTimeout(()=>{ pre.style.display='none'; }, 450);
     }
     /* ========================= إعداد عام ========================= */
-    const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
-    const IMGBB_API_KEY = "491f01510f766147819e077c95c497a5";
+  const WORKER_BASE = "https://edaaandsahb.laithqarqaz66.workers.dev/";
+  const WORKER = (WORKER_BASE || '').replace(/\/+$/, '');
+  const IMGBB_API_KEY = "491f01510f766147819e077c95c497a5";
 
     // Firebase (كما هو)
     const firebaseConfig = {
@@ -779,7 +871,7 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     const fxText  = document.getElementById('fxText');
     const rateLine = document.getElementById('rateLine');
     const sendJOD = document.getElementById('sendJOD'); // مبلغ الدفع بعملة الطريقة
-    const recvCUR = document.getElementById('recvCUR'); // ما سيُضاف بالدينار
+    const recvCUR = document.getElementById('recvCUR'); // ما سيُضاف بالدولار
 
     /* ========================= حالة وتنقّل ========================= */
     let currentCountry = null; // { id, data }
@@ -791,7 +883,35 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
 
     // قيم FX القادمة من الخادم
     let fxCurrency = null;      // عملة الطريقة (مثلاً USD)
-    let fxRatePerJOD = null;    // 1 JOD -> كم CUR
+    let fxRatePerJOD = null;    // 1 JOD -> كم من عملة الطريقة (CUR)
+    let usdPerJOD = null;       // 1 JOD -> كم USD (لاحتساب الإضافة بالدولار)
+    // تتبُّع حالة التفرّع عبر العنوان
+    let pendingRoute = null;     // يُستخدم لوضع المسار المطلوب حتى تكتمل قائمة الدول
+
+    // جلب قيمة 1 JOD بالدولار من إعداد عام (config/currency)
+    async function fetchUsdPerJODFromConfig(){
+      try{
+        const snap = await db.collection('config').doc('currency').get();
+        if(!snap || !snap.exists) return null;
+        const d = snap.data() || {};
+        let rates = {};
+        try { rates = JSON.parse(d.ratesJson || '{}') || {}; } catch(_){ rates = {}; }
+        const getVal = (obj)=>{
+          if (obj && typeof obj === 'object'){
+            if (obj.rate!=null) return Number(obj.rate);
+            if (obj.RATE!=null) return Number(obj.RATE);
+            if (obj.value!=null) return Number(obj.value);
+          }
+          if (typeof obj === 'number') return Number(obj);
+          return NaN;
+        };
+        // نفترض أن ratesJson دائمًا يمثل: كم تساوي 1 USD من كل عملة
+        // أي إن كان JOD: 1.4085 → فهذا يعني 1 USD = 1.4085 JOD ⇒ 1 JOD = 1/1.4085 USD
+        const jodPerUSD = getVal(rates.JOD);
+        if (!Number.isFinite(jodPerUSD) || jodPerUSD<=0) return null;
+        return 1 / jodPerUSD;
+      }catch(_){ return null; }
+    }
 
     /* ========================= أدوات UI ========================= */
     function cardSkeleton(count=1){
@@ -813,12 +933,13 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       recvCUR.value = '';
       fxCurrency = null;
       fxRatePerJOD = null;
+      usdPerJOD = null;
       fxBadge.classList.add('hidden');
       fxText.textContent = '';
       rateLine.textContent = '—';
       currentProofFile = null;
       uploadedProofUrl = null;
-      proofFile.value = '';
+      if (proofFileEl) proofFileEl.value = '';
       proofPreview.textContent = '';
       updateSubmitState();
       try { if (window.turnstile) turnstile.reset(); } catch(_){}
@@ -836,7 +957,7 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
         a.innerHTML=`
           <img src="${c.data.imageUrl||''}" alt="${c.data.name||''}">
           <h2>${c.data.name||''}</h2>`;
-        a.addEventListener('click',()=>enterCountry(c));
+        a.addEventListener('click',()=>navigateToCountry(c));
         grid.appendChild(a);
       });
       showNoResults(list.length===0);
@@ -860,13 +981,32 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
         .onSnapshot(snap=>{
           countries=snap.docs.map(d=>({id:d.id,data:d.data()}));
           if(!currentCountry){ renderCountries(countries); applySearch(); }
+          // إن وُجد مسار مطلوب قبل اكتمال التحميل، طبّقه الآن
+          if (pendingRoute){ try { applyRoute(true); } catch(_){} pendingRoute=null; }
         }, err=>{ console.error('countries onSnapshot error:', err); });
     }
 
-    async function enterCountry(c){
+    // أدوات التوجيه البسيطة (hash)
+    function buildCountryHash(id){ return '#/' + encodeURIComponent(id||''); }
+    function parseHash(){
+      try{
+        const h = location.hash || '';
+        const m = h.match(/^#\/([^\/?#]+)/);
+        if (m && m[1]) return { type:'country', id: decodeURIComponent(m[1]) };
+        return { type:'root' };
+      }catch(_){ return { type:'root' }; }
+    }
+    function setHashForCountry(id, replace){
+      const url = buildCountryHash(id);
+      try{ replace ? history.replaceState(null,'',url) : history.pushState(null,'',url); }
+      catch(_){ try{ location.hash = url; }catch(__){} }
+    }
+
+    async function enterCountry(c, fromHistory){
       currentCountry=c;
       whereText.textContent=`طرق الدفع — ${c.data.name}`;
       backBtn.style.display='inline-block';
+      if (!fromHistory){ setHashForCountry(c.id, false); }
       cardSkeleton();
 
       const snap=await db.collection('depositCountries').doc(c.id)
@@ -879,17 +1019,37 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       renderMethods(methods);
     }
 
-    function goBack(){
+    // إظهار الجذر (قائمة الدول)
+    function showRoot(){
       currentCountry=null;
       whereText.textContent='الدول المتاحة للإيداع';
       backBtn.style.display='none';
       renderCountries(countries);
     }
+    // زر الرجوع (إن فُعِّل) ينسّق مع سجلّ المتصفح
+    function goBack(){ try{ history.back(); }catch(_){ showRoot(); } }
     backBtn.addEventListener('click', goBack);
+
+    // الانتقال عند الضغط على بطاقة الدولة
+    function navigateToCountry(c){ enterCountry(c, false); }
+
+    // تطبيق المسار الحالي عند الرجوع/التقدّم أو عند التحميل
+    function applyRoute(fromPop){
+      const r = parseHash();
+      if (r.type === 'country'){
+        const c = (countries||[]).find(x => (x.id||'').toLowerCase() === (r.id||'').toLowerCase());
+        if (c){ enterCountry(c, true); }
+        else { pendingRoute = r; }
+      } else {
+        showRoot();
+      }
+    }
+    window.addEventListener('popstate', function(){ try{ applyRoute(true); }catch(_){ } });
+    window.addEventListener('hashchange', function(){ try{ applyRoute(true); }catch(_){ } });
 
     /* ========================= فتح المودال + FX (من الخادم) ========================= */
     async function fetchFx(countryId, methodId){
-      const url = `${WORKER_BASE}/deposit/fx?countryId=${encodeURIComponent(countryId)}&methodId=${encodeURIComponent(methodId)}`;
+      const url = `${WORKER}/deposit/fx?countryId=${encodeURIComponent(countryId)}&methodId=${encodeURIComponent(methodId)}`;
       const res = await fetch(url, { method:'GET' });
       const data = await res.json();
       if (!res.ok || data.success !== true) throw new Error(data.error || 'تعذر جلب سعر الصرف');
@@ -912,6 +1072,10 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
         const fx = await fetchFx(currentCountry.id, m.id);
         fxCurrency = fx.currencyCode;
         fxRatePerJOD = fx.ratePerJOD; // 1 JOD -> CUR
+        // إذا كانت عملة الطريقة JOD، فالنسبة الصحيحة هي 1 JOD -> 1 JOD
+        if ((fxCurrency||'').toUpperCase() === 'JOD') {
+          fxRatePerJOD = 1;
+        }
       }catch(e){
         fxCurrency = null; fxRatePerJOD = null;
         rateLine.textContent = 'فشل جلب السعر من الخادم';
@@ -923,11 +1087,56 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
         return;
       }
 
-      // عناوين الحقول واتجاه العملية: يدفع بعملة الطريقة → يُضاف JOD
-      
-      document.querySelector("label[for=\"sendJOD\"]").textContent = `سيدفع (${fxCurrency})`;
-      document.querySelector("label[for=\"recvCUR\"]").textContent = 'سيُضاف (دينار أردني JOD)';
-      const priceText = `1 ${fxCurrency} = ${format4(1 / fxRatePerJOD)} JOD`;
+      // عناوين الحقول واتجاه العملية: يدفع بعملة الطريقة → يُضاف بالدولار
+      document.querySelector('label[for="sendJOD"]').textContent = `سيدفع (${fxCurrency})`;
+      document.querySelector('label[for="recvCUR"]').textContent = 'سيُضاف (USD)';
+      // أوسمة العملة على الحقول لعرضها عبر CSS (::before)
+      try {
+        var fieldPay = document.getElementById('fieldPay');
+        var fieldRecv = document.getElementById('fieldRecv');
+        if (fieldPay) fieldPay.setAttribute('data-cur', fxCurrency || 'USD');
+        if (fieldRecv) fieldRecv.setAttribute('data-cur', 'USD');
+      } catch(_){ }
+
+      // تحديد قيمة USD لكل 1 JOD: إن كانت الطريقة USD نستخدم نفس السعر،
+      // وإلا نحاول البحث عن طريقة أخرى في نفس الدولة عملتها USD لاستخراج السعر منها.
+      try {
+        usdPerJOD = (fxCurrency && fxCurrency.toUpperCase() === 'USD') ? fxRatePerJOD : null;
+        if (!usdPerJOD) {
+          const usdMethod = (methods || []).find(x => {
+            const c = (x && x.data && (x.data.currencyCode || x.data.currency || '')).toUpperCase();
+            return c === 'USD';
+          });
+          if (usdMethod && usdMethod.data) {
+            let r = Number(usdMethod.data.ratePerJOD);
+            if (!Number.isFinite(r) || r <= 0) {
+              const toJOD = Number(usdMethod.data.rateToJOD);
+              if (Number.isFinite(toJOD) && toJOD > 0) r = 1 / toJOD;
+            }
+            if (Number.isFinite(r) && r > 0) usdPerJOD = r;
+          }
+        }
+        // ملاذ أخير: من وثيقة config/currency العامة
+        if (!usdPerJOD){
+          const fromCfg = await fetchUsdPerJODFromConfig();
+          if (Number.isFinite(fromCfg) && fromCfg>0) usdPerJOD = fromCfg;
+        }
+      } catch(_){ }
+      // إن كان المستخدم كتب قيمة قبل اكتمال جلب usdPerJOD حدث الحقول الآن
+      try{ if (sendJOD.value) sendJOD.oninput(); }catch(_){ }
+      // تهيئة مبدئية: تركيز على خانة الدفع بالعملة الأساسية (دولار)
+      try { sendJOD.focus(); } catch(_){ }
+      let priceText = `1 ${fxCurrency} = ${format4(1 / fxRatePerJOD)} JOD`;
+      try{
+        const CUR = (fxCurrency||'').toUpperCase();
+        if (CUR === 'USD') {
+          priceText = `1 USD = ${format4(1 / fxRatePerJOD)} JOD`;
+        } else if (CUR === 'JOD') {
+          priceText = (usdPerJOD && usdPerJOD>0)
+            ? `1 JOD = ${format4(usdPerJOD)} USD`
+            : `1 JOD ≈ — USD`;
+        }
+      }catch(_){ }
       fxText.textContent  = priceText;
       rateLine.textContent= priceText;
       fxBadge.classList.remove('hidden');
@@ -945,16 +1154,42 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
         ? fields.map(([k,v])=>`<div class="info-item"><strong>${k}</strong> <div>${v}</div></div>`).join('')
         : '<div class="info-item">لا توجد تفاصيل متاحة.</div>';
 
-      // الحاسبة (عرض فقط)
+      // الحاسبة (عرض فقط) — نعرض المبلغ الذي سيُضاف بالدولار USD
       sendJOD.oninput = ()=>{
         const v = Number(sendJOD.value);
-        recvCUR.value = (!fxRatePerJOD || !isFinite(v) || v<=0) ? '' : (v / fxRatePerJOD).toFixed(2);
+        if (!isFinite(v) || v <= 0 || !(usdPerJOD>0) || !fxCurrency) {
+          recvCUR.value = '';
+        } else {
+          // تحويل: CUR → JOD → USD
+          const curCode = (fxCurrency||'').toUpperCase();
+          const jod = (curCode === 'JOD') ? v : (v / fxRatePerJOD); // كم دينار سيُضاف
+          const usd = jod * usdPerJOD;            // كم دولار معادل سيُضاف
+          recvCUR.value = usd.toFixed(2);
+        }
         updateSubmitState();
+        try{
+          document.getElementById('fieldPay').classList.toggle('filled', isFinite(v) && v>0);
+          const rv = Number(recvCUR.value);
+          document.getElementById('fieldRecv').classList.toggle('filled', isFinite(rv) && rv>0);
+        }catch(_){ }
       };
       recvCUR.oninput = ()=>{
         const v = Number(recvCUR.value);
-        sendJOD.value = (!fxRatePerJOD || !isFinite(v) || v<=0) ? '' : (v * fxRatePerJOD).toFixed(2);
+        if (!isFinite(v) || v <= 0 || !(usdPerJOD>0) || !fxCurrency) {
+          sendJOD.value = '';
+        } else {
+          // عكس العملية: USD → JOD → CUR
+          const jod = v / usdPerJOD;              // كم دينار مكافئ
+          const curCode = (fxCurrency||'').toUpperCase();
+          const cur = (curCode === 'JOD') ? jod : (jod * fxRatePerJOD); // كم سيدفع بعملة الطريقة
+          sendJOD.value = cur.toFixed(2);
+        }
         updateSubmitState();
+        try{
+          document.getElementById('fieldRecv').classList.toggle('filled', isFinite(v) && v>0);
+          const pv = Number(sendJOD.value);
+          document.getElementById('fieldPay').classList.toggle('filled', isFinite(pv) && pv>0);
+        }catch(_){ }
       };
 
       updateSubmitState();
@@ -1051,7 +1286,7 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
           turnstileToken: window.turnstileToken
         };
 
-        const res = await fetch(`${WORKER_BASE}/deposit/submit`, {
+        const res = await fetch(`${WORKER}/deposit/submit`, {
           method: 'POST',
           headers: {
             'Authorization': 'Bearer ' + idToken,
@@ -1062,7 +1297,16 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
         const data = await res.json();
         if(!res.ok || !data.success) throw new Error(data.error || 'فشل تقديم الطلب');
 
-        alert(`تم تقديم طلب الإيداع بنجاح.\nالكود: ${data.depositCode}\nسيدفع: ${data.amountCurrency} ${data.currency}\nسيُضاف: ${data.amountJOD} JOD\n(السعر من الخادم: 1 JOD = ${data.ratePerJOD} ${data.currency})`);
+        // احسب ما سيُضاف بالدولار إن كان سعر USD متاحًا
+        let addedUSDLine = '';
+        try{
+          if (usdPerJOD && Number.isFinite(Number(usdPerJOD))) {
+            const usdAdded = Number(data.amountJOD) * Number(usdPerJOD);
+            if (Number.isFinite(usdAdded)) addedUSDLine = `\nسيُضاف (بالدولار): ${usdAdded.toFixed(2)} USD`;
+          }
+        }catch(_){ addedUSDLine = ''; }
+
+        alert(`تم تقديم طلب الإيداع بنجاح.\nالكود: ${data.depositCode}\nسيدفع: ${data.amountCurrency} ${data.currency}\nسيُضاف (دينار): ${data.amountJOD} JOD${addedUSDLine}\n(السعر من الخادم: 1 JOD = ${data.ratePerJOD} ${data.currency})`);
         closeModalFn();
       }catch(err){
         console.error(err);
@@ -1095,6 +1339,8 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     closeModal.addEventListener('click', closeModalFn);
     methodModal.addEventListener('click', (e)=>{ if(e.target===methodModal) closeModalFn(); });
 
+    // طبّق المسار الحالي (إن وُجد) ثم ابدأ مراقبة الدول
+    try { applyRoute(true); } catch(_){}
     watchCountries();
 
     (function(){
@@ -1108,6 +1354,8 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
   
 </body>
 </html>
+
+
 
 
 

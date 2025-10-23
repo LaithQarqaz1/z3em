@@ -14,6 +14,69 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 let pricesFetchOnce = false;
 
+// ===== Turnstile إعداد =====
+const TURNSTILE_SITE_KEY = "0x4AAAAAABmiVmi7wosqeHQT";
+let _tsWidgetId = null;
+let _tsReadyPromise = null;
+let _tsToken = "";
+function ensureTurnstileScript() {
+  if (window.turnstile) return Promise.resolve();
+  if (_tsReadyPromise) return _tsReadyPromise;
+  _tsReadyPromise = new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    s.async = true;
+    s.defer = true;
+    s.onload = () => resolve();
+    s.onerror = () => resolve();
+    document.head.appendChild(s);
+  });
+  return _tsReadyPromise;
+}
+function themeIsDark(){
+  try{
+    const htmlTheme = (document.documentElement.getAttribute('data-theme')||'').toLowerCase();
+    if (htmlTheme === 'dark') return true;
+    if (htmlTheme === 'light') return false;
+    return document.body.classList.contains('dark-mode');
+  }catch(_){ return false; }
+}
+async function getTurnstileTokenInteractive() {
+  try { await ensureTurnstileScript(); } catch {}
+  const modalCard = document.querySelector('#purchase-modal .pm-card') || document.body;
+  let holder = document.getElementById('cf-turnstile-container');
+  if (!holder) {
+    holder = document.createElement('div');
+    holder.id = 'cf-turnstile-container';
+    holder.style.cssText = 'margin-top:10px; display:block;';
+    modalCard.appendChild(holder);
+  }
+  const opts = {
+    sitekey: TURNSTILE_SITE_KEY,
+    theme: themeIsDark()? 'dark' : 'light',
+    callback: (t) => { _tsToken = t || ''; },
+    'expired-callback': () => { _tsToken = ''; try{ window.turnstile && _tsWidgetId!=null && window.turnstile.reset(_tsWidgetId); }catch(_){} },
+  };
+  if (!_tsWidgetId && window.turnstile && window.turnstile.render) {
+    _tsWidgetId = window.turnstile.render(holder, opts);
+  } else if (window.turnstile && window.turnstile.reset && _tsWidgetId != null) {
+    try { window.turnstile.reset(_tsWidgetId); } catch {}
+  }
+  const started = Date.now();
+  while (Date.now() - started < 15000) {
+    try {
+      if (window.turnstile && _tsWidgetId != null) {
+        const r = window.turnstile.getResponse(_tsWidgetId);
+        if (r) { _tsToken = r; break; }
+      }
+    } catch {}
+    if (_tsToken) break;
+    await new Promise(r => setTimeout(r, 200));
+  }
+  if (!_tsToken) throw new Error('turnstile_token_missing');
+  return _tsToken;
+}
+
 /* ================== أدوات محلية للجلسة ================== */
 // نقرأ مفتاح الجلسة من localStorage (حُفظ أثناء الدخول)
 function getLocalSessionKey() {
@@ -222,7 +285,10 @@ async function sendOrder() {
     return;
   }
 
-  // تم تعطيل Turnstile بناءً على طلبك
+  // التحقق من Turnstile قبل الإرسال
+  let turnstileToken = '';
+  try { turnstileToken = await getTurnstileTokenInteractive(); }
+  catch(_) { showToast('فشل التحقق الأمني، حاول مجدداً', 'error'); return; }
 
   const user = firebase.auth().currentUser;
   if (!user) {
@@ -301,7 +367,8 @@ async function sendOrder() {
         offers: selectedOffers,
         currency: "دأ",
         currentUrl,
-        authkey
+        authkey,
+        turnstileToken
       })
     });
 

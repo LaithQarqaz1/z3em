@@ -44,7 +44,7 @@ body.dark-mode #preloader {
   display: grid;               /* تمركز أي محتوى داخلي */
   place-items: center;         /* يضمن توسيط صورة اللودر */
   /* اجعل الصورة الخلفية تُحمّل مبكرًا جدًا مع CSS */
-  background-image: url('https://i.ibb.co/svXFyxQk/Chat-GPT-Image-9-2025-06-11-56.png');
+  background-image: url('loading.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: 72px 72px;

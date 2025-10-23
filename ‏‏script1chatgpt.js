@@ -222,6 +222,11 @@ async function sendOrder() {
     return;
   }
 
+  // التحقق من Turnstile قبل الإرسال
+  let turnstileToken = '';
+  try { turnstileToken = await getTurnstileTokenInteractive(); }
+  catch(_) { showToast('فشل التحقق الأمني، حاول مجدداً', 'error'); return; }
+
   // تم تعطيل Turnstile بناءً على طلبك
 
   const user = firebase.auth().currentUser;
@@ -301,7 +306,8 @@ async function sendOrder() {
         offers: selectedOffers,
         currency: "دأ",
         currentUrl,
-        authkey
+        authkey,
+        turnstileToken
       })
     });
 
