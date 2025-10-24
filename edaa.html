@@ -1044,6 +1044,49 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       catch(_){ try{ location.hash = url; }catch(__){} }
     }
 
+    // ====== تأكيد الإيداع: تحميل CSS من الباك-إند + عرض نافذة (نطاق عام) ======
+    let __CONFIRM_CSS_ADDED = false;
+    async function ensureConfirmCss(idToken){
+      if (__CONFIRM_CSS_ADDED) return true;
+      try{
+        const res = await fetch(`${WORKER}/ui/confirm.css`, { headers: { Authorization: 'Bearer '+idToken }});
+        if(!res.ok){ __CONFIRM_CSS_ADDED=false; return false; }
+        const css = await res.text();
+        const st = document.createElement('style'); st.id='zconfirm-style'; st.textContent = css;
+        document.head.appendChild(st); __CONFIRM_CSS_ADDED = true; return true;
+      }catch(e){ __CONFIRM_CSS_ADDED=false; return false; }
+    }
+
+    function zEscHtml(s){
+      try{ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }catch(_){ return String(s||''); }
+    }
+
+    function showDepositConfirm({ code, paid, addedUSD, fx, extra }){
+      try{ const old = document.getElementById('zconfirm'); if (old) old.remove(); }catch(_){ }
+      const overlay = document.createElement('div'); overlay.className='zconfirm-overlay'; overlay.id='zconfirm';
+      overlay.innerHTML = `
+        <div class="zconfirm-modal" role="dialog" aria-label="تأكيد الطلب">
+          <div class="zconfirm-header">
+            <span class="zbadge">✓</span>
+            <h3 class="zconfirm-title">تم تقديم طلب الإيداع بنجاح</h3>
+          </div>
+          <div class="zconfirm-body">
+            <div class="zrow"><div class="zlabel">الكود</div><div class="zvalue zmono">${zEscHtml(code||'—')}</div></div>
+            <div class="zrow"><div class="zlabel">سيدفع</div><div class="zvalue">${zEscHtml(paid||'—')}</div></div>
+            <div class="zrow"><div class="zlabel">سيُضاف (USD)</div><div class="zvalue">${zEscHtml(addedUSD||'—')}</div></div>
+            ${fx? `<div class="zfx">السعر من الخادم: ${zEscHtml(fx)}</div>`:''}
+            ${extra? `<div class="zfx">${zEscHtml(extra)}</div>`:''}
+          </div>
+          <div class="zconfirm-footer">
+            <button class="zbtn zbtn-primary" id="zconfirm-ok">حسنًا</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      function close(){ try{ overlay.remove(); }catch(_){ } }
+      overlay.addEventListener('click', (e)=>{ if(e.target===overlay) close(); });
+      document.getElementById('zconfirm-ok').addEventListener('click', close);
+    }
+
     async function enterCountry(c, fromHistory){
       currentCountry=c;
       whereText.textContent=`طرق الدفع — ${c.data.name}`;

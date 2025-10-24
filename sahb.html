@@ -444,6 +444,51 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
       submitWithdrawBtn.disabled = !(amountsValid() && !!window.turnstileToken && !!currentMethod && !!currentCountry && recipientValid());
     }
 
+    // ====== تأكيد السحب: تحميل CSS من الباك-إند + عرض نافذة ======
+    let __CONFIRM_CSS_ADDED = false;
+    async function ensureConfirmCss(idToken){
+      if (__CONFIRM_CSS_ADDED) return true;
+      try{
+        const res = await fetch(`${WORKER_BASE}/ui/confirm.css`, { headers: { Authorization: 'Bearer '+idToken }});
+        if(!res.ok){ __CONFIRM_CSS_ADDED=false; return false; }
+        const css = await res.text();
+        const st = document.createElement('style'); st.id='zconfirm-style'; st.textContent = css;
+        document.head.appendChild(st); __CONFIRM_CSS_ADDED = true; return true;
+      }catch(e){ __CONFIRM_CSS_ADDED=false; return false; }
+    }
+
+    function zEscHtml(s){
+      try{ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }catch(_){ return String(s||''); }
+    }
+
+    function showWithdrawConfirm({ code, debitedJOD, amountCurrency, currency, ratePerJOD }){
+      try{ const old = document.getElementById('zconfirm'); if (old) old.remove(); }catch(_){ }
+      const overlay = document.createElement('div'); overlay.className='zconfirm-overlay'; overlay.id='zconfirm';
+      const jodTxt = (debitedJOD!=null && isFinite(Number(debitedJOD))) ? `${Number(debitedJOD).toFixed(2)} JOD` : '—';
+      const payTxt = (amountCurrency!=null && isFinite(Number(amountCurrency))) ? `${Number(amountCurrency).toFixed(2)} ${currency||''}` : '—';
+      const fxTxt = (ratePerJOD!=null && isFinite(Number(ratePerJOD))) ? `1 JOD = ${Number(ratePerJOD).toFixed(4)} ${currency||''}` : '';
+      overlay.innerHTML = `
+        <div class="zconfirm-modal" role="dialog" aria-label="تأكيد السحب">
+          <div class="zconfirm-header">
+            <span class="zbadge">✓</span>
+            <h3 class="zconfirm-title">تم تقديم طلب السحب</h3>
+          </div>
+          <div class="zconfirm-body">
+            <div class="zrow"><div class="zlabel">الكود</div><div class="zvalue zmono">${zEscHtml(code||'—')}</div></div>
+            <div class="zrow"><div class="zlabel">سيُخصم</div><div class="zvalue">${zEscHtml(jodTxt)}</div></div>
+            <div class="zrow"><div class="zlabel">سيستلم</div><div class="zvalue">${zEscHtml(payTxt)}</div></div>
+            ${fxTxt? `<div class="zfx">السعر من الخادم: ${zEscHtml(fxTxt)}</div>`:''}
+          </div>
+          <div class="zconfirm-footer">
+            <button class="zbtn zbtn-primary" id="zconfirm-ok">حسنًا</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      function close(){ try{ overlay.remove(); }catch(_){ } }
+      overlay.addEventListener('click', (e)=>{ if(e.target===overlay) close(); });
+      document.getElementById('zconfirm-ok').addEventListener('click', close);
+    }
+
     // ================= تقديم طلب السحب =================
     async function getIdTokenOrThrow(){
       const user = auth.currentUser;
@@ -479,14 +524,15 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
         const data = await res.json();
         if(!res.ok || !data.success) throw new Error(data.error || 'فشل تقديم طلب السحب');
 
-        alert(
-          `تم تقديم طلب السحب.\n` +
-          `الكود: ${data.withdrawCode}\n` +
-          `سيُخصم: ${Number(data.amountJOD).toFixed(2)} JOD\n` +
-          `سيستلم: ${Number(data.amountCurrency).toFixed(2)} ${data.currency}\n` +
-          `(السعر: 1 JOD = ${Number(data.ratePerJOD).toFixed(4)} ${data.currency})`
-        );
-        closeModalFn();
+        try { await ensureConfirmCss(idToken); } catch(_){ }
+        showWithdrawConfirm({
+          code: data.withdrawCode,
+          debitedJOD: data.amountJOD,
+          amountCurrency: data.amountCurrency,
+          currency: data.currency,
+          ratePerJOD: data.ratePerJOD
+        });
+        try { closeModalFn(); } catch(_){ }
       } catch (err) {
         console.error(err);
         alert(err.message || 'فشل تقديم الطلب');
