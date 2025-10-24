@@ -1130,6 +1130,16 @@ function _readOfferPriceForElement(el){
     pm.classList.remove('show');
     document.body.classList.remove('modal-open');
     document.querySelectorAll('.offer-box.selected').forEach(x => x.classList.remove('selected'));
+    // Cleanup Turnstile widget so it doesn't persist between opens
+    try {
+      const holder = document.getElementById('cf-turnstile-container');
+      if (holder) holder.remove();
+      if (window.turnstile && typeof _tsWidgetId !== 'undefined' && _tsWidgetId != null) {
+        try { window.turnstile.remove(_tsWidgetId); } catch(_) { try { window.turnstile.reset(_tsWidgetId); } catch(_){} }
+      }
+      if (typeof _tsToken !== 'undefined') _tsToken = '';
+      if (typeof _tsWidgetId !== 'undefined') _tsWidgetId = null;
+    } catch(_){ }
     if (window._pm_watchInterval) {
       clearInterval(window._pm_watchInterval);
       window._pm_watchInterval = null;

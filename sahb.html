@@ -5,9 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>السحب النقدي</title>
   <link rel="icon" href="https://i.ibb.co/zHC1tQ8b/1757362837638.png" type="image/png">
+  <!-- تهيئة الثيم مبكراً لمنع اللمعة -->
+  <script>
+    (function(){
+      try{
+        var t = localStorage.getItem('theme');
+        if(!t){ t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'; }
+        var dark = (t==='dark');
+        document.documentElement.setAttribute('data-theme', dark? 'dark':'light');
+        // color-scheme + theme-color
+        var metaCS=document.querySelector('meta[name="color-scheme"]'); if(!metaCS){ metaCS=document.createElement('meta'); metaCS.name='color-scheme'; document.head.appendChild(metaCS);} metaCS.setAttribute('content', dark?'dark light':'light dark');
+        var metaTC=document.querySelector('meta[name="theme-color"]'); if(!metaTC){ metaTC=document.createElement('meta'); metaTC.name='theme-color'; document.head.appendChild(metaTC);} metaTC.setAttribute('content', dark?'#0b1220':'#f7f8fb');
+        // خلفية مبدئية سريعة
+        var s=document.createElement('style'); s.id='critical-theme'; s.textContent='html{background:'+(dark?'#0b1220':'#f7f8fb')+';color:'+(dark?'#e6edf3':'#111')+'} body{background:inherit;color:inherit;margin:0}'; document.head.appendChild(s);
+        // صنف body للوضع الداكن
+        var applyBody=function(){ try{ document.body.classList.toggle('dark-mode', dark); }catch(_){ } };
+        if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyBody); else applyBody();
+      }catch(_){ }
+    })();
+  </script>
 
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="header.css"/>
+  <script src="header.js" defer></script>
+  <link rel="stylesheet" href="loader.css">
+  <script src="loader.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -100,12 +123,6 @@
   })();
   </script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <link rel="stylesheet" href="header.css" />
-
-  <script src="header.js" defer></script>
-  <!-- Loader assets -->
-  <link rel="stylesheet" href="loader.css">
-  <script src="loader.js" defer></script>
   <style>
     :root{
       --brand:#0077cc; --brand-dark:#005fa3; --bg:#f7f8fb; --card:#ffffff;
@@ -114,10 +131,12 @@
     *{box-sizing:border-box}
     body{font-family:'Cairo',sans-serif;margin:0;background:var(--bg);color:#111}
     main{max-width:1200px;margin:20px auto;padding:0 16px}
-    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;max-width:1000px;margin:0 auto 12px}
-    .back-btn{display:none;background:#e9eef5;border:none;padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:700;color:#1f2937}
+    .toolbar{display:flex;justify-content:center;align-items:center;gap:10px;max-width:1000px;margin:0 auto 12px;padding:0}
+    .back-btn{display:none !important;background:#e9eef5;border:none;padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:700;color:#1f2937}
     .back-btn:hover{filter:brightness(.98)}
-    .where{font-weight:800;color:var(--brand)}
+    .toolbar > div:last-child{display:none}
+    .toolbar > div[style*="width:120px"]{display:none}
+    .where{font-weight:800;color:#0077cc;text-align:center}
     .search-container{max-width:1000px;margin:0 auto 16px;display:flex;gap:10px}
     .search-container input{flex:1;padding:12px 14px;border:2px solid var(--brand);border-radius:9999px;font-size:1rem;outline:none;transition:.2s;background:#fff}
     .search-container input:focus{box-shadow:0 0 0 6px var(--ring);border-color:var(--brand-dark)}
@@ -140,7 +159,7 @@
     .modal.open{display:flex}
     .modal-content{background:#fff;padding:18px;border-radius:16px;max-width:680px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.22)}
     .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-    .modal-title{font-size:1.15rem;font-weight:800}
+    .modal-title{font-size:1.2rem;font-weight:800;text-align:center;letter-spacing:.2px;background:linear-gradient(90deg,#7dd3fc,#22d3ee,#a7f3d0);-webkit-background-clip:text;background-clip:text;color:transparent}
     .close{background:transparent;border:none;font-size:1.4rem;cursor:pointer}
     .badge{display:inline-flex;align-items:center;gap:6px;background:#eef6ff;color:#1e40af;border:1px solid #c7ddff;padding:6px 10px;border-radius:9999px;font-size:.85rem;margin-top:6px}
 
@@ -157,7 +176,7 @@
     .calc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0}
     .calc .field{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px}
     .rate-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:2px 0 10px}
-    .rate-line .chip{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:9999px;padding:6px 10px}
+    .rate-line .chip{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:9999px;padding:6px 10px; direction:ltr}
 
     .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
     .btn{border:none;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:700}
@@ -168,10 +187,39 @@
     .turnstile-wrap{margin-top:8px}
     .muted{color:#667085;font-size:.92rem}
     .error{color:var(--danger);font-size:.9rem;margin-top:4px}
+    /* تحسينات المودال والحقول مثل صفحة الإيداع */
+    #methodModal .modal-content{ position:relative; border-radius:18px; }
+    #methodModal .modal-content::before{ content:""; position:absolute; inset-inline:0; inset-block-start:0; height:4px; background:linear-gradient(90deg,#06b6d4,#0ea5e9,#22c55e); opacity:.9; }
+    #methodModal .calc .field{ position:relative; margin:0; border-radius:14px; padding:6px; }
+    #methodModal .calc .field input{ height:44px; font-weight:800; direction:ltr; text-align:end; font-variant-numeric:tabular-nums; border:0; background:transparent; padding:0 64px; }
+    #methodModal .calc .field::before{ content: attr(data-cur); position:absolute; inset-inline-start:8px; top:50%; transform:translateY(-50%); padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:800; letter-spacing:.3px; background:#eef2f7; border:1px solid #e5e7eb; color:#475569; pointer-events:none; }
+    #methodModal .calc .field > label{ position:absolute; inset-inline-end:12px; top:-10px; padding:0 8px; border-radius:999px; font-size:.75rem; font-weight:800; line-height:1.6; background:#ffffff; color:#475569; }
+    html[data-theme="dark"] #methodModal .calc .field::before { background:rgba(148,163,184,.12); border:1px solid #334155; color:#cbd5e1; }
+    html[data-theme="light"] #methodModal .calc .field::before { background:#eef2f7; border:1px solid #e5e7eb; color:#475569; }
+    /* ضبط اتجاه شارات السعر لعدم انعكاسها بالعربية */
+    #fxBadge, #rateLine{ direction:ltr }
+    @media (max-width: 480px){ #methodModal .calc .field input{ padding:0 40px; height:42px; } }
+    /* دعم الثيم الداكن */
+    body.dark-mode { background:#0b1220; color:#e6edf3; }
+    body.dark-mode .card{ background:#1a2234; color:#e6edf3; border:1px solid #334155; box-shadow:0 2px 10px rgba(0,0,0,.35); }
+    body.dark-mode .card.loading{ background:#162032; }
+    body.dark-mode .no-results{ color:#94a3b8; }
+    body.dark-mode .modal-content{ background:#111827; color:#e6edf3; box-shadow:0 10px 30px rgba(0,0,0,.5); }
+    body.dark-mode .info-item{ background:#0f172a; border-color:#334155; }
+    body.dark-mode .calc .field{ background:#0f172a; border-color:#334155; }
+    body.dark-mode .calc label{ color:#cbd5e1; }
+    body.dark-mode .calc input{ background:#0b1220; color:#e6edf3; border-color:#334155; }
+    /* دعم الوضع الداكن لحقول المستلم */
+    body.dark-mode .form .field{ background:#0f172a; border-color:#334155; }
+    body.dark-mode .form .field label{ color:#cbd5e1; }
+    body.dark-mode .form .field input{ background:#0b1220; color:#e6edf3; border-color:#334155; }
+    body.dark-mode .form .field input::placeholder{ color:#94a3b8; }
+    body.dark-mode .rate-line .chip{ background:#0f172a; border-color:#334155; color:#e6edf3; }
+    body.dark-mode .btn-outline{ background:#0b1220; color:#e6edf3; border-color:#334155; }
   </style>
 </head>
 <body>
-  <div id="preloader"><div class="loader"></div></div>
+  <div id="preloader" class="auto-hide"><div class="loader"></div></div>
 <div id="headerContainer"></div>
 <div id="sidebarContainer"></div>
 
@@ -203,6 +251,18 @@
         <button class="close" id="closeModal">&times;</button>
       </div>
 
+      <!-- الحاسبة: سيُخصم بالدولار وسيستلم بعملة الطريقة (مثل الإيداع) -->
+      <div class="calc">
+        <div class="field" id="fieldPay" data-cur="USD">
+          <label for="sendUSD">سيُخصم (USD)</label>
+          <input type="number" id="sendUSD" min="0" step="0.01" placeholder="0.00"/>
+        </div>
+        <div class="field" id="fieldRecv" data-cur="—">
+          <label for="recvCUR">سيستلم (—)</label>
+          <input type="number" id="recvCUR" min="0" step="0.01" placeholder="0.00"/>
+        </div>
+      </div>
+
       <!-- بيانات المستلم -->
       <div class="form" id="recipientForm">
         <div class="field">
@@ -214,18 +274,6 @@
           <label for="recipientName">اسم المستخدم</label>
           <input type="text" id="recipientName" placeholder="الاسم كما سيظهر في التحويل"/>
           <div id="recipientNameErr" class="error" style="display:none;">أدخل اسمًا صالحًا (3 أحرف على الأقل).</div>
-        </div>
-      </div>
-
-      <!-- الحاسبة: ندخل JOD ويعرض المبلغ المستلم بعملة الطريقة -->
-      <div class="calc">
-        <div class="field">
-          <label for="desiredJOD">سيُخصم من الموقع (JOD)</label>
-          <input type="number" id="desiredJOD" min="0" step="0.01" placeholder="0.00"/>
-        </div>
-        <div class="field">
-          <label for="receiveCUR">سأستلم نقدا بقيمة (—)</label>
-          <input type="text" id="receiveCUR" placeholder="—" disabled/>
         </div>
       </div>
 
@@ -256,7 +304,17 @@
 
   <script>
     // ================= إعدادات عامة =================
-const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
+    // لودر بسيط — نفس أسلوب الإيداع
+    function showPreloader(){
+      const pre = document.getElementById('preloader');
+      if(!pre) return; pre.classList.remove('hidden'); pre.style.display='flex'; pre.style.opacity='1';
+    }
+    function hidePreloader(){
+      const pre = document.getElementById('preloader');
+      if(!pre) return; pre.classList.add('hidden'); setTimeout(()=>{ pre.style.display='none'; }, 450);
+    }
+const WORKER_BASE = "https://edaaandsahb.laithqarqaz66.workers.dev/";
+const WORKER = (WORKER_BASE || '').replace(/\/+$/, '');
     const firebaseConfig = {
           apiKey:"AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
           authDomain:"z3em-d9b11.firebaseapp.com",
@@ -292,8 +350,8 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
     const fxText  = document.getElementById('fxText');
     const rateLine = document.getElementById('rateLine');
 
-    const desiredJOD = document.getElementById('desiredJOD');
-    const receiveCUR = document.getElementById('receiveCUR');
+    const sendUSD = document.getElementById('sendUSD');
+    const recvCUR = document.getElementById('recvCUR');
 
     const recipientId   = document.getElementById('recipientId');
     const recipientName = document.getElementById('recipientName');
@@ -310,7 +368,10 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
 
     // FX
     let fxCurrency = null;     // عملة طريقة السحب
-    let fxRatePerJOD = null;   // 1 JOD -> CUR
+    let fxRatePerJOD = null;   // 1 JOD -> CUR (من الخادم أو الوثيقة)
+    let fxRatePerUSD = null;   // 1 USD -> CUR (إن توفر من الخادم)
+    let usdPerJOD = null;      // 1 JOD -> USD (من config/طريقة USD)
+    let curPerUSD = null;      // 1 USD -> CUR (نستخدمه في الحاسبة)
 
     // ================= أدوات UI =================
     function cardSkeleton(count=4){
@@ -327,9 +388,9 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
     function openModal(){ methodModal.classList.add('open'); }
     function closeModalFn(){
       methodModal.classList.remove('open');
-      currentMethod = null; fxCurrency = null; fxRatePerJOD = null;
+      currentMethod = null; fxCurrency = null; fxRatePerJOD = null; usdPerJOD = null;
       fxBadge.style.display='none'; fxText.textContent=''; rateLine.textContent='—';
-      desiredJOD.value=''; receiveCUR.value='';
+      sendUSD.value=''; recvCUR.value='';
       recipientId.value=''; recipientName.value='';
       recipientIdErr.style.display='none'; recipientNameErr.style.display='none';
       updateSubmitState();
@@ -358,6 +419,7 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
     }
 
     async function enterCountry(c){
+      showPreloader();
       currentCountry=c;
       whereText.textContent=`طرق السحب — ${c.data.name}`;
       backBtn.style.display='inline-block';
@@ -371,6 +433,7 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
 
       methods=snap.docs.map(d=>({id:d.id,data:d.data()}));
       renderMethods(methods);
+      hidePreloader();
     }
 
     function goBack(){
@@ -383,33 +446,112 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
 
     // ================= FX من الخادم =================
     async function fetchFx(countryId, methodId){
-      const res = await fetch(`${WORKER_BASE}/withdraw/fx?countryId=${encodeURIComponent(countryId)}&methodId=${encodeURIComponent(methodId)}`);
+      // قاعدة العامل: تسمح بتهيئة override عبر localStorage: key 'withdraw:worker'
+      let base = WORKER_BASE || '';
+      try{ const ov = localStorage.getItem('withdraw:worker'); if (ov) base = ov; }catch(_){ }
+      base = (base||'').replace(/\/+$/,'');
+
+      const url = `${base}/withdraw/fx?countryId=${encodeURIComponent(countryId)}&methodId=${encodeURIComponent(methodId)}`;
+      const headers = {};
+      try { const u = auth && auth.currentUser; if (u) headers['Authorization'] = 'Bearer ' + await u.getIdToken(); } catch(_){ }
+      const res = await fetch(url, { method:'GET', headers });
       const data = await res.json();
       if (!res.ok || data.success !== true) throw new Error(data.error || 'تعذر جلب سعر الصرف');
-      return { currencyCode: data.currencyCode, ratePerJOD: Number(data.ratePerJOD), feeHint: data.feeHint || null };
+      return {
+        currencyCode: data.currencyCode,
+        ratePerUSD: Number(data.ratePerUSD), // 1 USD -> CUR (إن توفر)
+        ratePerJOD: Number(data.ratePerJOD), // 1 JOD -> CUR (توافق)
+        feeHint: data.feeHint || null
+      };
+    }
+    // جلب قيمة 1 JOD بالدولار من إعداد عام (config/currency)
+    async function fetchUsdPerJODFromConfig(){
+      try{
+        const snap = await db.collection('config').doc('currency').get();
+        if(!snap || !snap.exists) return null;
+        const d = snap.data() || {};
+        let rates = {};
+        try { rates = JSON.parse(d.ratesJson || '{}') || {}; } catch(_){ rates = {}; }
+        const getVal = (obj)=>{
+          if (obj && typeof obj === 'object'){
+            if (obj.rate!=null) return Number(obj.rate);
+            if (obj.RATE!=null) return Number(obj.RATE);
+            if (obj.value!=null) return Number(obj.value);
+          }
+          if (typeof obj === 'number') return Number(obj);
+          return NaN;
+        };
+        // ratesJson: 1 USD = X من كل عملة → إن كان JOD: 1 USD = X JOD ⇒ 1 JOD = 1/X USD
+        const jodPerUSD = getVal(rates.JOD);
+        if (!Number.isFinite(jodPerUSD) || jodPerUSD<=0) return null;
+        return 1 / jodPerUSD;
+      }catch(_){ return null; }
     }
     function format4(n){ const s=(Math.round(n*10000)/10000).toFixed(4); return s.replace(/\.?0+$/,''); }
 
     async function openMethod(m){
+      showPreloader();
       currentMethod = m;
       modalTitle.textContent=`تفاصيل السحب — ${m.data.name||''}`;
       methodInfo.innerHTML='';
 
       try{
         const fx = await fetchFx(currentCountry.id, m.id);
-        fxCurrency = fx.currencyCode;
-        fxRatePerJOD = fx.ratePerJOD;
-        const priceText = `1 JOD = ${format4(fxRatePerJOD)} ${fxCurrency}`;
-        fxText.textContent  = priceText;
-        rateLine.textContent= priceText;
+        fxCurrency   = fx.currencyCode;
+        fxRatePerUSD = Number(fx.ratePerUSD)||null; // 1 USD -> CUR
+        fxRatePerJOD = Number(fx.ratePerJOD)||null; // 1 JOD -> CUR
         fxBadge.style.display='inline-flex';
-        document.querySelector('label[for="receiveCUR"]').innerText = `سأستلم نقدا بقيمة (${fxCurrency})`;
+        document.querySelector('label[for="recvCUR"]').textContent = `سيستلم (${fxCurrency})`;
       }catch(e){
-        fxCurrency = null; fxRatePerJOD = null;
+        fxCurrency = null; fxRatePerUSD=null; fxRatePerJOD = null;
         rateLine.textContent = 'فشل جلب السعر من الخادم';
         fxBadge.style.display='none';
-        document.querySelector('label[for="receiveCUR"]').innerText = 'سأستلم نقدا بقيمة (—)';
+        document.querySelector('label[for="recvCUR"]').textContent = 'سيستلم (—)';
       }
+
+      // تحديد usdPerJOD (1 JOD -> USD) من config/أو طريقة USD بنفس الدولة
+      try {
+        usdPerJOD = null;
+        const usdMethod = (methods || []).find(x => {
+          const c = (x && x.data && (x.data.currencyCode || x.data.currency || '')).toUpperCase();
+          return c === 'USD';
+        });
+        if (usdMethod && usdMethod.data) {
+          let r = Number(usdMethod.data.ratePerJOD);
+          if (!Number.isFinite(r) || r <= 0) {
+            const toJOD = Number(usdMethod.data.rateToJOD);
+            if (Number.isFinite(toJOD) && toJOD > 0) r = 1 / toJOD;
+          }
+          if (Number.isFinite(r) && r > 0) usdPerJOD = r; // 1 JOD -> USD
+        }
+        if (!usdPerJOD){
+          const fromCfg = await fetchUsdPerJODFromConfig();
+          if (Number.isFinite(fromCfg) && fromCfg>0) usdPerJOD = fromCfg;
+        }
+      } catch(_){ }
+
+      // بناء 1 USD -> CUR
+      try {
+        const jodPerUSD = (usdPerJOD && usdPerJOD>0) ? (1/usdPerJOD) : null;
+        curPerUSD = null;
+        if (Number.isFinite(fxRatePerUSD) && fxRatePerUSD>0) curPerUSD = fxRatePerUSD;
+        else if (Number.isFinite(fxRatePerJOD) && fxRatePerJOD>0 && Number.isFinite(jodPerUSD) && jodPerUSD>0) curPerUSD = fxRatePerJOD * jodPerUSD;
+        else if ((fxCurrency||'').toUpperCase()==='JOD' && Number.isFinite(jodPerUSD) && jodPerUSD>0) curPerUSD = jodPerUSD;
+
+        // عرض السعر بقاعدة USD
+        let priceText = '—';
+        if (Number.isFinite(curPerUSD) && curPerUSD>0) priceText = `1 USD = ${format4(curPerUSD)} ${(fxCurrency||'').toUpperCase()}`;
+        fxText.textContent  = priceText;
+        rateLine.textContent= priceText;
+      } catch(_){ }
+
+      // تحديث شارات العملة على الحقول
+      try {
+        var fieldPay = document.getElementById('fieldPay');
+        var fieldRecv = document.getElementById('fieldRecv');
+        if (fieldPay) fieldPay.setAttribute('data-cur','USD');
+        if (fieldRecv) fieldRecv.setAttribute('data-cur', (fxCurrency||'').toUpperCase() || '—');
+      } catch(_){ }
 
       const info=m.data.info||{};
       const fields=[['الجهة', info.bank||info.agent],['الاسم', info.accountName],['رقم/معرّف', info.accountNumber||info.wallet],['IBAN', info.iban],['ملاحظات', info.note]].filter(([_,v])=>v);
@@ -417,10 +559,26 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
         ? fields.map(([k,v])=>`<div class="info-item"><strong>${k}:</strong> <div>${v}</div></div>`).join('')
         : '<div class="info-item">لا توجد تفاصيل متاحة.</div>';
 
-      desiredJOD.oninput = ()=>{
-        const v = Number(desiredJOD.value);
-        if (!fxRatePerJOD || !isFinite(v) || v<=0){ receiveCUR.value=''; }
-        else{ receiveCUR.value = (v * fxRatePerJOD).toFixed(2) + ' ' + (fxCurrency||''); }
+      // الحاسبة بمنطق USD ثابت: 1 USD -> CUR
+      sendUSD.oninput = ()=>{
+        const v = Number(sendUSD.value);
+        if (!(Number.isFinite(curPerUSD) && curPerUSD>0) || !isFinite(v) || v<=0){
+          recvCUR.value='';
+        } else {
+          const cur = v * curPerUSD;
+          recvCUR.value = (Math.round(cur*100)/100).toFixed(2);
+        }
+        updateSubmitState();
+      };
+      // عكسياً: من قيمة الاستلام إلى USD
+      recvCUR.oninput = ()=>{
+        const v = Number(recvCUR.value);
+        if (!(Number.isFinite(curPerUSD) && curPerUSD>0) || !isFinite(v) || v<=0){
+          sendUSD.value='';
+        } else {
+          const usd = v / curPerUSD;
+          sendUSD.value = (Math.round(usd*100)/100).toFixed(2);
+        }
         updateSubmitState();
       };
 
@@ -429,11 +587,13 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
 
       updateSubmitState();
       openModal();
-    }
+      hidePreloader();
+      }
+
 
     function amountsValid(){
-      const v = Number(desiredJOD.value);
-      return isFinite(v) && v > 0 && !!fxRatePerJOD;
+      const v = Number(sendUSD.value);
+      return isFinite(v) && v > 0 && Number.isFinite(curPerUSD) && curPerUSD>0;
     }
     function recipientValid(){
       const idOk = (recipientId.value||'').trim().length >= 3;
@@ -449,7 +609,7 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
     async function ensureConfirmCss(idToken){
       if (__CONFIRM_CSS_ADDED) return true;
       try{
-        const res = await fetch(`${WORKER_BASE}/ui/confirm.css`, { headers: { Authorization: 'Bearer '+idToken }});
+        const res = await fetch(`${WORKER}/ui/confirm.css`, { headers: { Authorization: 'Bearer '+idToken }});
         if(!res.ok){ __CONFIRM_CSS_ADDED=false; return false; }
         const css = await res.text();
         const st = document.createElement('style'); st.id='zconfirm-style'; st.textContent = css;
@@ -461,12 +621,12 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
       try{ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }catch(_){ return String(s||''); }
     }
 
-    function showWithdrawConfirm({ code, debitedJOD, amountCurrency, currency, ratePerJOD }){
+    function showWithdrawConfirm({ code, debitedUSD, amountCurrency, currency, ratePerUSD }){
       try{ const old = document.getElementById('zconfirm'); if (old) old.remove(); }catch(_){ }
       const overlay = document.createElement('div'); overlay.className='zconfirm-overlay'; overlay.id='zconfirm';
-      const jodTxt = (debitedJOD!=null && isFinite(Number(debitedJOD))) ? `${Number(debitedJOD).toFixed(2)} JOD` : '—';
+      const usdTxt = (debitedUSD!=null && isFinite(Number(debitedUSD))) ? `${Number(debitedUSD).toFixed(2)} USD` : '—';
       const payTxt = (amountCurrency!=null && isFinite(Number(amountCurrency))) ? `${Number(amountCurrency).toFixed(2)} ${currency||''}` : '—';
-      const fxTxt = (ratePerJOD!=null && isFinite(Number(ratePerJOD))) ? `1 JOD = ${Number(ratePerJOD).toFixed(4)} ${currency||''}` : '';
+      const fxTxt = (ratePerUSD!=null && isFinite(Number(ratePerUSD))) ? `1 USD = ${Number(ratePerUSD).toFixed(4)} ${currency||''}` : '';
       overlay.innerHTML = `
         <div class="zconfirm-modal" role="dialog" aria-label="تأكيد السحب">
           <div class="zconfirm-header">
@@ -475,7 +635,7 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
           </div>
           <div class="zconfirm-body">
             <div class="zrow"><div class="zlabel">الكود</div><div class="zvalue zmono">${zEscHtml(code||'—')}</div></div>
-            <div class="zrow"><div class="zlabel">سيُخصم</div><div class="zvalue">${zEscHtml(jodTxt)}</div></div>
+            <div class="zrow"><div class="zlabel">سيُخصم</div><div class="zvalue">${zEscHtml(usdTxt)}</div></div>
             <div class="zrow"><div class="zlabel">سيستلم</div><div class="zvalue">${zEscHtml(payTxt)}</div></div>
             ${fxTxt? `<div class="zfx">السعر من الخادم: ${zEscHtml(fxTxt)}</div>`:''}
           </div>
@@ -497,7 +657,7 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
     }
 
     async function handleSubmitWithdraw(country, method){
-      if(!amountsValid()) return alert('أدخل قيمة صحيحة بالدينار.');
+      if(!amountsValid()) return alert('أدخل قيمة صحيحة بالدولار.');
       if(!recipientValid()) return alert('أدخل رقم/معرّف واسم مستخدم صحيحين (٣ أحرف على الأقل).');
       if(!window.turnstileToken) return alert('أكمل التحقق الأمني Turnstile.');
 
@@ -509,13 +669,13 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
           countryName: country?.data?.name || "",
           methodId:   method?.id || "",
           methodName: method?.data?.name || "",
-          desiredJOD: Number(desiredJOD.value),
+          desiredUSD: Number.isFinite(Number(sendUSD.value))? Number(Number(sendUSD.value).toFixed(2)) : 0,
           payoutTarget: (recipientId.value||'').trim(),     // المطلوب بواسطة الباك-إند
           payoutName:   (recipientName.value||'').trim(),   // معلومة إضافية
           turnstileToken: window.turnstileToken
         };
 
-        const res = await fetch(`${WORKER_BASE}/withdraw/submit`, {
+        const res = await fetch(`${WORKER}/withdraw/submit`, {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -527,10 +687,10 @@ const WORKER_BASE = "https://edaaandsahb.qusaistore3.workers.dev";
         try { await ensureConfirmCss(idToken); } catch(_){ }
         showWithdrawConfirm({
           code: data.withdrawCode,
-          debitedJOD: data.amountJOD,
+          debitedUSD: data.debitedUSD,
           amountCurrency: data.amountCurrency,
           currency: data.currency,
-          ratePerJOD: data.ratePerJOD
+          ratePerUSD: data.ratePerUSD
         });
         try { closeModalFn(); } catch(_){ }
       } catch (err) {
