@@ -752,13 +752,35 @@ ul.appendChild(ordersLi);
 const walletLi = document.createElement('li');
 walletLi.id = 'walletBtn';
 walletLi.innerHTML = '<i class="fas fa-wallet"></i><a href="#">محفظتي</a>';
-walletLi.onclick = () => navigateTo('wallet.html');
+walletLi.onclick = () => {
+  const file = (location.pathname.split('/').pop() || '').toLowerCase();
+  const isHome = file === '' || file === 'index.html';
+  try { sessionStorage.setItem('nav:fromHome','1'); } catch {}
+  if (isHome) {
+    toggleSidebar();
+    try { showPageLoader(); } catch {}
+    setTimeout(() => { window.location.hash = '#/wallet'; }, 80);
+  } else {
+    navigateTo('index.html#/wallet');
+  }
+};
 walletLi.style.display = 'none';
 ul.appendChild(walletLi);
 // التقييمات
 const reviewsLi = document.createElement('li');
 reviewsLi.innerHTML = '<i class="fa-solid fa-star"></i><a href="#">التقييمات</a>';
-reviewsLi.onclick = () => navigateTo('Reviews.html');
+reviewsLi.onclick = () => {
+  const file = (location.pathname.split('/').pop() || '').toLowerCase();
+  const isHome = file === '' || file === 'index.html';
+  try { sessionStorage.setItem('nav:fromHome','1'); } catch {}
+  if (isHome) {
+    toggleSidebar();
+    try { showPageLoader(); } catch {}
+    setTimeout(() => { window.location.hash = '#/reviews'; }, 80);
+  } else {
+    navigateTo('index.html#/reviews');
+  }
+};
 ul.appendChild(reviewsLi);
 // الإعدادات
 const settingsLi = document.createElement('li');
@@ -899,15 +921,34 @@ function initMobileDock(){
     try { const hasFA = !!document.querySelector('link[href*="font-awesome"], link[href*="fontawesome"], link[href*="/fa"], link[href*="/all.min.css"]'); if (!hasFA) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css'; l.crossOrigin = 'anonymous'; document.head.appendChild(l); } } catch {}
     const dock = document.createElement('nav'); dock.className = 'mobile-dock'; dock.setAttribute('aria-label','الشريط السفلي للجوال');
     const makeItem = (html, key, href) => { if (href) { const a = document.createElement('a'); a.href = href; a.innerHTML = html; a.className = 'dock-item'; a.dataset.key = key; return a; } else { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = html; b.className = 'dock-item'; b.dataset.key = key; return b; } };
-    const wallet = makeItem('<i class="fa-solid fa-wallet" aria-hidden="true"></i>', 'wallet', 'wallet.html'); wallet.setAttribute('aria-label','محفظتي');
+    const wallet = makeItem('<i class="fa-solid fa-wallet" aria-hidden="true"></i>', 'wallet', 'index.html#/wallet'); wallet.setAttribute('aria-label','محفظتي');
     const store  = makeItem('<i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>', 'store', 'index.html#/games'); store.setAttribute('aria-label','المتجر/الألعاب');
     const orders = makeItem('<i class="fa-solid fa-list" aria-hidden="true"></i>', 'orders', 'talabat.html'); orders.setAttribute('aria-label','طلباتي');
     const deposit= makeItem('<i class="fa-solid fa-circle-dollar-to-slot" aria-hidden="true"></i>', 'deposit', 'edaa.html'); deposit.setAttribute('aria-label','شحن الرصيد');
     const home   = makeItem('<i class="fa-solid fa-house" aria-hidden="true"></i>', 'home', 'index.html'); home.setAttribute('aria-label','الرئيسية');
     dock.appendChild(wallet); dock.appendChild(store); dock.appendChild(orders); dock.appendChild(deposit); dock.appendChild(home);
     window.addEventListener('DOMContentLoaded', () => { try { document.body.appendChild(dock); document.body.classList.add('mobile-has-dock'); } catch {} });
-    wallet.addEventListener('click', () => { try { showPageLoader(); } catch {} });
-    function updateActive(){ try { const file = (location.pathname.split('/').pop() || '').toLowerCase(); const storePages = new Set(['games.html','freefire.html','freefireauto.html','freefiremembership.html','freefireinbut.html','freefiren.html','pubg.html','weplay.html','bloodstrike.html','roblox.html','jawaker.html','yala.html','8ball.html','mobaileg.html','instainbut.html']); let key = 'home'; if (file === 'index.html') key = 'home'; else if (file === 'wallet.html') key = 'wallet'; else if (file === 'talabat.html') key = 'orders'; else if (file === 'edaa.html') key = 'deposit'; else if (storePages.has(file)) key = 'store'; dock.querySelectorAll('.dock-item').forEach(el => el.classList.remove('active')); if (key){ const a = dock.querySelector(`.dock-item[data-key="${key}"]`); if (a) a.classList.add('active'); } } catch {} }
+    wallet.addEventListener('click', () => { try { sessionStorage.setItem('nav:fromHome','1'); showPageLoader(); } catch {} });
+    function updateActive(){
+      try {
+        const file = (location.pathname.split('/').pop() || '').toLowerCase();
+        const hash = (location.hash || '').toLowerCase();
+        const storePages = new Set(['games.html','freefire.html','freefireauto.html','freefiremembership.html','freefireinbut.html','freefiren.html','pubg.html','weplay.html','bloodstrike.html','roblox.html','jawaker.html','yala.html','8ball.html','mobaileg.html','instainbut.html']);
+        let key = 'home';
+        if (hash === '#/wallet') key = 'wallet';
+        else if (hash === '#/reviews') key = 'home';
+        else if (hash === '#/games' || hash === '#/social' || hash === '#/software') key = 'store';
+        else if (file === 'index.html') key = 'home';
+        else if (file === 'talabat.html') key = 'orders';
+        else if (file === 'edaa.html') key = 'deposit';
+        else if (storePages.has(file)) key = 'store';
+        dock.querySelectorAll('.dock-item').forEach(el => el.classList.remove('active'));
+        if (key){
+          const a = dock.querySelector(`.dock-item[data-key="${key}"]`);
+          if (a) a.classList.add('active');
+        }
+      } catch {}
+    }
     window.addEventListener('DOMContentLoaded', updateActive); window.addEventListener('pageshow', updateActive);
   } catch {}
 }

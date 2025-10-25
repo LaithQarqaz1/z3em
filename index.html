@@ -93,6 +93,8 @@
   </script>
   <script src="header.js" defer></script>
   <script src="loader.js" defer></script>
+  <script src="reviews-inline.js" defer></script>
+  <script src="wallet-inline.js" defer></script>
   <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js" async></script>
     
 
@@ -187,7 +189,254 @@
   .inline-back{display:none}
   .inline-title{display:none}
   </style>
-  
+
+  <!-- Reviews page inline styles -->
+  <style>
+    .reviews-page{padding:0 16px 48px;}
+    .reviews-page .reviews-spacer{height:70px;}
+    @media(max-width:720px){.reviews-page .reviews-spacer{height:54px;}}
+    .reviews-page *{box-sizing:border-box;}
+    .reviews-page main{max-width:960px;margin:30px auto;background:#fff;border-radius:10px;padding:30px;box-shadow:0 4px 12px rgba(0,0,0,0.1);}
+    @media(max-width:720px){.reviews-page main{margin:20px 15px;padding:20px;}}
+    .reviews-page .review-form{margin-bottom:40px;position:relative;}
+    .reviews-page .user-name{font-weight:bold;margin-bottom:10px;color:#5c5ebf;}
+    .reviews-page .stars{display:flex;justify-content:flex-start;gap:0;font-size:30px;cursor:pointer;color:#ccc;user-select:none;}
+    .reviews-page .stars .selected{color:#ffb400;text-shadow:0 0 5px #ffb400aa;}
+    .reviews-page textarea{width:100%;min-height:100px;padding:12px 15px;font-size:16px;border-radius:8px;border:1px solid #ddd;margin-top:15px;resize:vertical;transition:border-color .3s ease;}
+    .reviews-page textarea:focus{outline:none;border-color:#5c5ebf;box-shadow:0 0 8px #5c5ebf44;}
+    .reviews-page .code-preview{position:absolute;bottom:-30px;right:0;left:0;background-color:rgba(0,123,255,.1);padding:8px 15px;border-radius:8px;color:#555;font-size:14px;opacity:.7;transition:opacity .3s;pointer-events:none;display:none;}
+    .reviews-page button{margin-top:20px;background-color:#5c5ebf;color:#fff;padding:12px 25px;font-size:18px;border:none;border-radius:8px;cursor:pointer;transition:background-color .3s ease;display:block;width:100%;}
+    .reviews-page button:disabled{background-color:#cfc6ff;cursor:not-allowed;}
+    .reviews-page button:hover:not(:disabled){background-color:#3b3e8c;}
+    .reviews-page .rating-filters{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+    .reviews-page .rating-filter{background:#f0f2f5;border:1px solid #ddd;border-radius:20px;padding:8px 15px;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:5px;}
+    .reviews-page .rating-filter:hover{background:#e0e3e7;}
+    .reviews-page .rating-filter.active{background:#5c5ebf;color:#fff;border-color:#5c5ebf;}
+    .reviews-page .rating-filter .stars{font-size:16px;gap:0;color:inherit;}
+    .reviews-page .rating-filter .count{font-size:14px;opacity:.8;}
+    .reviews-page .reviews-list{max-height:800px;overflow-y:auto;padding-right:10px;}
+    .reviews-page .review-item{position:relative;border-bottom:1px solid #eee;padding:12px 0;display:block;}
+    .reviews-page .review-item:last-child{border-bottom:none;}
+    .reviews-page .header-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7a7cd0,#b9bbef);color:#fff;font-weight:800;display:inline-flex;align-items:center;justify-content:center;user-select:none;flex:0 0 28px;margin-inline-end:6px;}
+    .reviews-page .header-avatar.small{width:22px;height:22px;font-size:12px;flex:0 0 22px;}
+    .reviews-page .review-main{min-width:0;}
+    .reviews-page .review-header{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}
+    .reviews-page .review-header .username{font-weight:800;color:#5c5ebf;}
+    .reviews-page .review-header .time{font-size:12px;color:#7a8694;}
+    .reviews-page .review-header .sep{opacity:.6;}
+    .reviews-page .mini-stars{display:inline-flex;gap:2px;margin-inline-start:6px;}
+    .reviews-page .mini-stars i{font-size:12px;color:#ffb400;}
+    .reviews-page .review-user,
+    .reviews-page .review-code,
+    .reviews-page .review-stars{display:none;}
+    .reviews-page .review-text{font-size:17px;line-height:1.5;white-space:pre-wrap;color:#444;}
+    .reviews-page .review-date{font-size:13px;color:#999;margin-top:6px;}
+    .reviews-page .review-actions{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;}
+    .reviews-page .vote-btn{display:inline-flex!important;align-items:center;gap:6px;padding:4px 10px;border-radius:18px;border:1px solid #ddd;background:#f7f8fa!important;cursor:pointer;font-size:13px;line-height:1;width:auto!important;box-shadow:none!important;}
+    .reviews-page .vote-btn i{color:#64748b;font-size:14px;}
+    .reviews-page .vote-btn.active{background:#e6f4ff;border-color:#eef0ff;}
+    .reviews-page .vote-count{font-weight:700;color:#3b3e8c;}
+    .reviews-page .vote-btn.reply .reply-label{margin-inline-start:4px;}
+    .reviews-page .reply-box{display:none;margin-top:8px;flex-basis:100%;width:100%;background:linear-gradient(180deg,#f9fcff,#f1f7ff);border:1px solid #eceeff;border-radius:14px;padding:14px 16px;box-shadow:0 4px 14px rgba(122,124,208,0.12);flex-direction:column;gap:10px;transition:box-shadow .2s ease,border-color .2s ease;}
+    .reviews-page .reply-box.open{display:flex;}
+    .reviews-page .reply-box .reply-input{width:100%;background:#fff;color:#111827;border:1px solid #cbd5e1;border-radius:12px;padding:12px 14px;outline:none;transition:border-color .2s ease,box-shadow .2s ease;min-height:120px;resize:vertical;font-size:15px;line-height:1.6;}
+    .reviews-page .reply-box .reply-input:focus{border-color:#7a7cd0;box-shadow:0 0 0 3px rgba(122,124,208,.20);}
+    .reviews-page .reply-box .reply-input::placeholder{color:#9ea0d9;}
+    .reviews-page .reply-box .send-reply{margin-top:8px;width:auto!important;display:inline-flex!important;padding:10px 16px;font-size:15px;background:linear-gradient(135deg,#7a7cd0,#5c5ebf);color:#fff;border:none;border-radius:12px;cursor:pointer;box-shadow:0 4px 12px rgba(2,132,199,.25);transition:transform .15s ease,filter .15s ease,box-shadow .2s ease;align-self:flex-start;}
+    .reviews-page .reply-box .send-reply:hover{filter:brightness(1.05);transform:translateY(-1px);}
+    .reviews-page .reply-box .send-reply:active{transform:translateY(0);}
+    .reviews-page .reply-box .cancel-reply{margin-top:8px;width:auto!important;display:inline-flex!important;padding:10px 16px;font-size:14px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;color:#475569;cursor:pointer;}
+    .reviews-page .replies{margin-top:10px;background:transparent;border:0;padding:0;}
+    .reviews-page .replies.collapsed{display:none;}
+    .reviews-page .replies-list{margin-top:8px;margin-inline-start:16px;padding-inline-start:14px;border-inline-start:2px solid #e5e7eb;}
+    .reviews-page .reply-item{margin-top:10px;}
+    .reviews-page .reply-meta{font-size:12px;color:#666;}
+    .reviews-page .reply-actions{display:flex;align-items:center;gap:14px;margin-top:6px;}
+    .reviews-page .reply-link{background:transparent!important;border:0!important;padding:0!important;margin:0!important;color:#5c5ebf!important;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;line-height:1;width:auto!important;box-shadow:none!important;border-radius:0!important;}
+    .reviews-page .reply-link:hover{text-decoration:underline;}
+    .reviews-page .reply-text{white-space:pre-wrap;color:#333;}
+    .reviews-page .reviews-list .vote-btn,
+    .reviews-page .reviews-list .send-reply,
+    .reviews-page .reviews-list .cancel-reply{width:auto!important;display:inline-flex!important;}
+    .reviews-page .reviews-list .review-actions .vote-btn:empty{display:none!important;}
+    .reviews-page .reviews-list .review-actions .vote-btn.reply i{font-size:14px;}
+    .reviews-page .reviews-list::-webkit-scrollbar{width:8px;}
+    .reviews-page .reviews-list::-webkit-scrollbar-track{background:#f1f1f1;border-radius:4px;}
+    .reviews-page .reviews-list::-webkit-scrollbar-thumb{background:#5c5ebf;border-radius:4px;}
+    body.dark-mode .reviews-page main{background:#0f1024;box-shadow:0 6px 18px rgba(0,0,0,.45);color:#f0f1ff;}
+    body.dark-mode .reviews-page .user-name,
+    body.dark-mode .reviews-page .review-user{color:#9c9ede;}
+    body.dark-mode .reviews-page .stars{color:#64748b;}
+    body.dark-mode .reviews-page .stars .selected,
+    body.dark-mode .reviews-page .review-stars{color:#fbbf24;text-shadow:0 0 6px #fbbf2499;}
+    body.dark-mode .reviews-page textarea{background:#05050b;color:#f0f1ff;border-color:#2b2d52;}
+    body.dark-mode .reviews-page textarea:focus{border-color:#b9bbef;box-shadow:0 0 8px #b9bbef55;}
+    body.dark-mode .reviews-page button{background:linear-gradient(135deg,#7a7cd0,#3b3e8c);color:#f0f1ff;}
+    body.dark-mode .reviews-page button:hover:not(:disabled){background:#5c5ebf;}
+    body.dark-mode .reviews-page button:disabled{background-color:#2e316f;}
+    body.dark-mode .reviews-page .rating-filter{background:#0e1623;border-color:#2b2d52;color:#f0f1ff;}
+    body.dark-mode .reviews-page .rating-filter:hover{background:#0c1420;}
+    body.dark-mode .reviews-page .rating-filter.active{background:#7a7cd0;border-color:#7a7cd0;color:#05050b;}
+    body.dark-mode .reviews-page .review-text{color:#dbe2ea;}
+    body.dark-mode .reviews-page .review-date{color:#9ea0d9;}
+    body.dark-mode .reviews-page .review-header .username{color:#9c9ede;}
+    body.dark-mode .reviews-page .review-header .time{color:#9fb0c5;}
+    body.dark-mode .reviews-page .vote-btn{background:#0e1623!important;border-color:#2b2d52;color:#f0f1ff;}
+    body.dark-mode .reviews-page .vote-btn i{color:#9aa9bc;}
+    body.dark-mode .reviews-page .vote-btn.active{background:#1c1d38;border-color:#414391;}
+    body.dark-mode .reviews-page .reply-box{background:#05050b;border-color:#2b2d52;box-shadow:0 4px 14px rgba(0,0,0,.45);}
+    body.dark-mode .reviews-page .reply-box .reply-input{background:#0e1623;color:#f0f1ff;border-color:#2b2d52;}
+    body.dark-mode .reviews-page .reply-box .reply-input:focus{border-color:#b9bbef;box-shadow:0 0 0 3px rgba(56,189,248,.25);}
+    body.dark-mode .reviews-page .reply-box .cancel-reply{background:#0e1623;color:#cbd5e1;border-color:#2b2d52;}
+    body.dark-mode .reviews-page .replies{background:transparent;border-color:transparent;}
+    body.dark-mode .reviews-page .replies-list{border-inline-start-color:#2b2d52;}
+    body.dark-mode .reviews-page .reply-text{color:#dbe2ea;}
+    body.dark-mode .reviews-page .reviews-list::-webkit-scrollbar-track{background:#05050b;}
+    body.dark-mode .reviews-page .reviews-list::-webkit-scrollbar-thumb{background:#7a7cd0;}
+  </style>
+
+  <!-- Wallet page inline styles -->
+  <style>
+    .wallet-page{padding:0 16px 48px;}
+    .wallet-page .wallet-spacer{height:32px;}
+    @media(max-width:720px){.wallet-page .wallet-spacer{height:24px;}}
+    .wallet-page main{
+      max-width:960px;
+      margin:24px auto;
+      background:#fff;
+      border-radius:16px;
+      padding:28px;
+      box-shadow:0 8px 24px rgba(15,23,42,0.08);
+      border:1px solid rgba(226,232,240,.9);
+    }
+    @media(max-width:720px){.wallet-page main{margin:16px 12px;padding:22px;}}
+    .wallet-page h2{margin:0 0 12px;font-size:1.5rem;color:#5c5ebf;display:flex;align-items:center;gap:10px;}
+    .wallet-page .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+    .wallet-page .chip{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid #e5e7eb;
+      background:#fff;
+      cursor:pointer;
+      font-weight:700;
+      transition:.2s;
+    }
+    .wallet-page .chip.active{box-shadow:0 0 0 2px rgba(122,124,208,.15);}
+    .wallet-page .chip[data-filter="all"].active{background:#eef0ff;border-color:#7a7cd0;color:#2e316f;}
+    .wallet-page .chip[data-filter="pending"]{background:#fff7ed;border-color:#fed7aa;color:#7c2d12;}
+    .wallet-page .chip[data-filter="pending"].active{background:#fde7c7;border-color:#fb923c;}
+    .wallet-page .chip[data-filter="approved"]{background:#dcfce7;border-color:#86efac;color:#065f46;}
+    .wallet-page .chip[data-filter="approved"].active{background:#bbf7d0;border-color:#22c55e;}
+    .wallet-page .chip[data-filter="rejected"]{background:#fee2e2;border-color:#fecaca;color:#7f1d1d;}
+    .wallet-page .chip[data-filter="rejected"].active{background:#fecaca;border-color:#ef4444;}
+    .wallet-page .list{display:flex;flex-direction:column;gap:16px;margin-top:14px;}
+    .wallet-page .card{
+      border:1px solid #e2e8f0;
+      border-radius:16px;
+      padding:18px;
+      background:#fff;
+      box-shadow:0 6px 18px rgba(15,23,42,.06);
+      transition:border-color .2s ease, box-shadow .2s ease;
+      position:relative;
+      overflow:hidden;
+    }
+    .wallet-page .card.selected{border-color:#7a7cd0;box-shadow:0 0 0 2px rgba(122,124,208,.18);}
+    .wallet-page .card header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;}
+    .wallet-page .header-left{display:flex;flex-direction:column;gap:6px;}
+    @media(min-width:600px){.wallet-page .header-left{flex-direction:row;align-items:center;gap:16px;}}
+    .wallet-page .direction{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:1rem;}
+    .wallet-page .direction i{font-size:1rem;}
+    .wallet-page .direction.in{color:#16a34a;}
+    .wallet-page .direction.out{color:#dc2626;}
+    .wallet-page .code{font-family:'Cairo',sans-serif;font-weight:700;color:#1f2937;font-size:1rem;display:inline-flex;align-items:center;gap:6px;}
+    .wallet-page .code-label{color:#6b7280;font-weight:600;font-size:.95rem;}
+    .wallet-page .code-btn,
+    .wallet-page .code-status-btn{
+      border:none;
+      background:#eef0ff;
+      color:#5c5ebf;
+      border-radius:12px;
+      padding:6px 12px;
+      font-weight:700;
+      cursor:pointer;
+      transition:.2s;
+    }
+    .wallet-page .code-btn{
+      background:#fff;
+      border:1px solid #d1d5db;
+      color:#1f2937;
+      box-shadow:0 1px 2px rgba(15,23,42,.08);
+    }
+    .wallet-page .code-btn:hover{border-color:#7a7cd0;color:#5c5ebf;box-shadow:0 2px 6px rgba(122,124,208,.15);}
+    .wallet-page .code-status-btn{background:#eef0ff;color:#5c5ebf;}
+    .wallet-page .code-status-btn:hover{background:#dce0ff;}
+    .wallet-page .status{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 10px;
+      border-radius:999px;
+      font-weight:700;
+      border:1px solid transparent;
+      background:#f3f4f6;
+      color:#374151;
+    }
+    .wallet-page .status i{font-size:.85rem;}
+    .wallet-page .status.pending{background:#fff7ed;color:#7c2d12;border-color:#fed7aa;}
+    .wallet-page .status.approved{background:#dcfce7;color:#065f46;border-color:#86efac;}
+    .wallet-page .status.rejected{background:#fee2e2;color:#7f1d1d;border-color:#fecaca;}
+    .wallet-page .meta{display:flex;flex-wrap:wrap;gap:14px;color:#4b5563;margin-top:12px;}
+    .wallet-page .meta span{display:inline-flex;align-items:center;gap:6px;}
+    .wallet-page .meta i{color:#6f72a6;}
+    .wallet-page .details{margin-top:12px;color:#4b5563;line-height:1.8;}
+    .wallet-page .proof{margin-top:8px;}
+    .wallet-page .proof a{color:#5c5ebf;text-decoration:none;font-weight:700;}
+    .wallet-page .empty{
+      padding:24px;
+      text-align:center;
+      border:1px dashed #cbd5f5;
+      border-radius:16px;
+      background:#f8f9ff;
+      color:#6f72a6;
+    }
+    .wallet-page .loading{position:relative;overflow:hidden;pointer-events:none;}
+    .wallet-page .loading::after{
+      content:'';
+      position:absolute;
+      inset:0;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);
+      animation:wallet-shimmer 1.2s infinite;
+    }
+    @keyframes wallet-shimmer{
+      0%{transform:translateX(-100%);}
+      100%{transform:translateX(100%);}
+    }
+    body.dark-mode .wallet-page main{background:#0f1024;border-color:#1f2937;box-shadow:0 8px 26px rgba(0,0,0,.4);}
+    body.dark-mode .wallet-page .chip{background:#0f1024;border-color:#2b2d52;color:#f0f1ff;}
+    body.dark-mode .wallet-page .chip[data-filter="all"].active{background:#151836;border-color:#7a7cd0;color:#9c9ede;}
+    body.dark-mode .wallet-page .chip[data-filter="pending"]{background:#2b2f3a;border-color:#a16207;color:#fde68a;}
+    body.dark-mode .wallet-page .chip[data-filter="approved"]{background:#064e3b;border-color:#047857;color:#bbf7d0;}
+    body.dark-mode .wallet-page .chip[data-filter="rejected"]{background:#3f1d1d;border-color:#7f1d1d;color:#fecaca;}
+    body.dark-mode .wallet-page .card{background:#111827;border-color:#1f2937;box-shadow:0 8px 28px rgba(0,0,0,.35);}
+    body.dark-mode .wallet-page .card.selected{box-shadow:0 0 0 2px rgba(122,124,208,.25);}
+    body.dark-mode .wallet-page .code{color:#e2e8f0;}
+    body.dark-mode .wallet-page .code-btn{
+      background:#141b2f;
+      border-color:#2b2d52;
+      color:#e2e8f0;
+    }
+    body.dark-mode .wallet-page .code-btn:hover{border-color:#7a7cd0;color:#9c9ede;}
+    body.dark-mode .wallet-page .direction.in{color:#22c55e;}
+    body.dark-mode .wallet-page .direction.out{color:#f87171;}
+    body.dark-mode .wallet-page .status{background:#1f2937;color:#e2e8f0;border-color:#374151;}
+    body.dark-mode .wallet-page .status.pending{background:#2b2f3a;color:#fde68a;border-color:#a16207;}
+    body.dark-mode .wallet-page .status.approved{background:#064e3b;color:#bbf7d0;border-color:#047857;}
+    body.dark-mode .wallet-page .status.rejected{background:#3f1d1d;color:#fecaca;border-color:#7f1d1d;}
+    body.dark-mode .wallet-page .meta{color:#cbd5e1;}
+    body.dark-mode .wallet-page .meta i{color:#9ea0d9;}
+    body.dark-mode .wallet-page .proof a{color:#a3a8ff;}
+    body.dark-mode .wallet-page .empty{background:#141832;border-color:#2b2d52;color:#cbd5e1;}
+  </style>
   <!-- Settings page inline styles -->
   <style>
     .settings-page{
@@ -1786,13 +2035,154 @@ button#logoutBtn:hover{background:#990000}
         };
       })();
 
+      var reviewsRoute = (function(){
+        var state = {
+          root: null,
+          initialized: false
+        };
+
+        function ensureRoot(){
+          if (state.root) return state.root;
+          var root = document.createElement('div');
+          root.className = 'reviews-page';
+          root.innerHTML = [
+            '<div class="reviews-spacer" aria-hidden="true"></div>',
+            '<main>',
+            '  <section class="review-form" aria-label="نموذج إضافة تقييم وتعليق">',
+            '    <div class="user-name" id="currentUserName"></div>',
+            '    <div class="stars" id="starRating" role="radiogroup" aria-label="اختر عدد النجوم من 1 إلى 5">',
+            '      <i class="fa-regular fa-star" data-value="1" role="radio" aria-checked="false" tabindex="0" aria-label="1 نجمة"></i>',
+            '      <i class="fa-regular fa-star" data-value="2" role="radio" aria-checked="false" tabindex="-1" aria-label="2 نجوم"></i>',
+            '      <i class="fa-regular fa-star" data-value="3" role="radio" aria-checked="false" tabindex="-1" aria-label="3 نجوم"></i>',
+            '      <i class="fa-regular fa-star" data-value="4" role="radio" aria-checked="false" tabindex="-1" aria-label="4 نجوم"></i>',
+            '      <i class="fa-regular fa-star" data-value="5" role="radio" aria-checked="false" tabindex="-1" aria-label="5 نجوم"></i>',
+            '    </div>',
+            '    <textarea id="reviewText" placeholder="اكتب تعليقك هنا..." aria-label="نص التعليق"></textarea>',
+            '    <div class="code-preview" id="codePreview"></div>',
+            '    <button id="submitReview" disabled>إرسال التقييم</button>',
+            '  </section>',
+            '  <section class="rating-filters" id="ratingFilters">',
+            '    <div class="rating-filter active" data-rating="0">الكل</div>',
+            '    <div class="rating-filter" data-rating="5">',
+            '      <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>',
+            '      <span class="count" id="count-5">0</span>',
+            '    </div>',
+            '    <div class="rating-filter" data-rating="4">',
+            '      <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></div>',
+            '      <span class="count" id="count-4">0</span>',
+            '    </div>',
+            '    <div class="rating-filter" data-rating="3">',
+            '      <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i></div>',
+            '      <span class="count" id="count-3">0</span>',
+            '    </div>',
+            '    <div class="rating-filter" data-rating="2">',
+            '      <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i></div>',
+            '      <span class="count" id="count-2">0</span>',
+            '    </div>',
+            '    <div class="rating-filter" data-rating="1">',
+            '      <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i></div>',
+            '      <span class="count" id="count-1">0</span>',
+            '    </div>',
+            '  </section>',
+            '  <section class="reviews-list" id="reviewsList" aria-live="polite" aria-relevant="additions"></section>',
+            '</main>'
+          ].join('');
+          state.root = root;
+          return root;
+        }
+
+        function build(){
+          var frag = document.createDocumentFragment();
+          frag.appendChild(ensureRoot());
+          return frag;
+        }
+
+        function init(){
+          if (state.initialized) return;
+          if (!document.getElementById('reviewsList')) return;
+          if (typeof window.__initReviewsPage === 'function'){
+            window.__initReviewsPage();
+            state.initialized = true;
+          }
+        }
+
+        function onShow(){
+          init();
+          if (typeof window.__REVIEWS_REFRESH__ === 'function'){
+            try { window.__REVIEWS_REFRESH__(); } catch(_){}
+          }
+        }
+
+      return {
+        build: build,
+        onShow: onShow
+      };
+    })();
+
+      var walletRoute = (function(){
+        var state = {
+          root: null,
+          initialized: false
+        };
+
+        function ensureRoot(){
+          if (state.root) return state.root;
+          var root = document.createElement('div');
+          root.className = 'wallet-page';
+          root.innerHTML = [
+            '<div class="wallet-spacer" aria-hidden="true"></div>',
+            '<main>',
+            '  <h2><i class="fas fa-wallet"></i> محفظتي</h2>',
+            '  <div class="toolbar" id="walletToolbar">',
+            '    <button class="chip" data-filter="all">الكل</button>',
+            '    <button class="chip" data-filter="pending">قيد المراجعة</button>',
+            '    <button class="chip" data-filter="approved">مقبولة</button>',
+            '    <button class="chip" data-filter="rejected">مرفوضة</button>',
+            '  </div>',
+            '  <div id="walletList" class="list"></div>',
+            '</main>'
+          ].join('');
+          state.root = root;
+          return root;
+        }
+
+        function build(){
+          var frag = document.createDocumentFragment();
+          frag.appendChild(ensureRoot());
+          return frag;
+        }
+
+        function init(){
+          if (state.initialized) return;
+          if (!document.getElementById('walletList')) return;
+          if (typeof window.__initWalletPage === 'function'){
+            window.__initWalletPage();
+            state.initialized = true;
+          }
+        }
+
+        function onShow(){
+          init();
+          if (typeof window.__WALLET_REFRESH__ === 'function'){
+            try { window.__WALLET_REFRESH__(); } catch(_){}
+          }
+        }
+
+        return {
+          build: build,
+          onShow: onShow
+        };
+      })();
+
       var routes = {
         'games':         { url: 'games.html',         title: 'الألعاب' },
         'social':        { url: 'social.html',        title: 'مواقع التواصل' },
         'software':      { url: 'software.html',      title: 'اشتراكات البرامج' },
         'freefireinbut': { url: 'freefireinbut.html', title: 'فري فاير' },
         'webdev':        { url: 'webdev.html',        title: 'تطوير مواقع' },
-        'settings':      { title: 'إعدادات الحساب', build: settingsRoute.build, onShow: settingsRoute.onShow }
+        'settings':      { title: 'إعدادات الحساب', build: settingsRoute.build, onShow: settingsRoute.onShow },
+        'reviews':       { title: 'التقييمات', build: reviewsRoute.build, onShow: reviewsRoute.onShow },
+        'wallet':        { title: 'محفظتي', build: walletRoute.build, onShow: walletRoute.onShow }
       };
 
       var home = {
@@ -2083,6 +2473,8 @@ button#logoutBtn:hover{background:#990000}
         if (path.endsWith('software.html'))       { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('software'); return; }
         if (path.endsWith('webdev.html'))         { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('webdev'); return; }
         if (path.endsWith('freefireinbut.html'))  { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('freefireinbut'); return; }
+        if (path.endsWith('reviews.html'))        { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('reviews'); return; }
+        if (path.endsWith('wallet.html'))         { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('wallet'); return; }
         if (path.endsWith('settings.html'))       { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('settings'); return; }
       }
       document.addEventListener('pointerdown', handleCardNavEvent, true);

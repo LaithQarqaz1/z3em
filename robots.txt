@@ -15,7 +15,6 @@ Allow: /freefireinbut.html
 Allow: /yala.html
 Allow: /bloodstrike.html
 Allow: /freefireauto.html
-Allow: /wallet.html
 Allow: /pubg.html
 Allow: /mobailleg.html
 Allow: /8ball.html
@@ -24,7 +23,6 @@ Allow: /weplay.html
 Allow: /instainbut.html
 Allow: /indexteam.html
 Allow: /login.html
-Allow: /Reviews.html
 Allow: /settings.html
 Allow: /talabat.html
 Allow: /terms.html
@@ -44,10 +42,8 @@ Allow: /1-main/freefireinbut.html
 Allow: /1-main/yala.html
 Allow: /1-main/bloodstrike.html
 Allow: /1-main/freefireauto.html
-Allow: /1-main/wallet.html
 Allow: /1-main/pubg.html
 Allow: /1-main/roblox.html
-Allow: /1-main/Reviews.html
 Allow: /1-main/indexteam.html
 Allow: /1-main/terms.html
 Allow: /1-main/freefire.html
