@@ -23,62 +23,62 @@
 <style>
 /* ==== Dark Mode for talabat page ==== */
 body.dark-mode .content-container{
-  background:#0f172a;
-  color:#e6edf3;
+  background:#0f1024;
+  color:#f0f1ff;
   box-shadow:0 8px 22px rgba(0,0,0,0.35);
-  border:1px solid #334155;
+  border:1px solid #2b2d52;
   border-radius:16px;
   padding:20px;
 }
 
 /* العنوان والأيقونة */
 body.dark-mode .content-container h2{
-  color:#7dd3fc;
+  color:#9c9ede;
 }
 body.dark-mode .content-container h2 i{
-  color:#38bdf8;
+  color:#b9bbef;
 }
 
 /* قائمة الطلبات */
 body.dark-mode .orders-list{
-  background:#0b1220;
-  border:1px solid #334155;
-  color:#e6edf3;
+  background:#05050b;
+  border:1px solid #2b2d52;
+  color:#f0f1ff;
   border-radius:14px;
   padding:12px;
 }
-body.dark-mode .orders-list::-webkit-scrollbar-track{ background:#0b1220; }
-body.dark-mode .orders-list::-webkit-scrollbar-thumb{ background:#0ea5e9; }
+body.dark-mode .orders-list::-webkit-scrollbar-track{ background:#05050b; }
+body.dark-mode .orders-list::-webkit-scrollbar-thumb{ background:#7a7cd0; }
 
 /* الفوتر ومربعات الأيقونات */
 body.dark-mode .footerContainer{
-  background:linear-gradient(135deg,#0e7490,#083344);
+  background:linear-gradient(135deg,#414391,#1c1d38);
   box-shadow:0 8px 18px rgba(0,0,0,0.35);
 }
 body.dark-mode .footer-title{
-  color:#e6edf3;
+  color:#f0f1ff;
 }
 body.dark-mode .icon-box{
-  background:#0f172a;
-  color:#e6edf3;
+  background:#0f1024;
+  color:#f0f1ff;
   box-shadow:0 6px 14px rgba(0,0,0,0.30);
-  border:1px solid #334155;
+  border:1px solid #2b2d52;
 }
-body.dark-mode .icon-box i{ color:#7dd3fc; }
-body.dark-mode .icon-box h3{ color:#e6edf3; }
+body.dark-mode .icon-box i{ color:#9c9ede; }
+body.dark-mode .icon-box h3{ color:#f0f1ff; }
 body.dark-mode .icon-box p{ color:#cbd5e1; }
 
 
 /* Dark mode style for order cards */
 body.dark-mode .order-card {
   background: #1a2234;        /* خلفية داكنة */
-  color: #e6edf3;             /* النصوص فاتحة */
-  border: 1px solid #334155;  /* إطار أنعم */
+  color: #f0f1ff;             /* النصوص فاتحة */
+  border: 1px solid #2b2d52;  /* إطار أنعم */
 }
 
 body.dark-mode .order-card .order-header {
-  background: #0f172a;        /* تمييز الهيدر داخل الكارد */
-  color: #e6edf3;
+  background: #0f1024;        /* تمييز الهيدر داخل الكارد */
+  color: #f0f1ff;
 }
 
 body.dark-mode .order-card .order-status {
@@ -86,13 +86,13 @@ body.dark-mode .order-card .order-status {
 }
 
 body.dark-mode .order-card .order-details {
-  background: #0b1220;
+  background: #05050b;
   color: #dbe2ea;
 }
 
 /* تحسين النصوص في تفاصيل الطلب للوضع الداكن */
 body.dark-mode .order-card .order-details {
-  background: #0b1220;
+  background: #05050b;
   color: #ffffff;              /* جعل النص أبيض واضح */
 }
 
@@ -104,22 +104,22 @@ body.dark-mode .order-card .order-details span {
 }
 
 body.dark-mode .order-card .order-details strong {
-  color: #93c5fd !important;   /* تمييز النص الغامق بلون أزرق فاتح */
+  color: #9c9ede !important;   /* تمييز النص الغامق بلون أزرق فاتح */
 }
 
 /* ===== شريط أدوات الطلبات (مثل المحفظة) ===== */
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 12px}
 .chip{padding:6px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-weight:700}
-.chip.active{box-shadow:0 0 0 2px rgba(14,165,233,.15)}
-.chip[data-filter="all"].active{background:#e5f3fb;border-color:#0ea5e9;color:#0b4a67}
+.chip.active{box-shadow:0 0 0 2px rgba(122,124,208,.15)}
+.chip[data-filter="all"].active{background:#eef0ff;border-color:#7a7cd0;color:#2e316f}
 .chip[data-filter="pending"]{background:#fff7ed;border-color:#fed7aa;color:#7c2d12}
 .chip[data-filter="pending"].active{background:#fde7c7;border-color:#fb923c;color:#7c2d12}
 .chip[data-filter="approved"]{background:#dcfce7;border-color:#86efac;color:#065f46}
 .chip[data-filter="approved"].active{background:#bbf7d0;border-color:#22c55e;color:#065f46}
 .chip[data-filter="rejected"]{background:#fee2e2;border-color:#fecaca;color:#7f1d1d}
 .chip[data-filter="rejected"].active{background:#fecaca;border-color:#ef4444;color:#7f1d1d}
-body.dark-mode .chip{background:#0f172a;border-color:#334155;color:#e6edf3}
-body.dark-mode .chip[data-filter="all"].active{background:#0b2840;border-color:#0ea5e9;color:#7dd3fc}
+body.dark-mode .chip{background:#0f1024;border-color:#2b2d52;color:#f0f1ff}
+body.dark-mode .chip[data-filter="all"].active{background:#151836;border-color:#7a7cd0;color:#9c9ede}
 body.dark-mode .chip[data-filter="pending"]{background:#2b2f3a;border-color:#a16207;color:#fde68a}
 body.dark-mode .chip[data-filter="approved"]{background:#064e3b;border-color:#047857;color:#bbf7d0}
 body.dark-mode .chip[data-filter="rejected"]{background:#3f1d1d;border-color:#7f1d1d;color:#fecaca}
@@ -129,7 +129,7 @@ body.dark-mode .chip[data-filter="rejected"]{background:#3f1d1d;border-color:#7f
   text-align:center;
   border:1px dashed #e5e7eb;
   border-radius:12px;
-  color:#6b7280;
+  color:#6f72a6;
   background:#fff;
   margin:12px 0;
   /* Center content nicely */
@@ -143,11 +143,11 @@ body.dark-mode .chip[data-filter="rejected"]{background:#3f1d1d;border-color:#7f
   place-items:center;
   place-content:center;
 }
-body.dark-mode #ordersEmptyMessage{background:#0f172a;border-color:#334155;color:#9aa7b7}
+body.dark-mode #ordersEmptyMessage{background:#0f1024;border-color:#2b2d52;color:#9aa7b7}
 /* Empty state illustration */
 #ordersEmptyMessage .illu{display:block;margin:0 auto;align-self:center}
 #ordersEmptyMessage .caption{font-size:14px}
-body.dark-mode #ordersEmptyMessage .paper{fill:#1f2937}
+body.dark-mode #ordersEmptyMessage .paper{fill:#1b1d3b}
 
 
 /* الهواتف (شاشات أصغر من 480px) */
@@ -238,7 +238,7 @@ body.dark-mode #ordersEmptyMessage .paper{fill:#1f2937}
 
   /* الكرت: تبسيط تام + تباين واضح */
   .order-card{
-    background: #0f172a;                 /* داكن نظيف */
+    background: #0f1024;                 /* داكن نظيف */
     border: 1px solid rgba(255,255,255,0.08);
     box-shadow: none;
     border-radius: 12px;
@@ -260,7 +260,7 @@ body.dark-mode #ordersEmptyMessage .paper{fill:#1f2937}
   .order-header > div:first-child{
     font-size: 14px;
     line-height: 1.5;
-    color: #e6edf3;
+    color: #f0f1ff;
   }
   .order-header i{                         /* السهم */
     font-size: 14px;
@@ -283,7 +283,7 @@ body.dark-mode #ordersEmptyMessage .paper{fill:#1f2937}
   .order-details{
     display: none;
     border-top: 1px solid rgba(255,255,255,0.06);
-    background: #0b1220;
+    background: #05050b;
     padding: 12px;
     font-size: 13.5px;
     line-height: 1.6;
@@ -372,14 +372,14 @@ body.dark-mode #ordersEmptyMessage .paper{fill:#1f2937}
 /* ===== تخصيص ألوان الوضع الداكن ===== */
 @media (max-width: 480px) {
   body.dark-mode .order-card {
-    background: #0f172a;
+    background: #0f1024;
     border: 1px solid rgba(255,255,255,0.08);
   }
-  body.dark-mode .order-header > div:first-child { color: #e6edf3; }
+  body.dark-mode .order-header > div:first-child { color: #f0f1ff; }
   body.dark-mode .order-details {
     border-top: 1px solid rgba(255,255,255,0.06);
-    background: #0b1220;
-    color: #e6edf3;
+    background: #05050b;
+    color: #f0f1ff;
   }
 
   /* الوضع الفاتح (عادي) */
@@ -437,28 +437,28 @@ body.dark-mode .order-status {
 .calendar-sub{display:flex;align-items:center;justify-content:space-between;margin:6px 0 10px;font-size:.9rem}
 .calendar-mode{display:flex;gap:6px}
 .calendar-mode-btn{border:1px solid #e5e7eb;background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer}
-.calendar-mode-btn.active{background:#e5f3fb;border-color:#0ea5e9;color:#0b4a67}
-.calendar-selection{color:#334155;font-weight:600;display:none}
+.calendar-mode-btn.active{background:#eef0ff;border-color:#7a7cd0;color:#2e316f}
+.calendar-selection{color:#2b2d52;font-weight:600;display:none}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .calendar-weekday{text-align:center;font-weight:700;font-size:.85rem;padding:6px 0;color:#64748b}
 .calendar-spacer{height:1px}
 .calendar-day{position:relative;text-align:center;padding:10px 0;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;background:#fff}
 .calendar-day .num{position:relative;z-index:1;font-weight:700}
 .calendar-day.has{background:#dcfce7;border-color:#86efac;color:#065f46}
-.calendar-day.active{background:#e0f2fe;border-color:#93c5fd;outline:none}
+.calendar-day.active{background:#e0f2fe;border-color:#9c9ede;outline:none}
 .calendar-day.disabled{opacity:.5;cursor:not-allowed;pointer-events:none}
-.calendar-day.in-range{background:#e0f2fe;border-color:#93c5fd}
-.calendar-day.range-start,.calendar-day.range-end{background:#e0f2fe;border-color:#93c5fd;outline:none}
+.calendar-day.in-range{background:#e0f2fe;border-color:#9c9ede}
+.calendar-day.range-start,.calendar-day.range-end{background:#e0f2fe;border-color:#9c9ede;outline:none}
 .calendar-day .count{position:absolute;top:-6px;inset-inline-end:-6px;background:#22c55e;color:#fff;border-radius:999px;min-width:18px;height:18px;line-height:18px;padding:0 6px;font-size:11px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
-body.dark-mode .calendar-panel{background:#0f172a;color:#e6edf3;border-color:#334155}
-body.dark-mode .cal-nav{background:#0f172a;border-color:#334155;color:#e6edf3}
-body.dark-mode .calendar-day{background:#0f172a;border-color:#334155}
+body.dark-mode .calendar-panel{background:#0f1024;color:#f0f1ff;border-color:#2b2d52}
+body.dark-mode .cal-nav{background:#0f1024;border-color:#2b2d52;color:#f0f1ff}
+body.dark-mode .calendar-day{background:#0f1024;border-color:#2b2d52}
 body.dark-mode .calendar-day.has{background:#064e3b;border-color:#047857;color:#bbf7d0}
-body.dark-mode .calendar-mode-btn{background:#0f172a;border-color:#334155;color:#e6edf3}
-body.dark-mode .calendar-mode-btn.active{background:#0b2840;border-color:#0ea5e9;color:#7dd3fc}
-body.dark-mode .calendar-day.in-range{background:#0b2840;border-color:#0ea5e9}
-body.dark-mode .calendar-day.active{background:#0b2840;border-color:#0ea5e9;outline:none}
-body.dark-mode .calendar-day.range-start, body.dark-mode .calendar-day.range-end{background:#0b2840;border-color:#0ea5e9;outline:none}
+body.dark-mode .calendar-mode-btn{background:#0f1024;border-color:#2b2d52;color:#f0f1ff}
+body.dark-mode .calendar-mode-btn.active{background:#151836;border-color:#7a7cd0;color:#9c9ede}
+body.dark-mode .calendar-day.in-range{background:#151836;border-color:#7a7cd0}
+body.dark-mode .calendar-day.active{background:#151836;border-color:#7a7cd0;outline:none}
+body.dark-mode .calendar-day.range-start, body.dark-mode .calendar-day.range-end{background:#151836;border-color:#7a7cd0;outline:none}
 
 /* Mobile tuning */
 @media (max-width: 420px){
@@ -614,5 +614,7 @@ function toggleDetails(code) {
 
 </body>
 </html>
+
+
 
 

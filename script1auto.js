@@ -1,4 +1,4 @@
-// ================== إعدادات Firebase (كما هي) ==================
+﻿// ================== إعدادات Firebase (كما هي) ==================
 const firebaseConfig = {
           apiKey:"AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
           authDomain:"z3em-d9b11.firebaseapp.com",
@@ -447,8 +447,8 @@ const detectTheme = () => {
       pageBg:        dark ? "#0a0a0f" : "#f7f7fb",
       cardBg:        dark ? "#0e0d13" : "#ffffff",
       cardText:      dark ? "#e8e7f3" : "#111111",
-      subtleTx:      dark ? "#bdbdd0" : "#6b7280",
-      codeTx:        dark ? "#e6edf3" : "#111111",
+      subtleTx:      dark ? "#bdbdd0" : "#6f72a6",
+      codeTx:        dark ? "#f0f1ff" : "#111111",
       bannerBg:      "#21c065",
       bannerText:    "#ffffff",
       iconBg:        "#ffe34f",
@@ -574,4 +574,6 @@ const detectTheme = () => {
 document.addEventListener('DOMContentLoaded', () => {
   // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
 });
+
+
 

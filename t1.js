@@ -1,4 +1,4 @@
- 
+﻿ 
 // إنشاء العنصر الرئيسي للحاوية
 const contentContainer = document.createElement("div");
 contentContainer.className = "content-container";
@@ -131,3 +131,4 @@ function showOrderDetails(value) {
     details.innerHTML = '';
   }
 }
+

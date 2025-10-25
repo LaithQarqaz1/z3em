@@ -1,4 +1,4 @@
-const bannerBackgrounds = [
+﻿const bannerBackgrounds = [
 
 ];
 
@@ -357,3 +357,4 @@ window.addEventListener("load", function () {
 function closePopupOnOutsideClick(event) {
   closePopup();
 }
+

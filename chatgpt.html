@@ -44,13 +44,13 @@
       document.documentElement.setAttribute('data-theme', theme);
       try{
         var metaCS=document.querySelector('meta[name="color-scheme"]'); if(!metaCS){ metaCS=document.createElement('meta'); metaCS.name='color-scheme'; document.head.appendChild(metaCS);} metaCS.setAttribute('content', theme==='dark'?'dark light':'light dark');
-        var metaTC=document.querySelector('meta[name="theme-color"]'); if(!metaTC){ metaTC=document.createElement('meta'); metaTC.name='theme-color'; document.head.appendChild(metaTC);} metaTC.setAttribute('content', theme==='dark'?'#0b1220':'#f9f9f9');
+        var metaTC=document.querySelector('meta[name="theme-color"]'); if(!metaTC){ metaTC=document.createElement('meta'); metaTC.name='theme-color'; document.head.appendChild(metaTC);} metaTC.setAttribute('content', theme==='dark'?'#05050b':'#f9f9f9');
       }catch(e){}
-      var s=document.createElement('style'); s.id='critical-theme'; s.textContent='html{background:'+(theme==='dark'?'#0b1220':'#f9f9f9')+';color:'+(theme==='dark'?'#e6edf3':'#333')+'} body{background:inherit;color:inherit;margin:0}'; document.head.appendChild(s);
+      var s=document.createElement('style'); s.id='critical-theme'; s.textContent='html{background:'+(theme==='dark'?'#05050b':'#f9f9f9')+';color:'+(theme==='dark'?'#f0f1ff':'#333')+'} body{background:inherit;color:inherit;margin:0}'; document.head.appendChild(s);
     })();
   </script>
   <meta name="color-scheme" content="dark light">
-  <meta name="theme-color" content="#0b1220">
+  <meta name="theme-color" content="#05050b">
 
   <!-- تحسين الاتصال المسبق -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -175,7 +175,7 @@
   <style>
     /* متغيرات للألوان ليتوافق المودال مع الثيم */
     :root{ --card-bg:#ffffff; --card-text:#111827; --card-border:#e5e7eb; --input-bg:#ffffff; --input-text:#111827; --btn-bg:#6366f1; --btn-bg-hover:#4f46e5; --btn-text:#ffffff }
-    html[data-theme="dark"], body.dark-mode{ --card-bg:#0f172a; --card-text:#e6edf3; --card-border:#334155; --input-bg:#0b1220; --input-text:#e6edf3; --btn-bg:#475569; --btn-bg-hover:#64748b; --btn-text:#ffffff }
+    html[data-theme="dark"], body.dark-mode{ --card-bg:#0f1024; --card-text:#f0f1ff; --card-border:#2b2d52; --input-bg:#05050b; --input-text:#f0f1ff; --btn-bg:#475569; --btn-bg-hover:#64748b; --btn-text:#ffffff }
     /* اتجاه عام مساعد */
     .rtl { direction: rtl; text-align: right; unicode-bidi: embed; }
 
@@ -227,7 +227,7 @@
       align-items: center !important;
       text-align: center !important;
       margin:20px auto;max-width:400px;padding:20px;
-      border:2px solid #007bff;border-radius:10px;background:#f9f9f9;font-weight:bold;
+      border:2px solid #5c5ebf;border-radius:10px;background:#f9f9f9;font-weight:bold;
     }
     #selected-amount-container h2 { margin-bottom: 10px !important; }
 
@@ -257,7 +257,7 @@
       padding:12px 15px;
       background:#fff;
       color:#111;
-      border:2px solid #0077cc;
+      border:2px solid #5c5ebf;
       border-radius:25px;
       font-size:1rem;
       outline:none;
@@ -266,9 +266,9 @@
       width: 100%;
       max-width: 100%;
     }
-    .search-container input[type="text"]:focus{box-shadow:0 0 6px rgba(0,119,204,.5);border-color:#005fa3}
-    .search-container button{background:#0077cc;border:none;padding:12px 20px;border-radius:25px;color:#fff;font-size:1rem;cursor:pointer;transition:.3s}
-    .search-container button:hover{background:#005fa3}
+    .search-container input[type="text"]:focus{box-shadow:0 0 6px rgba(65,67,145,.5);border-color:#414391}
+    .search-container button{background:#5c5ebf;border:none;padding:12px 20px;border-radius:25px;color:#fff;font-size:1rem;cursor:pointer;transition:.3s}
+    .search-container button:hover{background:#414391}
 
     /* نظام الشبكة والبطاقات مطابق للرئيسية index.html */
     .categories {
@@ -348,7 +348,7 @@
   color: #fff !important;
   margin: 0;
   letter-spacing: 0.5px;
-  background: #0077cc;
+  background: #5c5ebf;
   border-radius: 7px;
   padding: 0;
   width: 100%;
@@ -356,7 +356,7 @@
 }
 body.dark-mode .offer-box .offer-price {
   color: #fff !important;
-  background: #0369a1;
+  background: #3b3e8c;
 }
     @media (max-width: 992px) {
       .categories {
@@ -390,21 +390,21 @@ body.dark-mode .offer-box .offer-price {
     .offer-box.card h2{font-weight:700;font-size:1rem;margin:0;line-height:1.4;word-break:break-word}
     .offer-box.card .caption{margin-top:8px; line-height:1.35}
     .offer-box.card .caption .jewels{display:block; color:#475569; font-weight:700}
-    .offer-box.card .caption .price{display:block; color:#0f172a; font-weight:800}
+    .offer-box.card .caption .price{display:block; color:#0f1024; font-weight:800}
     .offer-box.card img{width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;object-position:center;border-radius:8px;user-select:none;background-color:#f0f0f0;display:block;margin:0 auto}
 
     /* رسالة لا نتائج مثل الرئيسية */
     .no-results{ text-align:center; font-size:1.2rem; color:#888; margin-top:30px }
-    body.dark-mode .no-results{ color:#94a3b8 }
+    body.dark-mode .no-results{ color:#9ea0d9 }
 
     /* وضع داكن */
-    body.dark-mode .search-container input[type="text"]{background:#0b1220;color:#e6edf3;border-color:#334155}
+    body.dark-mode .search-container input[type="text"]{background:#05050b;color:#f0f1ff;border-color:#2b2d52}
     body.dark-mode .search-container button{background:#475569}
     body.dark-mode .search-container button:hover{background:#64748b}
-    body.dark-mode .offer-box.card{background:#101826;color:#e6edf3;border-color:#334155;box-shadow:0 2px 10px rgba(0,0,0,.35)}
-    body.dark-mode .offer-box.card img{background:#162032}
+    body.dark-mode .offer-box.card{background:#101826;color:#f0f1ff;border-color:#2b2d52;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+    body.dark-mode .offer-box.card img{background:#0d0e1d}
     body.dark-mode .offer-box.card .caption .jewels{color:#cbd5e1}
-    body.dark-mode .offer-box.card .caption .price{color:#e6edf3}
+    body.dark-mode .offer-box.card .caption .price{color:#f0f1ff}
 
     /* البطاقات + تغطية "غير متوفر" */
     .offer-box { position: relative; cursor: pointer; }
@@ -418,33 +418,33 @@ body.dark-mode .offer-box .offer-price {
     }
 
 /* ====== Dark Mode for Free Fire page ====== */
-body.dark-mode{ background:#0b1220; color:#e6edf3; }
+body.dark-mode{ background:#05050b; color:#f0f1ff; }
 
 /* الصندوق الرئيسي */
 body.dark-mode .main-white-box{
-  background:#0f172a !important;
-  color:#e6edf3 !important;
-  border:1px solid #334155 !important;
+  background:#0f1024 !important;
+  color:#f0f1ff !important;
+  border:1px solid #2b2d52 !important;
   box-shadow:0 8px 22px rgba(0,0,0,.35);
 }
 
 /* صندوق مُعرّف اللاعب */
 body.dark-mode .player-id-box{
-  background:#0f172a !important;
-  border-color:#334155 !important;
-  color:#e6edf3 !important;
+  background:#0f1024 !important;
+  border-color:#2b2d52 !important;
+  color:#f0f1ff !important;
 }
-body.dark-mode .player-id-box label{ color:#e6edf3 !important; }
+body.dark-mode .player-id-box label{ color:#f0f1ff !important; }
 body.dark-mode .player-id-box input{
-  background:#0b1220 !important;
-  color:#e6edf3 !important;
-  border-color:#334155 !important;
+  background:#05050b !important;
+  color:#f0f1ff !important;
+  border-color:#2b2d52 !important;
 }
 
 /* صندوق المبلغ المختار */
 body.dark-mode #selected-amount-container{
-  background:#0f172a !important;
-  border-color:#334155 !important;
+  background:#0f1024 !important;
+  border-color:#2b2d52 !important;
   color:#ffffff !important;
 }
 body.dark-mode #selected-amount-container .voucher,
@@ -456,37 +456,37 @@ body.dark-mode #selected-amount-container .voucher .price{
 /* بطاقات العروض */
 body.dark-mode .offer-box{
   background:#101826 !important;
-  border:1px solid #334155 !important;
-  color:#e6edf3 !important;
+  border:1px solid #2b2d52 !important;
+  color:#f0f1ff !important;
 }
-body.dark-mode .offer-box span{ color:#e6edf3 !important; }
-body.dark-mode .offer-box.selected{ outline:2px solid #38bdf8; }
+body.dark-mode .offer-box span{ color:#f0f1ff !important; }
+body.dark-mode .offer-box.selected{ outline:2px solid #b9bbef; }
     body.dark-mode .offer-box.disabled .unavailable-badge{ background:rgba(0,0,0,.45); }
 
 /* عناوين الأقسام */
-body.dark-mode .section-title{ color:#7dd3fc !important; }
+body.dark-mode .section-title{ color:#9c9ede !important; }
 
 /* زر الشراء */
 body.dark-mode .send-button{
-  background:#0369a1 !important;
-  color:#e6edf3 !important;
+  background:#3b3e8c !important;
+  color:#f0f1ff !important;
 }
-body.dark-mode .send-button:hover{ background:#0ea5e9 !important; }
+body.dark-mode .send-button:hover{ background:#7a7cd0 !important; }
 
 /* التوست */
 body.dark-mode #toast{
-  background:#0f172a !important;
-  color:#e6edf3 !important;
+  background:#0f1024 !important;
+  color:#f0f1ff !important;
 }
 
 /* النافذة المنبثقة (دليل المعرف) */
 body.dark-mode #popup > div{
   background:#111827 !important;
-  color:#e6edf3 !important;
+  color:#f0f1ff !important;
 }
 
 /* محاكاة شيمر أخفت في الوضع الداكن إن وُجد */
-body.dark-mode .offer-box.loading{ background:#162032 !important; }
+body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
 
 /* === اجعل خلفية قسم لماذا تختارنا مثل الخلفيات الأخرى === */
 
@@ -499,19 +499,19 @@ body.dark-mode .offer-box.loading{ background:#162032 !important; }
 
 /* تباين عنوان القسم على الخلفية الفاتحة */
 .footer-title{
-  color: #0b1220 !important;
+  color: #05050b !important;
 }
 
 /* وضع داكن: لون مسطح مطابق لصناديق الوضع الداكن */
 body.dark-mode .footer-icons{
-  background: #0f265a !important;   /* بديل للتدرّج الداكن */
-  border-color: #334155;
+  background: #2e316f !important;   /* بديل للتدرّج الداكن */
+  border-color: #2b2d52;
   box-shadow: 0 8px 22px rgba(0,0,0,0.35);
 }
 
 /* نص العنوان في الوضع الداكن */
 body.dark-mode .footer-title{
-  color: #e6edf3 !important;
+  color: #f0f1ff !important;
 }
 
 
@@ -609,12 +609,12 @@ a.card.auto{
   border: 1.5px solid transparent;
   background:
     linear-gradient(var(--card-bg),var(--card-bg)) padding-box,
-    linear-gradient(135deg,#06b6d4,#10b981) border-box;
+    linear-gradient(135deg,#9c9ede,#10b981) border-box;
 }
 html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
   background:
     linear-gradient(var(--card-bg),var(--card-bg)) padding-box,
-    linear-gradient(135deg,#22c55e,#06b6d4) border-box;
+    linear-gradient(135deg,#22c55e,#9c9ede) border-box;
 }
 #myOffersContainer .offer-box.card.auto:hover{
   transform: translateY(-4px) scale(1.01);
@@ -1262,4 +1262,6 @@ window.addEventListener('DOMContentLoaded', () => {
   
 </body>
 </html>
+
+
 

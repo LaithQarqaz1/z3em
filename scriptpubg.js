@@ -1,4 +1,4 @@
-// لافتة علوية (مع حراسة لمنع أخطاء في حال عدم وجودها)
+﻿// لافتة علوية (مع حراسة لمنع أخطاء في حال عدم وجودها)
 const bannerBackgrounds = [];
 (function initTopBanner(){
   try {
@@ -350,3 +350,4 @@ window.addEventListener("load", function () {
 function closePopupOnOutsideClick(event) {
   closePopup();
 }
+

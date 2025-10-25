@@ -15,9 +15,9 @@
         document.documentElement.setAttribute('data-theme', dark? 'dark':'light');
         // color-scheme + theme-color
         var metaCS=document.querySelector('meta[name="color-scheme"]'); if(!metaCS){ metaCS=document.createElement('meta'); metaCS.name='color-scheme'; document.head.appendChild(metaCS);} metaCS.setAttribute('content', dark?'dark light':'light dark');
-        var metaTC=document.querySelector('meta[name="theme-color"]'); if(!metaTC){ metaTC=document.createElement('meta'); metaTC.name='theme-color'; document.head.appendChild(metaTC);} metaTC.setAttribute('content', dark?'#0b1220':'#f7f8fb');
+        var metaTC=document.querySelector('meta[name="theme-color"]'); if(!metaTC){ metaTC=document.createElement('meta'); metaTC.name='theme-color'; document.head.appendChild(metaTC);} metaTC.setAttribute('content', dark?'#05050b':'#f7f8fb');
         // خلفية مبدئية سريعة
-        var s=document.createElement('style'); s.id='critical-theme'; s.textContent='html{background:'+(dark?'#0b1220':'#f7f8fb')+';color:'+(dark?'#e6edf3':'#111')+'} body{background:inherit;color:inherit;margin:0}'; document.head.appendChild(s);
+        var s=document.createElement('style'); s.id='critical-theme'; s.textContent='html{background:'+(dark?'#05050b':'#f7f8fb')+';color:'+(dark?'#f0f1ff':'#111')+'} body{background:inherit;color:inherit;margin:0}'; document.head.appendChild(s);
         // صنف body للوضع الداكن
         var applyBody=function(){ try{ document.body.classList.toggle('dark-mode', dark); }catch(_){ } };
         if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyBody); else applyBody();
@@ -125,29 +125,69 @@
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <style>
     :root{
-      --brand:#0077cc; --brand-dark:#005fa3; --bg:#f7f8fb; --card:#ffffff;
-      --muted:#667085; --ring: rgba(0,119,204,.25); --success:#12b76a; --danger:#ef4444;
+      --brand:#5c5ebf;
+      --brand-dark:#414391;
+      --bg:#f7f8fb;
+      --card-bg:#ffffff;
+      --card-text:#1b1d3b;
+      --card-border:#d9dbff;
+      --elev-shadow:0 2px 8px rgba(64,66,115,.12);
+      --skeleton:#eceeff;
+      --muted:#667085;
+      --ring: rgba(65,67,145,.25);
+      --success:#12b76a;
+      --danger:#ef4444;
     }
     *{box-sizing:border-box}
     body{font-family:'Cairo',sans-serif;margin:0;background:var(--bg);color:#111}
     main{max-width:1200px;margin:20px auto;padding:0 16px}
     .toolbar{display:flex;justify-content:center;align-items:center;gap:10px;max-width:1000px;margin:0 auto 12px;padding:0}
-    .back-btn{display:none !important;background:#e9eef5;border:none;padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:700;color:#1f2937}
+    .back-btn{display:none !important;background:#e9eef5;border:none;padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:700;color:#1b1d3b}
     .back-btn:hover{filter:brightness(.98)}
     .toolbar > div:last-child{display:none}
     .toolbar > div[style*="width:120px"]{display:none}
-    .where{font-weight:800;color:#0077cc;text-align:center}
+    .where{font-weight:800;color:#5c5ebf;text-align:center}
     /* Search */
     .search-container{margin:20px auto;max-width:1000px;display:flex;justify-content:center;gap:10px;padding:0}
     .search-container input{flex:1;padding:12px 15px;border:2px solid var(--brand);border-radius:25px;font-size:1rem;outline:none;transition:.3s;background:#fff}
-    .search-container input:focus{box-shadow:0 0 5px rgba(0,119,204,.5);border-color:var(--brand-dark)}
+    .search-container input:focus{box-shadow:0 0 5px rgba(65,67,145,.5);border-color:var(--brand-dark)}
     .search-container button{background:var(--brand);border:none;padding:12px 20px;border-radius:25px;color:#fff;font-size:1rem;cursor:pointer;transition:.3s}
     .search-container button:hover{background:var(--brand-dark)}
     /* Grid and Cards (match deposit) */
     .categories{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,max-content));gap:20px;justify-content:start;max-width:1000px;margin:auto}
-    .card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);text-align:center;padding:16px;text-decoration:none;color:#333;transition:transform .3s ease,box-shadow .3s ease;display:flex;flex-direction:column;gap:12px;border:1px solid #e5e7eb}
-    .card:hover{transform:translateY(-5px);box-shadow:0 8px 20px rgba(0,0,0,.15)}
-    .card img{width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;object-position:center;border-radius:8px;user-select:none;background:#f0f0f0;display:block;margin:0 auto}
+    .card{
+      position:relative;
+      background:var(--card-gradient, var(--card-bg));
+      color:var(--card-text);
+      border:1px solid var(--card-border-strong, var(--card-border));
+      border-radius:14px;
+      box-shadow:var(--card-shadow, var(--elev-shadow));
+      text-align:center;
+      padding:16px;
+      text-decoration:none;
+      transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      overflow:hidden;
+    }
+    .card::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:radial-gradient(circle at top right, rgba(255,255,255,.32), rgba(255,255,255,0) 60%);
+      opacity:.6;
+    }
+    .card.maintenance{ background:var(--card-bg)!important; color:var(--muted)!important; border-color:var(--card-border); box-shadow:none; pointer-events:none; opacity:.7; }
+    .card.maintenance::after{ display:none; }
+    .card.maintenance h2{ color:#a00; }
+    .card.maintenance img{ filter:grayscale(100%); }
+    .card:hover{\n      transform:translateY(-5px);
+      box-shadow:var(--card-shadow-hover, var(--card-shadow));
+      border-color:var(--card-border-hover, var(--card-border-strong, var(--card-border)));
+    }
+    .card img{width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;object-position:center;border-radius:8px;user-select:none;background:var(--skeleton);display:block;margin:0 auto}
     .card h2{font-weight:700;font-size:1rem;margin:0;line-height:1.4;word-break:break-word}
     .no-results{text-align:center;font-size:1.05rem;color:#9aa4b2;margin-top:26px}
     /* Fixed responsive columns like deposit */
@@ -162,7 +202,7 @@
       .search-container{flex-direction:column}
       .search-container input,.search-container button{width:100%}
     }
-    .card.loading{position:relative;background:#f3f4f6;overflow:hidden;pointer-events:none}
+    .card.loading{position:relative;background:var(--skeleton);overflow:hidden;pointer-events:none}
     .card.loading img,.card.loading h2{visibility:hidden}
     .card.loading::after{content:'';position:absolute;top:0;right:-150px;width:100px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:shimmer 1.2s infinite}
     @keyframes shimmer{0%{right:-150px}100%{right:100%}}
@@ -171,14 +211,14 @@
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
     .modal.open{display:flex}
     .modal-content{background:#fff;padding:18px;border-radius:16px;max-width:680px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.22)}
-    .modal-title{font-size:1.2rem;font-weight:800;text-align:center;letter-spacing:.2px;background:linear-gradient(90deg,#7dd3fc,#22d3ee,#a7f3d0);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:10px}
+    .modal-title{font-size:1.2rem;font-weight:800;text-align:center;letter-spacing:.2px;background:linear-gradient(90deg,#9c9ede,#b9bbef,#a7f3d0);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:10px}
     /* Floating close button like deposit */
     .modal-x{ position:absolute; inset-inline-end:10px; inset-block-start:10px; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; cursor:pointer; border:1px solid transparent; background:transparent; }
-    html[data-theme="dark"] .modal-x{ border-color:#334155; background:rgba(2,6,23,.45); color:#cbd5e1 }
+    html[data-theme="dark"] .modal-x{ border-color:#2b2d52; background:rgba(2,6,23,.45); color:#cbd5e1 }
     html[data-theme="dark"] .modal-x:hover{ background:rgba(2,6,23,.7) }
-    html[data-theme="light"] .modal-x{ border-color:#e5e7eb; background:#ffffff; color:#334155 }
+    html[data-theme="light"] .modal-x{ border-color:#e5e7eb; background:#ffffff; color:#2b2d52 }
     html[data-theme="light"] .modal-x:hover{ background:#f8fafc }
-    .badge{display:inline-flex;align-items:center;gap:6px;background:#eef6ff;color:#1e40af;border:1px solid #c7ddff;padding:6px 10px;border-radius:9999px;font-size:.85rem;margin-top:6px}
+    .badge{display:inline-flex;align-items:center;gap:6px;background:#eef0ff;color:#414391;border:1px solid #eceeff;padding:6px 10px;border-radius:9999px;font-size:.85rem;margin-top:6px}
     /* إخفاء شارة السعر قرب العنوان */
     #fxBadge{ display:none !important }
 
@@ -196,7 +236,7 @@
     .calc .field{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px}
     /* إخفاء حقل السعر الحالي بالكامل */
     .rate-line{display:none !important}
-    .rate-line .chip{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:9999px;padding:6px 10px; direction:ltr}
+    .rate-line .chip{background:#eceeff;border:1px solid #e2e8f0;border-radius:9999px;padding:6px 10px; direction:ltr}
 
     .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
     .btn{border:none;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:700}
@@ -209,53 +249,53 @@
     .error{color:var(--danger);font-size:.9rem;margin-top:4px}
     /* تحسينات المودال والحقول مثل صفحة الإيداع */
     #methodModal .modal-content{ position:relative; border-radius:18px; }
-    #methodModal .modal-content::before{ content:""; position:absolute; inset-inline:0; inset-block-start:0; height:4px; background:linear-gradient(90deg,#06b6d4,#0ea5e9,#22c55e); opacity:.9; }
+    #methodModal .modal-content::before{ content:""; position:absolute; inset-inline:0; inset-block-start:0; height:4px; background:linear-gradient(90deg,#9c9ede,#7a7cd0,#22c55e); opacity:.9; }
     #methodModal .calc .field{ position:relative; margin:0; border-radius:14px; padding:6px; }
     #methodModal .calc .field input{ height:44px; font-weight:800; direction:ltr; text-align:end; font-variant-numeric:tabular-nums; border:0; background:transparent; padding:0 64px; }
     #methodModal .calc .field::before{ content: attr(data-cur); position:absolute; inset-inline-start:8px; top:50%; transform:translateY(-50%); padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:800; letter-spacing:.3px; background:#eef2f7; border:1px solid #e5e7eb; color:#475569; pointer-events:none; }
     #methodModal .calc .field > label{ position:absolute; inset-inline-end:12px; top:-10px; padding:0 8px; border-radius:999px; font-size:.75rem; font-weight:800; line-height:1.6; background:#ffffff; color:#475569; }
     /* Modal theme (match deposit) */
-    html[data-theme="dark"] #methodModal .modal-content { background: linear-gradient(180deg, rgba(2,6,23,.92), rgba(2,6,23,.86)); border: 1px solid #334155; color: #e6edf3; box-shadow:0 12px 36px rgba(0,0,0,.45); }
+    html[data-theme="dark"] #methodModal .modal-content { background: linear-gradient(180deg, rgba(2,6,23,.92), rgba(2,6,23,.86)); border: 1px solid #2b2d52; color: #f0f1ff; box-shadow:0 12px 36px rgba(0,0,0,.45); }
     html[data-theme="light"] #methodModal .modal-content { background:#ffffff; border:1px solid #e5e7eb; color:#111827; box-shadow:0 18px 40px rgba(0,0,0,.12); }
     /* Info list look */
     #methodInfo.info-list{ border-radius:14px; padding:12px }
-    html[data-theme="dark"] #methodInfo.info-list{ border:1px solid #334155; background:rgba(2,6,23,.45) }
+    html[data-theme="dark"] #methodInfo.info-list{ border:1px solid #2b2d52; background:rgba(2,6,23,.45) }
     html[data-theme="light"] #methodInfo.info-list{ border:1px solid #e6eef7; background:#f8fafc }
     #methodInfo .info-item{ display:flex; justify-content:space-between; align-items:center; background:transparent; border:none; padding:8px 0 }
     #methodInfo .info-item + .info-item{ border-top:1px dashed rgba(148,163,184,.25) }
-    html[data-theme="dark"] #methodInfo .info-item strong{ color:#93c5fd }
-    html[data-theme="light"] #methodInfo .info-item strong{ color:#1d4ed8 }
+    html[data-theme="dark"] #methodInfo .info-item strong{ color:#9c9ede }
+    html[data-theme="light"] #methodInfo .info-item strong{ color:#5c5ebf }
     /* Primary button gradient */
-    .btn-primary{ background:linear-gradient(135deg,#0ea5e9,#0369a1); border:0 }
+    .btn-primary{ background:linear-gradient(135deg,#7a7cd0,#3b3e8c); border:0 }
     .btn-primary:hover{ filter:brightness(.98) }
-    html[data-theme="dark"] #methodModal .calc .field::before { background:rgba(148,163,184,.12); border:1px solid #334155; color:#cbd5e1; }
+    html[data-theme="dark"] #methodModal .calc .field::before { background:rgba(148,163,184,.12); border:1px solid #2b2d52; color:#cbd5e1; }
     html[data-theme="light"] #methodModal .calc .field::before { background:#eef2f7; border:1px solid #e5e7eb; color:#475569; }
     /* ضبط اتجاه شارات السعر لعدم انعكاسها بالعربية */
     #fxBadge, #rateLine{ direction:ltr }
     @media (max-width: 480px){ #methodModal .calc .field input{ padding:0 40px; height:42px; } }
     /* دعم الثيم الداكن */
-    body.dark-mode { background:#0b1220; color:#e6edf3; }
-    body.dark-mode .card{ background:#1a2234; color:#e6edf3; border:1px solid #334155; box-shadow:0 2px 10px rgba(0,0,0,.35); }
-    body.dark-mode .card.loading{ background:#162032; }
+    body.dark-mode{ background:#05050b; color:#f0f1ff; --card-bg:#101223; --card-text:#f0f1ff; --card-border:#2b2d52; --card-gradient:linear-gradient(160deg, rgba(122,124,208,.14) 0%, rgba(16,18,35,.9) 100%); --card-border-strong:rgba(156,158,222,.32); --card-border-hover:rgba(156,158,222,.5); --card-shadow:0 10px 28px rgba(5,6,18,.6); --card-shadow-hover:0 14px 36px rgba(5,6,18,.68); --elev-shadow:0 6px 22px rgba(3,4,12,.55); --skeleton:#0d0e1d; }
+    body.dark-mode .card::after{ background:radial-gradient(circle at top right, rgba(156,158,222,.18), rgba(0,0,0,0) 65%); opacity:.45; }
+    body.dark-mode .card.loading{ background:var(--skeleton); }
     /* دعم الثيم الداكن لشريط البحث */
-    body.dark-mode .search-container input{ background:#0b1220; color:#e6edf3; border-color:#334155; }
-    body.dark-mode .search-container input::placeholder{ color:#94a3b8; }
-    body.dark-mode .search-container input:focus{ border-color:#38bdf8; box-shadow:0 0 6px rgba(56,189,248,.35); }
-    body.dark-mode .search-container button{ background:#0369a1; }
-    body.dark-mode .search-container button:hover{ background:#0ea5e9; }
-    body.dark-mode .no-results{ color:#94a3b8; }
-    body.dark-mode .modal-content{ background:#111827; color:#e6edf3; box-shadow:0 10px 30px rgba(0,0,0,.5); }
-    body.dark-mode .info-item{ background:#0f172a; border-color:#334155; }
-    body.dark-mode .calc .field{ background:#0f172a; border-color:#334155; }
+    body.dark-mode .search-container input{ background:#05050b; color:#f0f1ff; border-color:#2b2d52; }
+    body.dark-mode .search-container input::placeholder{ color:#9ea0d9; }
+    body.dark-mode .search-container input:focus{ border-color:#b9bbef; box-shadow:0 0 6px rgba(56,189,248,.35); }
+    body.dark-mode .search-container button{ background:#3b3e8c; }
+    body.dark-mode .search-container button:hover{ background:#7a7cd0; }
+    body.dark-mode .no-results{ color:#9ea0d9; }
+    body.dark-mode .modal-content{ background:#111827; color:#f0f1ff; box-shadow:0 10px 30px rgba(0,0,0,.5); }
+    body.dark-mode .info-item{ background:#0f1024; border-color:#2b2d52; }
+    body.dark-mode .calc .field{ background:#0f1024; border-color:#2b2d52; }
     body.dark-mode .calc label{ color:#cbd5e1; }
-    body.dark-mode .calc input{ background:#0b1220; color:#e6edf3; border-color:#334155; }
+    body.dark-mode .calc input{ background:#05050b; color:#f0f1ff; border-color:#2b2d52; }
     /* دعم الوضع الداكن لحقول المستلم */
-    body.dark-mode .form .field{ background:#0f172a; border-color:#334155; }
+    body.dark-mode .form .field{ background:#0f1024; border-color:#2b2d52; }
     body.dark-mode .form .field label{ color:#cbd5e1; }
-    body.dark-mode .form .field input{ background:#0b1220; color:#e6edf3; border-color:#334155; }
-    body.dark-mode .form .field input::placeholder{ color:#94a3b8; }
-    body.dark-mode .rate-line .chip{ background:#0f172a; border-color:#334155; color:#e6edf3; }
-    body.dark-mode .btn-outline{ background:#0b1220; color:#e6edf3; border-color:#334155; }
+    body.dark-mode .form .field input{ background:#05050b; color:#f0f1ff; border-color:#2b2d52; }
+    body.dark-mode .form .field input::placeholder{ color:#9ea0d9; }
+    body.dark-mode .rate-line .chip{ background:#0f1024; border-color:#2b2d52; color:#f0f1ff; }
+    body.dark-mode .btn-outline{ background:#05050b; color:#f0f1ff; border-color:#2b2d52; }
     /* ===== Mobile modal sizing like deposit ===== */
     @media (max-width: 480px) {
       .modal { 
@@ -814,6 +854,24 @@ const WORKER = (WORKER_BASE || '').replace(/\/+$/, '');
   
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

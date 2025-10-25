@@ -1,49 +1,18 @@
-// Deobfuscated and cleaned header logic
+﻿// Deobfuscated and cleaned header logic
 
-// Fast reload detection on home → stub Firestore
+// ألغينا حد إعادة تحميل Firebase؛ أعِد الوظائف الأصلية إن وُجدت
 (function(){
   try {
-    const file = (location.pathname.split('/').pop() || '').toLowerCase();
-    const onHome = file === '' || file === 'index.html';
-    if (!onHome) { window.__SKIP_FIREBASE__ = false; return; }
-
-    const key = 'global:loadTimes';
-    const now = Date.now();
-    let times;
-    try { times = JSON.parse(localStorage.getItem(key) || '[]'); } catch { times = []; }
-    if (!Array.isArray(times)) times = [];
-    times = times.filter(t => typeof t === 'number' && (now - t) < 10000);
-    times.push(now);
-    try { localStorage.setItem(key, JSON.stringify(times.slice(-10))); } catch {}
-
-    window.__SKIP_FIREBASE__ = times.length >= 3;
-    if (window.__SKIP_FIREBASE__ && typeof firebase !== 'undefined') {
-      try {
-        const noop = () => {};
-        function fakeDoc(){
-          return {
-            get: () => Promise.resolve({ exists: false, data: () => ({}), id: '' }),
-            set: () => Promise.resolve(),
-            update: () => Promise.resolve(),
-            onSnapshot: () => noop,
-          };
-        }
-        function fakeCollection(){
-          return {
-            doc: () => fakeDoc(),
-            where: () => fakeCollection(),
-            orderBy: () => fakeCollection(),
-            limit: () => fakeCollection(),
-            get: () => Promise.resolve({ empty: true, forEach: noop, docs: [] }),
-            onSnapshot: () => noop,
-          };
-        }
-        const fakeFirestore = { collection: () => fakeCollection(), doc: () => fakeDoc() };
-        try { window.__ORIG_FIREBASE__ = { auth: firebase.auth, firestore: firebase.firestore }; } catch {}
-        firebase.firestore = () => fakeFirestore;
-      } catch {}
+    if (typeof firebase !== 'undefined' && window.__ORIG_FIREBASE__) {
+      if (window.__ORIG_FIREBASE__.auth) {
+        firebase.auth = window.__ORIG_FIREBASE__.auth;
+      }
+      if (window.__ORIG_FIREBASE__.firestore) {
+        firebase.firestore = window.__ORIG_FIREBASE__.firestore;
+      }
     }
-  } catch { window.__SKIP_FIREBASE__ = false; }
+  } catch {}
+  try { window.__SKIP_FIREBASE__ = false; } catch {}
 })();
 
 // Force HTTPS when not local
@@ -795,7 +764,18 @@ ul.appendChild(reviewsLi);
 const settingsLi = document.createElement('li');
 settingsLi.id = 'settingsBtn';
 settingsLi.innerHTML = '<i class="fa-solid fa-gear"></i><a href="#">الإعدادات</a>';
-settingsLi.onclick = () => navigateTo('settings.html');
+settingsLi.onclick = () => {
+  const file = (location.pathname.split('/').pop() || '').toLowerCase();
+  const isHome = file === '' || file === 'index.html';
+  try { sessionStorage.setItem('nav:fromHome','1'); } catch {}
+  if (isHome) {
+    toggleSidebar();
+    try { showPageLoader(); } catch {}
+    setTimeout(() => { window.location.hash = '#/settings'; }, 80);
+  } else {
+    navigateTo('index.html#/settings');
+  }
+};
 settingsLi.style.display = 'none';
 ul.appendChild(settingsLi);
 // تسجيل الدخول / الخروج
@@ -1064,6 +1044,7 @@ function wirePageBalanceBox(){
     } else { tryRemove(); setTimeout(tryRemove, 200); setTimeout(tryRemove, 1000); }
   }catch(_){ }
 })();
+
 
 
 

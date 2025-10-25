@@ -1,4 +1,4 @@
-
+﻿
 const banner1 = document.getElementById("banner1");
 banner1.style.backgroundImage = `url('${bannerBackground}')`;
 banner1.classList.add("active");
@@ -324,3 +324,4 @@ window.addEventListener("load", function () {
 function closePopupOnOutsideClick(event) {
   closePopup();
 }
+

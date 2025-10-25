@@ -1,9 +1,9 @@
-/* loader.css - مُحسَّن بمظهر عصري وخفيف */
+﻿/* loader.css - مُحسَّن بمظهر عصري وخفيف */
 #preloader {
   position: fixed;
   inset: 0;
   /* لون خلفية قابل للتكيّف مع الثيم */
-  --overlay: rgba(255, 255, 255, 0.35);
+  --overlay: rgba(246, 247, 255, 0.65);
   background: var(--overlay);
   /* ملاحظة: blur واسع على الموبايل يسبب تقطيع، سنُعطّل لاحقًا للموبايل */
   -webkit-backdrop-filter: blur(6px);
@@ -23,7 +23,7 @@
 /* الوضع الداكن */
 html[data-theme="dark"] #preloader,
 body.dark-mode #preloader {
-  --overlay: rgba(11, 18, 32, 0.30);
+  --overlay: rgba(5, 5, 11, 0.72);
 }
 
 #preloader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -35,11 +35,11 @@ body.dark-mode #preloader {
   height: 128px;
   border-radius: 50%;
   /* ألوان العلامة التجارية (يمكن تعديلها لاحقًا) */
-  --c1: #007BFF; /* أزرق المتجر الأساسي */
-  --c2: #00B3FF; /* سماوي فاتح (احتياطي) */
-  --c3: #38BDF8; /* أكسنت سماوي مطابق بالموقع */
+  --c1: #7a7cd0; /* لون العلامة الأساسي */
+  --c2: #9c9ede; /* درجة فاتحة للإشعاع */
+  --c3: #b9bbef; /* أكسنت فاتح مطابق للموقع */
   /* drop-shadow مكلف على الموبايل؛ سيتم تعطيله في وسائط الموبايل */
-  filter: drop-shadow(0 6px 18px rgba(59, 130, 246, 0.35));
+  filter: drop-shadow(0 6px 18px rgba(66, 68, 150, 0.35));
   transition: transform 0.4s ease, opacity 0.4s ease;
   display: grid;               /* تمركز أي محتوى داخلي */
   place-items: center;         /* يضمن توسيط صورة اللودر */
@@ -53,8 +53,8 @@ body.dark-mode #preloader {
 /* درجات أفتح قليلاً في الوضع الداكن لضمان التباين */
 html[data-theme="dark"] .loader,
 body.dark-mode .loader {
-  --c1: #4EA8FF;
-  --c3: #7DD3FC;
+  --c1: #5c5ebf;
+  --c3: #9c9ede;
 }
 
 .loader::before,
@@ -109,3 +109,4 @@ body.dark-mode .loader {
   #preloader { -webkit-backdrop-filter: none; backdrop-filter: none; }
   .loader { filter: none; }
 }
+

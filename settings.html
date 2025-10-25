@@ -14,39 +14,39 @@
 
   <style>
     :root{
-      --primary:#00aaff;
-      --primary-2:#008ecc;
-      --bg:#f4faff;
+      --primary:#7a7cd0;
+      --primary-2:#5c5ebf;
+      --bg:#f8f9fa;
       --card:#ffffff;
-      --text:#1e1e1e;
-      --muted:#5c5c5c;
-      --border: rgba(0,170,255,.25);
-      --shadow: 0 12px 35px rgba(0, 170, 255, .15);
+      --text:#1b1d3b;
+      --muted:#6f72a6;
+      --border: rgba(122,124,208,.25);
+      --shadow: 0 12px 35px rgba(122,124,208,.15);
       --radius:16px;
-      --ring: 0 0 0 3px rgba(0,170,255,.25);
+      --ring: 0 0 0 3px rgba(122,124,208,.25);
       --success:#16a34a;
       --danger:#ef4444;
     }
 
     /* الوضع الداكن: نعدّل المتغيرات والألوان العامة */
     body.dark-mode{
-      --bg:#0f172a;
+      --bg:#0f1024;
       --card:#111827;
-      --text:#e5e7eb;
-      --muted:#a3a3a3;
-      --border: rgba(102,217,255,.25);
+      --text:#f0f1ff;
+      --muted:#9ea0d9;
+      --border: rgba(156,158,222,.25);
       --shadow: 0 12px 35px rgba(0,0,0,.55);
-      --ring: 0 0 0 3px rgba(102,217,255,.25);
+      --ring: 0 0 0 3px rgba(156,158,222,.25);
     }
 
     body {
       font-family: 'Cairo', sans-serif;
       margin: 0;
-      background: linear-gradient(180deg,#f0faff,#e6f7ff);
+      background: #f8f9fa;
       color: var(--text);
     }
     body.dark-mode{
-      background: linear-gradient(180deg,#0b1220,#0b172a);
+      background: #05050b;
     }
 
     .main-content { flex: 1; padding: 28px; }
@@ -81,7 +81,7 @@
 
     .info-card:hover{
       transform: translateY(-1px);
-      box-shadow: 0 10px 24px rgba(0,170,255,.15);
+      box-shadow: 0 10px 24px rgba(122,124,208,.15);
       border-color: var(--primary);
     }
 
@@ -101,8 +101,8 @@
       padding:3px 10px; border-radius:999px; font-weight:700; color: var(--primary-2);
     }
     body.dark-mode .badge{
-      background: #0f2a35; border-color: var(--primary);
-      color:#9adfff;
+      background: #2e316f; border-color: var(--primary);
+      color:#b9bbef;
     }
 
     .copyable{
@@ -115,7 +115,7 @@
       overflow-wrap:anywhere;
     }
     .copyable:hover{ background:#e6f7ff; color: var(--primary-2); }
-    body.dark-mode .copyable:hover{ background:#0f2a35; }
+    body.dark-mode .copyable:hover{ background:#2e316f; }
 
     .copyable.copied{ box-shadow: var(--ring); }
     .copyable.copied::after{
@@ -126,20 +126,20 @@
 
     #resetBtn {
       width:100%; padding:12px;
-      background: linear-gradient(135deg,#3fa6ff,#00cfff);
+      background: linear-gradient(135deg,#9c9ede,#b9bbef);
       color:#fff; font-size:1rem;
       border:none; border-radius:12px; cursor:pointer; margin-top:20px;
       box-shadow:0 8px 18px rgba(0,167,255,.25);
     }
     #resetBtn:hover { opacity:.9 }
-    body.dark-mode #resetBtn{ background: linear-gradient(135deg,#0099ff,#00cccc); }
+    body.dark-mode #resetBtn{ background: linear-gradient(135deg,#9c9ede,#9c9ede); }
 
     .toast{
       position:fixed; left:50%; top:18px; transform:translateX(-50%);
       background:#111; color:#fff; padding:10px 14px; border-radius:12px;
       box-shadow:0 12px 28px rgba(0,0,0,.18); font-size:.95rem; z-index:9999;
     }
-    body.dark-mode .toast{ background:#0e1525; color:#e6edf3; }
+    body.dark-mode .toast{ background:#0e1525; color:#f0f1ff; }
     @media(max-width:560px){ .toast{ top:auto; bottom:16px } }
 
     .hint{ margin-top:8px; color:var(--muted); font-size:.9rem; text-align:center }
@@ -455,6 +455,8 @@
   
 </body>
 </html>
+
+
 
 
 

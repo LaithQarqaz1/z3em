@@ -1,4 +1,4 @@
-body {
+﻿body {
   font-family: 'Cairo', sans-serif;
   background-color: #f0f4f8;
   direction: rtl;
@@ -8,7 +8,7 @@ body {
   max-width: 400px;
   margin: 30px auto;
   padding: 20px;
-  border: 2px solid #0077cc;
+  border: 2px solid #5c5ebf;
   border-radius: 12px;
   background-color: #ffffff;
   text-align: center;
@@ -18,13 +18,13 @@ body {
   width: 90%;
   padding: 10px;
   margin: 8px 0;
-  border: 1.5px solid #0077cc;
+  border: 1.5px solid #5c5ebf;
   border-radius: 8px;
   font-size: 1rem;
 }
 
 .auth-buttons button {
-  background-color: #0077cc;
+  background-color: #5c5ebf;
   color: white;
   border: none;
   margin: 5px;
@@ -35,7 +35,7 @@ body {
 }
 
 .auth-buttons button:hover {
-  background-color: #005fa3;
+  background-color: #414391;
 }
 
 #authStatus {
@@ -43,3 +43,4 @@ body {
   font-weight: bold;
   color: #444;
 }
+

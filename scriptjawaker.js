@@ -1,4 +1,4 @@
-const bannerBackground = "https://i.ibb.co/cSFd7q5N/4.png";
+﻿const bannerBackground = "https://i.ibb.co/cSFd7q5N/4.png";
 
 const banner1 = document.getElementById("banner1");
 banner1.style.backgroundImage = `url('${bannerBackground}')`;
@@ -325,3 +325,4 @@ window.addEventListener("load", function () {
 function closePopupOnOutsideClick(event) {
   closePopup();
 }
+

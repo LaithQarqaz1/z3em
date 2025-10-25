@@ -1,4 +1,4 @@
-// تقويم منبثق بسيط مع إبراز الأيام
+﻿// تقويم منبثق بسيط مع إبراز الأيام
 const CAL = { el: null, year: 0, month: 0 };
 function openCalendar(){
   const minDateStr = getMinDateStr(3);
@@ -587,14 +587,14 @@ function drawOrdersPage() {
       <svg class="illu" width="96" height="90" viewBox="0 0 96 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="overflow:visible">
         <!-- الخلفية: أزحناها قليلًا لليسار -->
         <g opacity="0.9" transform="translate(-8,2)">
-          <rect x="12" y="14" rx="8" ry="8" width="56" height="68" fill="#0f172a" opacity="0.15"/>
+          <rect x="12" y="14" rx="8" ry="8" width="56" height="68" fill="#0f1024" opacity="0.15"/>
           <rect x="20" y="8" rx="8" ry="8" width="56" height="68" class="paper" fill="#e5e7eb"/>
           <rect x="34" y="4" width="28" height="10" rx="3" class="clip" fill="#7c3aed"/>
           <circle cx="48" cy="3" r="3" class="dot" fill="#a78bfa"/>
         </g>
         <!-- الأمامية: أزحناها قليلًا لليمين ليصبح المركز بينهما -->
         <g transform="translate(8,6)">
-          <rect x="12" y="14" rx="8" ry="8" width="56" height="68" fill="#0f172a" opacity="0.15"/>
+          <rect x="12" y="14" rx="8" ry="8" width="56" height="68" fill="#0f1024" opacity="0.15"/>
           <rect x="20" y="8" rx="8" ry="8" width="56" height="68" class="paper" fill="#e5e7eb"/>
           <rect x="34" y="4" width="28" height="10" rx="3" class="clip" fill="#7c3aed"/>
           <circle cx="48" cy="3" r="3" class="dot" fill="#a78bfa"/>
@@ -831,7 +831,7 @@ function renderPaginationControls(total, page, totalPages, start, end) {
     b.textContent = label;
     b.style.cssText = 'padding:6px 10px;border:1px solid #ccc;border-radius:8px;background:#fff;cursor:pointer';
     if (document.body.classList.contains('dark-mode')) {
-      b.style.background = '#0f172a'; b.style.color = '#e6edf3'; b.style.borderColor = '#334155';
+      b.style.background = '#0f1024'; b.style.color = '#f0f1ff'; b.style.borderColor = '#2b2d52';
     }
     b.disabled = !!disabled;
     if (disabled) { b.style.opacity = '0.6'; b.style.cursor = 'not-allowed'; }
@@ -845,7 +845,7 @@ function renderPaginationControls(total, page, totalPages, start, end) {
   // Page numbers (compact: 1 ... p-1 p p+1 ... N)
   const addPageBtn = (p) => {
     const btn = mkBtn(String(p), false, () => { PAGINATION.page = p; drawOrdersPage(); });
-    if (p === page) { btn.style.fontWeight = '800'; btn.style.borderColor = '#0077cc'; }
+    if (p === page) { btn.style.fontWeight = '800'; btn.style.borderColor = '#5c5ebf'; }
     controls.appendChild(btn);
   };
   const addEllipsis = () => {
@@ -988,6 +988,8 @@ function toggleDetails(code) {
   d.style.display = isOpen ? 'none' : 'block';
   card.classList.toggle('open', !isOpen);
 }
+
+
 
 
 

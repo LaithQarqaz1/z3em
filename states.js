@@ -1,4 +1,4 @@
-// Shared states loader/apply for pages with grid cards
+﻿// Shared states loader/apply for pages with grid cards
 (function(){
   function applyCardState(card, state){
     var finalState = (state == null) ? 'on' : state;
@@ -101,4 +101,5 @@
   if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyStatesToPage);
   else try{ applyStatesToPage(); }catch(_){ }
 })();
+
 

@@ -1,4 +1,4 @@
-// loader.js (smooth navigation preloader)
+﻿// loader.js (smooth navigation preloader)
 // 1) Warm loader image cache ASAP
 (function(){
   try{
@@ -112,3 +112,4 @@ document.addEventListener('DOMContentLoaded', function(){
   // Fallback path: ensure hide on popstate as well
   window.addEventListener('popstate', function(){ hide(); cleanup(); });
 });
+
