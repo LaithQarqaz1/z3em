@@ -79,9 +79,20 @@
 
   <!-- CSS -->
   <link rel="preload" href="header.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="stylesheet" href="loader.css">
 
   <!-- Scripts -->
+  <!-- Ensure minimum 300ms loader on home (index) -->
+  <script>
+    (function(){
+      try {
+        sessionStorage.setItem('nav:loader:expected','1');
+        sessionStorage.setItem('nav:loader:showAt', String(Date.now()));
+      } catch (_) {}
+    })();
+  </script>
   <script src="header.js" defer></script>
+  <script src="loader.js" defer></script>
   <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js" async></script>
     
 
@@ -502,9 +513,9 @@ main{max-width:1200px;margin:20px auto;padding:0 15px}
     <div class="page-hero">
       <div class="hero-slider" id="heroSlider" aria-label="بانرات مميزة">
         <div class="hero-track">
-          <div class="hero-slide"><img draggable="false" src="https://i.ibb.co/TBh1qpzV/1757616222968.jpg" alt="بانر ترحيبي" loading="eager" decoding="async" fetchpriority="high"></div>
-          <div class="hero-slide"><img draggable="false" src="https://i.ibb.co/PGh4ChVf/1447-03-25-23-25-28-9c3ddea5.jpg" alt="عرض 1"  decoding="async"></div>
-          <div class="hero-slide"><img draggable="false" src="https://i.ibb.co/v4CHSKHy/1447-03-25-23-25-29-a22fe9dc.jpg" alt="عرض 2"  decoding="async"></div>
+          <div class="hero-slide"><img draggable="false" src="IMGS/in1.jpg" alt="بانر ترحيبي" loading="eager" decoding="async" fetchpriority="high"></div>
+          <div class="hero-slide"><img draggable="false" src="IMGS/in2.jpg" alt="عرض 1"  decoding="async"></div>
+          <div class="hero-slide"><img draggable="false" src="IMGS/in3.jpg" alt="عرض 2"  decoding="async"></div>
         </div>
       </div>
     </div>
@@ -1428,22 +1439,34 @@ main{max-width:1200px;margin:20px auto;padding:0 15px}
           try{ if (typeof applyCardsVisibility === 'function') applyCardsVisibility(); }catch(_){ }
           try{ attachSearchBehavior(inlineBox); }catch(_){ }
           // Hide the page loader after inline content is ready (hash navigation)
+          // Ensure minimum 300ms visibility from when it was shown
           try {
-            // Clear loader session flags so global guards don’t block hiding
-            sessionStorage.removeItem('nav:loader:expected');
-            sessionStorage.removeItem('nav:loader:showAt');
-          } catch(_){ }
-          try {
-            // Give layout a tick to settle, then hide smoothly
-            requestAnimationFrame(function(){ requestAnimationFrame(function(){
-              if (typeof hidePageLoader === 'function') hidePageLoader();
-            }); });
+            var started = 0;
+            try { started = Number(sessionStorage.getItem('nav:loader:showAt')||0) || 0; } catch(_){ started = 0; }
+            // Clear flags so global guards don’t block hiding
+            try { sessionStorage.removeItem('nav:loader:expected'); sessionStorage.removeItem('nav:loader:showAt'); } catch(_){ }
+            var elapsed = started ? (Date.now() - started) : Infinity;
+            var remain = 300 - elapsed;
+            function doHide(){
+              try {
+                requestAnimationFrame(function(){ requestAnimationFrame(function(){
+                  if (typeof hidePageLoader === 'function') hidePageLoader();
+                }); });
+              } catch(_){ if (typeof hidePageLoader === 'function') hidePageLoader(); }
+            }
+            if (remain > 0 && remain < 5000) { setTimeout(doHide, remain); } else { doHide(); }
           } catch(_){ if (typeof hidePageLoader === 'function') hidePageLoader(); }
         } else {
           var err = document.createElement('div'); err.textContent = 'لا يوجد محتوى متاح حالياً.'; inlineBox.appendChild(err);
           // Ensure loader never gets stuck even on failure
-          try { sessionStorage.removeItem('nav:loader:expected'); sessionStorage.removeItem('nav:loader:showAt'); } catch(_){ }
-          try { if (typeof hidePageLoader === 'function') hidePageLoader(); } catch(_){ }
+          try {
+            var startedF = 0; try { startedF = Number(sessionStorage.getItem('nav:loader:showAt')||0) || 0; } catch(_){ startedF = 0; }
+            try { sessionStorage.removeItem('nav:loader:expected'); sessionStorage.removeItem('nav:loader:showAt'); } catch(_){ }
+            var elapsedF = startedF ? (Date.now() - startedF) : Infinity;
+            var remainF = 300 - elapsedF;
+            function doHideF(){ try { if (typeof hidePageLoader === 'function') hidePageLoader(); } catch(_){ } }
+            if (remainF > 0 && remainF < 5000) { setTimeout(doHideF, remainF); } else { doHideF(); }
+          } catch(_){ try { if (typeof hidePageLoader === 'function') hidePageLoader(); } catch(__){} }
         }
       }
 
@@ -1561,6 +1584,10 @@ main{max-width:1200px;margin:20px auto;padding:0 15px}
       document.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
     })();
   </script>
+
+  
+  <!-- Page preloader overlay -->
+  <div id="preloader"><div class="loader"></div></div>
 
 </body>
 </html>
