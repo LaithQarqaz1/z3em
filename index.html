@@ -298,19 +298,19 @@
   <!-- Wallet page inline styles -->
   <style>
     .wallet-page{padding:0 16px 48px;}
-    .wallet-page .wallet-spacer{height:32px;}
-    @media(max-width:720px){.wallet-page .wallet-spacer{height:24px;}}
+    .wallet-page .wallet-spacer{height:70px;}
+    @media(max-width:720px){.wallet-page .wallet-spacer{height:54px;}}
     .wallet-page main{
       max-width:960px;
-      margin:24px auto;
+      margin:30px auto;
       background:#fff;
       border-radius:16px;
       padding:28px;
       box-shadow:0 8px 24px rgba(15,23,42,0.08);
       border:1px solid rgba(226,232,240,.9);
     }
-    @media(max-width:720px){.wallet-page main{margin:16px 12px;padding:22px;}}
-    .wallet-page h2{margin:0 0 12px;font-size:1.5rem;color:#5c5ebf;display:flex;align-items:center;gap:10px;}
+    @media(max-width:720px){.wallet-page main{margin:20px 12px;padding:22px;}}
+    .wallet-page h2{margin:0 0 14px;font-size:1.6rem;color:#5c5ebf;display:flex;align-items:center;gap:10px;}
     .wallet-page .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
     .wallet-page .chip{
       padding:6px 10px;
@@ -329,6 +329,20 @@
     .wallet-page .chip[data-filter="approved"].active{background:#bbf7d0;border-color:#22c55e;}
     .wallet-page .chip[data-filter="rejected"]{background:#fee2e2;border-color:#fecaca;color:#7f1d1d;}
     .wallet-page .chip[data-filter="rejected"].active{background:#fecaca;border-color:#ef4444;}
+    .wallet-page .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+    .wallet-page .actions button{
+      border-radius:12px;
+      border:1px solid #d1d5db;
+      background:#fff;
+      padding:10px 14px;
+      cursor:pointer;
+      font-weight:700;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      transition:.2s;
+    }
+    .wallet-page .actions button:hover{border-color:#7a7cd0;color:#5c5ebf;}
     .wallet-page .list{display:flex;flex-direction:column;gap:16px;margin-top:14px;}
     .wallet-page .card{
       border:1px solid #e2e8f0;
@@ -341,34 +355,20 @@
       overflow:hidden;
     }
     .wallet-page .card.selected{border-color:#7a7cd0;box-shadow:0 0 0 2px rgba(122,124,208,.18);}
-    .wallet-page .card header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;}
-    .wallet-page .header-left{display:flex;flex-direction:column;gap:6px;}
-    @media(min-width:600px){.wallet-page .header-left{flex-direction:row;align-items:center;gap:16px;}}
-    .wallet-page .direction{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:1rem;}
-    .wallet-page .direction i{font-size:1rem;}
-    .wallet-page .direction.in{color:#16a34a;}
-    .wallet-page .direction.out{color:#dc2626;}
-    .wallet-page .code{font-family:'Cairo',sans-serif;font-weight:700;color:#1f2937;font-size:1rem;display:inline-flex;align-items:center;gap:6px;}
-    .wallet-page .code-label{color:#6b7280;font-weight:600;font-size:.95rem;}
+    .wallet-page .card header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+    .wallet-page .code{font-family:'Cairo',sans-serif;font-weight:800;color:#1f2937;font-size:1.1rem;}
     .wallet-page .code-btn,
     .wallet-page .code-status-btn{
       border:none;
       background:#eef0ff;
       color:#5c5ebf;
-      border-radius:12px;
+      border-radius:10px;
       padding:6px 12px;
       font-weight:700;
       cursor:pointer;
       transition:.2s;
     }
-    .wallet-page .code-btn{
-      background:#fff;
-      border:1px solid #d1d5db;
-      color:#1f2937;
-      box-shadow:0 1px 2px rgba(15,23,42,.08);
-    }
-    .wallet-page .code-btn:hover{border-color:#7a7cd0;color:#5c5ebf;box-shadow:0 2px 6px rgba(122,124,208,.15);}
-    .wallet-page .code-status-btn{background:#eef0ff;color:#5c5ebf;}
+    .wallet-page .code-btn:hover,
     .wallet-page .code-status-btn:hover{background:#dce0ff;}
     .wallet-page .status{
       display:inline-flex;
@@ -420,14 +420,6 @@
     body.dark-mode .wallet-page .card{background:#111827;border-color:#1f2937;box-shadow:0 8px 28px rgba(0,0,0,.35);}
     body.dark-mode .wallet-page .card.selected{box-shadow:0 0 0 2px rgba(122,124,208,.25);}
     body.dark-mode .wallet-page .code{color:#e2e8f0;}
-    body.dark-mode .wallet-page .code-btn{
-      background:#141b2f;
-      border-color:#2b2d52;
-      color:#e2e8f0;
-    }
-    body.dark-mode .wallet-page .code-btn:hover{border-color:#7a7cd0;color:#9c9ede;}
-    body.dark-mode .wallet-page .direction.in{color:#22c55e;}
-    body.dark-mode .wallet-page .direction.out{color:#f87171;}
     body.dark-mode .wallet-page .status{background:#1f2937;color:#e2e8f0;border-color:#374151;}
     body.dark-mode .wallet-page .status.pending{background:#2b2f3a;color:#fde68a;border-color:#a16207;}
     body.dark-mode .wallet-page .status.approved{background:#064e3b;color:#bbf7d0;border-color:#047857;}
@@ -2132,12 +2124,15 @@ button#logoutBtn:hover{background:#990000}
           root.innerHTML = [
             '<div class="wallet-spacer" aria-hidden="true"></div>',
             '<main>',
-            '  <h2><i class="fas fa-wallet"></i> محفظتي</h2>',
+            '  <h2><span><i class="fas fa-wallet"></i> محفظتي</span></h2>',
             '  <div class="toolbar" id="walletToolbar">',
             '    <button class="chip" data-filter="all">الكل</button>',
             '    <button class="chip" data-filter="pending">قيد المراجعة</button>',
             '    <button class="chip" data-filter="approved">مقبولة</button>',
             '    <button class="chip" data-filter="rejected">مرفوضة</button>',
+            '  </div>',
+            '  <div class="actions">',
+            '    <button id="refreshWallet"><i class="fas fa-rotate"></i> تحديث</button>',
             '  </div>',
             '  <div id="walletList" class="list"></div>',
             '</main>'

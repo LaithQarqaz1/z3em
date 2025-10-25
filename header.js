@@ -937,6 +937,7 @@ function initMobileDock(){
         let key = 'home';
         if (hash === '#/wallet') key = 'wallet';
         else if (hash === '#/reviews') key = 'home';
+        else if (file === 'wallet.html') key = 'wallet';
         else if (hash === '#/games' || hash === '#/social' || hash === '#/software') key = 'store';
         else if (file === 'index.html') key = 'home';
         else if (file === 'talabat.html') key = 'orders';
