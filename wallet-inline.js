@@ -120,13 +120,14 @@
       function resolveSource(rawSource, direction){
         const val = (rawSource||'').toString();
         if (val === SOURCE_ORDERS) return SOURCE_ORDERS;
-        if (val === SOURCE_FINANCE) return SOURCE_FINANCE;
-        if (val === 'depositRequests' || val === 'withdrawRequests') return SOURCE_FINANCE;
+        if (val === SOURCE_FINANCE || val.startsWith('users/')) return SOURCE_FINANCE;
+        if (val === 'depositRequests' || val === 'withdrawRequests') return val;
         if (direction === 'out' || direction === 'in') return SOURCE_FINANCE;
         return SOURCE_FINANCE;
       }
       function isFinanceSource(source){
-        return resolveSource(source, 'in') === SOURCE_FINANCE;
+        const resolved = resolveSource(source, 'in');
+        return resolved === SOURCE_FINANCE;
       }
 
       function renderRecords(items){
@@ -339,6 +340,61 @@
         return results;
       }
 
+      async function fetchLegacyRequests(collection, uid, direction){
+        const fieldsToTry = ['userId','uid','userUid'];
+        const seen = new Set();
+        const aggregated = [];
+
+        const addDocs = (snapDocs) => {
+          snapDocs.forEach(doc => {
+            const data = doc.data() || {};
+            const code =
+              data.code ||
+              data.depositCode ||
+              data.withdrawCode ||
+              data.orderCode ||
+              doc.id;
+            if (!code || seen.has(code)) return;
+            seen.add(code);
+            aggregated.push({
+              id: doc.id,
+              code,
+              direction: computeDirection(data, code, direction),
+              source: collection,
+              legacy: true,
+              ...data
+            });
+          });
+        };
+
+        for (const field of fieldsToTry){
+          const baseRef = db.collection(collection).where(field,'==',uid);
+          try{
+            const snap = await baseRef.orderBy('createdAt','desc').limit(80).get();
+            addDocs(snap.docs);
+          }catch(error){
+            const msg = String(error && error.message || error || '');
+            if (msg.includes('requires an index') || msg.includes('FAILED_PRECONDITION')){
+              try{
+                const snap2 = await baseRef.limit(80).get();
+                addDocs(snap2.docs);
+              }catch(_){ /* ignore */ }
+            } else if (error?.code === 'permission-denied') {
+              // silent
+            } else {
+              console.warn('[wallet] legacy query failed for', collection, field, error);
+            }
+          }
+        }
+
+        aggregated.sort((a,b)=>{
+          const ta = asDate(a.createdAt || a.computedAt || a.timestamp)?.getTime() || 0;
+          const tb = asDate(b.createdAt || b.computedAt || b.timestamp)?.getTime() || 0;
+          return tb - ta;
+        });
+        return aggregated;
+      }
+
       async function fetchFromOrdersPrefix(uid){
         try{
           const snap = await db.collection('orders').where('userUid','==',uid).orderBy('createdAt','desc').limit(20).get();
@@ -364,8 +420,28 @@
           ALL_ITEMS = cacheToArray(uid);
           usedCache = true;
         } else {
+          const merged = new Map();
+          const pushItems = (items) => {
+            items.forEach(item => {
+              const key = item.code || item.id;
+              if (!key || merged.has(key)) return;
+              merged.set(key, item);
+            });
+          };
+
           const finance = await fetchFinanceRequests(uid);
-          let combined = [...finance];
+          pushItems(finance);
+
+          if (!finance.length) {
+            const [legacyDeposits, legacyWithdraws] = await Promise.all([
+              fetchLegacyRequests('depositRequests', uid, 'in'),
+              fetchLegacyRequests('withdrawRequests', uid, 'out')
+            ]);
+            pushItems(legacyDeposits);
+            pushItems(legacyWithdraws);
+          }
+
+          let combined = Array.from(merged.values());
           if (!combined.length){
             combined = await fetchFromOrdersPrefix(uid);
           }
