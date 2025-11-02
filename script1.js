@@ -218,10 +218,10 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
   try {
     // لا نجلب أسعار عامة بدون معرف مستخدم
     if (!useruid) return;
-    const url = new URL('https://qusaystorefreefire.qusaistore22.workers.dev');
+    const url = new URL('https://z3em-manwal.laithqarqaz1.workers.dev/');
     url.searchParams.set('mode', 'all');
     url.searchParams.set('useruid', useruid);
-    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store' });
+    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store', headers: { 'X-Game': 'freefiremanwal' } });
     const data = await res.json();
     if (!data || data.success === false) throw new Error(data?.error || 'فشل جلب الأسعار');
     persistOffers(data);
@@ -325,9 +325,9 @@ async function sendOrder() {
   // Quote
   let total, breakdown;
   try {
-    const priceRes = await fetch("https://qusaystorefreefire.qusaistore22.workers.dev", {
+    const priceRes = await fetch("https://z3em-manwal.laithqarqaz1.workers.dev/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Game": "freefiremanwal" },
       body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
     });
     const priceData = await priceRes.json();
@@ -355,12 +355,13 @@ async function sendOrder() {
       submitBtn.style.pointerEvents = 'none';
     }
 
-    const response = await fetch("https://qusaystorefreefire.qusaistore22.workers.dev", {
+    const response = await fetch("https://z3em-manwal.laithqarqaz1.workers.dev/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`,
-        "X-SessionKey": sessionKey
+        "X-SessionKey": sessionKey,
+        "X-Game": "freefiremanwal"
       },
       body: JSON.stringify({
         playerId: pid,
@@ -592,5 +593,7 @@ const detectTheme = () => {
 document.addEventListener('DOMContentLoaded', () => {
   // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
 });
+
+
 
 

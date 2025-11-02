@@ -190,16 +190,23 @@ async function rotateSessionKeyAfterOrder(uid, ttlSeconds = 0) {
   }
 }
 
+/* ================== تعريف الخدمة لهذه الصفحة ================== */
+const GAME = "freefiren"; // هذه الصفحة لفري فاير نيجيري
+function getManwalBase(defaultUrl) {
+  try { return localStorage.getItem("MANWAL_ROUTER_BASE") || defaultUrl; } catch { return defaultUrl; }
+}
+const WORKER_BASE = getManwalBase("https://z3em-manwal.laithqarqaz1.workers.dev/");
+
 /* ================== الأسعار كما هي ================== */
 async function loadPrices(useruid = null) {
   try {
-    const url = new URL("https://freefiren.qousaistore44.workers.dev/");
+    const url = new URL(WORKER_BASE);
     // لا نجلب أسعار عامة بدون معرف مستخدم
     if (!useruid) return;
     url.searchParams.set("mode", "all");
     url.searchParams.set("useruid", useruid);
 
-    const res = await fetch(url.toString(), { method: "GET" });
+    const res = await fetch(url.toString(), { method: "GET", headers: { "X-Game": GAME } });
     const data = await res.json();
 
     if (!data || data.success === false) {
@@ -297,9 +304,9 @@ async function sendOrder() {
   // Quote
   let total, breakdown;
   try {
-    const priceRes = await fetch("https://freefiren.qousaistore44.workers.dev/", {
+    const priceRes = await fetch(WORKER_BASE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Game": GAME },
       body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
     });
     const priceData = await priceRes.json();
@@ -327,12 +334,13 @@ async function sendOrder() {
       submitBtn.style.pointerEvents = 'none';
     }
 
-    const response = await fetch("https://freefiren.qousaistore44.workers.dev/", {
+    const response = await fetch(WORKER_BASE, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`,
-        "X-SessionKey": sessionKey
+        "X-SessionKey": sessionKey,
+        "X-Game": GAME
       },
       body: JSON.stringify({
         playerId: pid,
@@ -564,5 +572,7 @@ const detectTheme = () => {
 document.addEventListener('DOMContentLoaded', () => {
   // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
 });
+
+
 
 

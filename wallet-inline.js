@@ -1,4 +1,4 @@
-﻿(function(){
+(function(){
   if (typeof window === 'undefined') return;
   if (window.__WALLET_SCRIPT_ATTACHED__) return;
   window.__WALLET_SCRIPT_ATTACHED__ = true;
@@ -51,15 +51,21 @@
       const CACHE_PREFIX = 'wallet:cache:';
       const FILTER_PREFIX = 'wallet:filter:';
       const LAST_CODE_PREFIX = 'wallet:lastCode:';
-      const CACHE_TTL_MS = 30 * 60 * 1000; // 30 دقيقة
-      const RECENT_WINDOW_DAYS = 3;
 
       let ALL_ITEMS = [];
       let CURRENT_FILTER = 'all';
+      let LAST_USER_ID = null;
 
       function cardSkeleton(){ const d=document.createElement('div'); d.className='card loading'; d.style.height='92px'; return d; }
       function showSkeleton(n=3){ listEl.innerHTML=''; for(let i=0;i<n;i++) listEl.appendChild(cardSkeleton()); }
       function showEmpty(){ listEl.innerHTML = '<div class="empty">لا توجد عمليات إيداع حتى الآن.</div>'; }
+      function showRequiresAuth(){
+        listEl.innerHTML = '<div class="empty">يرجى تسجيل الدخول لعرض محفظتك.</div>';
+        chipsWrap.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        ALL_ITEMS = [];
+        CURRENT_FILTER = 'all';
+        LAST_USER_ID = null;
+      }
 
       function asDate(ts){
         try{
@@ -153,9 +159,10 @@
         try{ localStorage.setItem(CACHE_PREFIX+uid, JSON.stringify(obj||{})); }catch(_){ }
       }
       function replaceCache(uid, arr){
+        const sorted = sortByNewest(arr);
         const c = { order:[], byCode:{}, lastSync: Date.now() };
-        arr.forEach(it=>{
-          const code = it.code || it.depositCode || it.id;
+        sorted.forEach(it=>{
+          const code = getCode(it);
           if (!code) return;
           c.order.push(code);
           c.byCode[code] = it;
@@ -173,17 +180,59 @@
       }
       function cacheToArray(uid){
         const c = readCache(uid);
-        const arr = (c.order||[]).map(code => ({ code, ...(c.byCode||{})[code] })).filter(x => x && (x.code||x.id));
-        arr.sort((a,b)=>{
-          const ta = asDate(a.createdAt || a.computedAt || a.timestamp)?.getTime() || 0;
-          const tb = asDate(b.createdAt || b.computedAt || b.timestamp)?.getTime() || 0;
+        const arr = (c.order || []).map(code => ({ code, ...(c.byCode || {})[code] })).filter(x => getCode(x));
+        return sortByNewest(arr);
+      }
+
+      function getCode(item){
+        if (!item) return '';
+        return item.code || item.depositCode || item.id || '';
+      }
+      function sortByNewest(arr){
+        return (arr || []).slice().sort((a,b)=>{
+          const ta = asDate(a?.createdAt || a?.computedAt || a?.timestamp)?.getTime() || 0;
+          const tb = asDate(b?.createdAt || b?.computedAt || b?.timestamp)?.getTime() || 0;
           return tb - ta;
         });
-        return arr;
       }
-      function isRecent(ts){
-        const d = asDate(ts); if (!d) return true;
-        return (Date.now() - d.getTime()) <= RECENT_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+      function buildSnapshotSignature(list){
+        return sortByNewest(list).map(item=>{
+          const code = getCode(item);
+          const status = normStatus(item?.status || item?.state || '');
+          const created = asDate(item?.createdAt || item?.computedAt || item?.timestamp)?.getTime() || 0;
+          const addedVal = (item?.amountUSD!=null)? Number(item.amountUSD)
+                        : (item?.addedUSD!=null)? Number(item.addedUSD)
+                        : (item?.addedAmount!=null)? Number(item.addedAmount)
+                        : (item?.amountJOD!=null)? Number(item.amountJOD)
+                        : (item?.added!=null)? Number(item.added)
+                        : null;
+          const paidVal  = (item?.amountCurrency!=null)? Number(item.amountCurrency)
+                        : (item?.client_payAmount!=null)? Number(item.client_payAmount)
+                        : (item?.payAmount!=null)? Number(item.payAmount)
+                        : null;
+          const addedSig = (addedVal!=null && isFinite(addedVal)) ? addedVal.toFixed(2) : '';
+          const paidSig  = (paidVal!=null && isFinite(paidVal)) ? paidVal.toFixed(2) : '';
+          return [code, status, created, addedSig, paidSig].join('|');
+        }).join('||');
+      }
+      function selectLastCard(uid){
+        try{
+          const last = localStorage.getItem(LAST_CODE_PREFIX+uid);
+          if (!last) return;
+          const btn = listEl.querySelector(`.code-btn[data-code="${last}"], .code-status-btn[data-code="${last}"]`);
+          if (!btn) return;
+          const card = btn.closest('.card');
+          if (!card) return;
+          card.classList.add('selected');
+          const item = ALL_ITEMS.find(x => getCode(x) === last);
+          if (item) updateCardFromData(card, item);
+        }catch(_){ }
+      }
+      function displayItems(uid, items){
+        ALL_ITEMS = sortByNewest(items);
+        renderDeposits(applyFilter(ALL_ITEMS));
+        chipsWrap.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', (c.dataset.filter||'all') === CURRENT_FILTER));
+        selectLastCard(uid);
       }
 
       function updateCardFromData(card, data){
@@ -247,27 +296,37 @@
         }catch(_){ return []; }
       }
 
+      async function fetchAllDeposits(uid){
+        let data = await fetchFromDepositRequests(uid);
+        if (!data.length) data = await fetchFromOrdersPrefix(uid);
+        return sortByNewest(data);
+      }
+
       function applyFilter(arr){
         if (CURRENT_FILTER === 'all') return arr.slice();
         return arr.filter(item => normStatus(item.status || item.state) === CURRENT_FILTER);
       }
 
-      async function loadWallet(){
-        const user = auth.currentUser;
-        if (!user){ listEl.innerHTML = '<div class="empty">يرجى تسجيل الدخول لعرض محفظتك.</div>'; return; }
-        showSkeleton();
+      async function loadWalletFor(user, opts = {}){
+        if (!user){ showRequiresAuth(); return; }
+        const force = !!opts.force;
+        const skipSkeleton = !!opts.skipSkeleton;
+        if (!skipSkeleton) showSkeleton();
 
         const uid = user.uid;
+        if (LAST_USER_ID && LAST_USER_ID !== uid) CURRENT_FILTER = 'all';
+        LAST_USER_ID = uid;
+
+        let items = [];
         let usedCache = false;
         const cache = readCache(uid);
-        if (cache.order && cache.order.length){
-          ALL_ITEMS = cacheToArray(uid);
+
+        if (!force && cache.order && cache.order.length){
+          items = cacheToArray(uid);
           usedCache = true;
         } else {
-          let data = await fetchFromDepositRequests(uid);
-          if (!data.length) data = await fetchFromOrdersPrefix(uid);
-          ALL_ITEMS = data;
-          replaceCache(uid, data);
+          items = await fetchAllDeposits(uid);
+          replaceCache(uid, items);
         }
 
         try{
@@ -275,40 +334,22 @@
           if (savedFilter) CURRENT_FILTER = savedFilter;
         }catch(_){ }
 
-        renderDeposits(applyFilter(ALL_ITEMS));
-        chipsWrap.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', (c.dataset.filter||'all') === CURRENT_FILTER));
+        displayItems(uid, items);
+        const previousSignature = buildSnapshotSignature(ALL_ITEMS);
 
-        try{
-          const last = localStorage.getItem(LAST_CODE_PREFIX+uid);
-          if (last){
-            const btn = listEl.querySelector(`.code-btn[data-code="${last}"]`) || listEl.querySelector(`.code-status-btn[data-code="${last}"]`);
-            if (btn){
-              const card = btn.closest('.card');
-              if (card){
-                card.classList.add('selected');
-                const cached = readCache(uid).byCode?.[last];
-                if (cached) updateCardFromData(card, cached);
-              }
-            }
-          }
-        }catch(_){ }
+        if (force) return;
 
-        if (usedCache && (!cache.lastSync || (Date.now()-cache.lastSync) > CACHE_TTL_MS)){
-          const recentCodes = (cache.order||[]).filter(code => {
-            const it = (cache.byCode||{})[code] || {};
-            return isRecent(it.createdAt || it.computedAt || it.timestamp);
-          }).slice(0,20);
-          for (const code of recentCodes){
+        if (usedCache){
+          (async ()=>{
             try{
-              const snap = await db.collection('depositRequests').doc(code).get();
-              if (snap.exists){
-                const fresh = { id:snap.id, ...snap.data() };
-                upsertCache(uid, code, fresh);
-                const card = listEl.querySelector(`.code-btn[data-code="${code}"]`)?.closest('.card') || listEl.querySelector(`.code-status-btn[data-code="${code}"]`)?.closest('.card');
-                if (card) updateCardFromData(card, fresh);
+              const fresh = await fetchAllDeposits(uid);
+              replaceCache(uid, fresh);
+              const newSignature = buildSnapshotSignature(fresh);
+              if (newSignature !== previousSignature){
+                displayItems(uid, fresh);
               }
             }catch(_){ }
-          }
+          })();
         }
       }
 
@@ -324,7 +365,10 @@
         renderDeposits(applyFilter(ALL_ITEMS));
       });
 
-      refreshBtn.addEventListener('click', loadWallet);
+      refreshBtn.addEventListener('click', (e)=>{
+        try{ e.preventDefault(); }catch(_){ }
+        loadWalletFor(auth.currentUser, { force: true });
+      });
 
       listEl.addEventListener('click', async (e)=>{
         const btn = e.target.closest('.code-btn, .code-status-btn');
@@ -359,10 +403,31 @@
 
       function init(){
         showSkeleton();
-        loadWallet();
+
+        const current = auth.currentUser;
+        let firstAuthHandled = false;
+
+        if (typeof auth.onAuthStateChanged === 'function'){
+          try{
+            auth.onAuthStateChanged(user => {
+              const opts = { force: true, skipSkeleton: !firstAuthHandled };
+              firstAuthHandled = true;
+              loadWalletFor(user, opts);
+            });
+          }catch(_){
+            if (!current) showRequiresAuth();
+          }
+        } else if (current){
+          loadWalletFor(current, { force: true, skipSkeleton: true });
+          firstAuthHandled = true;
+        } else {
+          showRequiresAuth();
+        }
       }
 
-      window.__WALLET_REFRESH__ = function(){ try { loadWallet(); }catch(_){ } };
+      window.__WALLET_REFRESH__ = function(opts){
+        try { loadWalletFor(auth.currentUser, opts || {}); }catch(_){ }
+      };
 
       if (document.readyState === 'loading'){
         document.addEventListener('DOMContentLoaded', init, { once: true });

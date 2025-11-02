@@ -961,7 +961,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const fresh = await fetchOrdersFromFirebaseOnce(uid);
         LS.replace(uid, fresh);
         renderOrders(fresh);
-        // بعد التحديث الكامل، ما زلنا نطبّق قاعدة 7 أيام تلقائيًا عند الدخول القادم
       } catch (e) {
         console.error(e);
       }
@@ -988,8 +987,3 @@ function toggleDetails(code) {
   d.style.display = isOpen ? 'none' : 'block';
   card.classList.toggle('open', !isOpen);
 }
-
-
-
-
-

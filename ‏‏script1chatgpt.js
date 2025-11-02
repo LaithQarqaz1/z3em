@@ -363,7 +363,7 @@ async function sendOrder() {
 
 /* ================== نافذة التأكيد كما هي ================== */
 function showConfirmation(orderCode, {
-  orderUrl = "talabat.html",
+  orderUrl = "index.html#/orders",
   homeUrl  = "index.html",
   theme    = "auto"
 } = {}) {
@@ -531,5 +531,6 @@ const detectTheme = () => {
 document.addEventListener('DOMContentLoaded', () => {
   // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
 });
+
 
 

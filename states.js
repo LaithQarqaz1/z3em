@@ -22,13 +22,25 @@
   function prepCard(card){
     try{
       if (!card.dataset.originalHref){ var href = card.getAttribute('href'); if (href) card.dataset.originalHref = href; }
+      if (card.dataset && card.dataset.stateKey && !card.dataset.originalStateKey){ card.dataset.originalStateKey = card.dataset.stateKey; }
       var t = card.querySelector && card.querySelector('h2');
       if (t && !card.dataset.originalTitle){ card.dataset.originalTitle = t.textContent || ''; }
     }catch(_){ }
   }
 
+  function resolveStateKey(card){
+    try{
+      if (!card || !card.dataset) return '';
+      if (card.dataset.stateKey) return card.dataset.stateKey;
+      if (card.dataset.originalStateKey) return card.dataset.originalStateKey;
+      return '';
+    }catch(_){ return ''; }
+  }
+
   function getPageNameFromCard(card){
     try{
+      var key = resolveStateKey(card);
+      if (key) return key;
       var href = (card.dataset && card.dataset.originalHref) || card.getAttribute('href') || '';
       href = href.split('?')[0].split('#')[0];
       return href.replace(/\.html$/,'');

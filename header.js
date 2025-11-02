@@ -1,4 +1,4 @@
-﻿// Deobfuscated and cleaned header logic
+// Deobfuscated and cleaned header logic
 
 // ألغينا حد إعادة تحميل Firebase؛ أعِد الوظائف الأصلية إن وُجدت
 (function(){
@@ -725,7 +725,55 @@ try {
 } catch {}
 
 // Navigate helper
-function navigateTo(href){ try { sessionStorage.setItem('nav:fromHome','1'); } catch {} toggleSidebar(); showPageLoader(); setTimeout(()=>{ window.location.href = href; }, 150); }
+function navigateTo(href){
+  try { sessionStorage.setItem('nav:fromHome','1'); } catch {}
+  toggleSidebar();
+  let targetKey = href;
+  let currentKey = location.pathname + location.search + location.hash;
+  try {
+    const targetUrl = new URL(href, location.href);
+    targetKey = targetUrl.pathname + targetUrl.search + targetUrl.hash;
+  } catch {}
+  if (targetKey === currentKey){
+    try {
+      sessionStorage.removeItem('nav:loader:expected');
+      sessionStorage.removeItem('nav:loader:showAt');
+    } catch {}
+    hidePageLoader();
+    return;
+  }
+  showPageLoader();
+  setTimeout(()=>{ window.location.href = href; }, 150);
+}
+
+function navigateHomeHash(targetHash, routeKey){
+  const file = (location.pathname.split('/').pop() || '').toLowerCase();
+  const isHome = file === '' || file === 'index.html';
+  try { sessionStorage.setItem('nav:fromHome','1'); } catch {}
+  if (isHome) {
+    const already = (location.hash || '') === targetHash;
+    toggleSidebar();
+    if (already){
+      try {
+        sessionStorage.removeItem('nav:loader:expected');
+        sessionStorage.removeItem('nav:loader:showAt');
+      } catch {}
+      try { hidePageLoader(); } catch {}
+      const key = routeKey || (targetHash || '').replace(/^#\//,'');
+      if (key && typeof window.__reloadInlineRoute === 'function'){
+        try { window.__INLINE_FORCE_ROUTE__ = key; } catch {}
+        try { window.__reloadInlineRoute(key); } catch {}
+      } else if (key){
+        try { window.__INLINE_FORCE_ROUTE__ = null; } catch {}
+      }
+      return;
+    }
+    try { showPageLoader(); } catch {}
+    setTimeout(() => { window.location.hash = targetHash; }, 80);
+  } else {
+    navigateTo('index.html' + targetHash);
+  }
+}
 
 // Sidebar
 const sidebar = document.createElement('nav');
@@ -752,52 +800,19 @@ ul.appendChild(ordersLi);
 const walletLi = document.createElement('li');
 walletLi.id = 'walletBtn';
 walletLi.innerHTML = '<i class="fas fa-wallet"></i><a href="#">محفظتي</a>';
-walletLi.onclick = () => {
-  const file = (location.pathname.split('/').pop() || '').toLowerCase();
-  const isHome = file === '' || file === 'index.html';
-  try { sessionStorage.setItem('nav:fromHome','1'); } catch {}
-  if (isHome) {
-    toggleSidebar();
-    try { showPageLoader(); } catch {}
-    setTimeout(() => { window.location.hash = '#/wallet'; }, 80);
-  } else {
-    navigateTo('index.html#/wallet');
-  }
-};
+walletLi.onclick = () => navigateHomeHash('#/wallet','wallet');
 walletLi.style.display = 'none';
 ul.appendChild(walletLi);
 // التقييمات
 const reviewsLi = document.createElement('li');
 reviewsLi.innerHTML = '<i class="fa-solid fa-star"></i><a href="#">التقييمات</a>';
-reviewsLi.onclick = () => {
-  const file = (location.pathname.split('/').pop() || '').toLowerCase();
-  const isHome = file === '' || file === 'index.html';
-  try { sessionStorage.setItem('nav:fromHome','1'); } catch {}
-  if (isHome) {
-    toggleSidebar();
-    try { showPageLoader(); } catch {}
-    setTimeout(() => { window.location.hash = '#/reviews'; }, 80);
-  } else {
-    navigateTo('index.html#/reviews');
-  }
-};
+reviewsLi.onclick = () => navigateHomeHash('#/reviews','reviews');
 ul.appendChild(reviewsLi);
 // الإعدادات
 const settingsLi = document.createElement('li');
 settingsLi.id = 'settingsBtn';
 settingsLi.innerHTML = '<i class="fa-solid fa-gear"></i><a href="#">الإعدادات</a>';
-settingsLi.onclick = () => {
-  const file = (location.pathname.split('/').pop() || '').toLowerCase();
-  const isHome = file === '' || file === 'index.html';
-  try { sessionStorage.setItem('nav:fromHome','1'); } catch {}
-  if (isHome) {
-    toggleSidebar();
-    try { showPageLoader(); } catch {}
-    setTimeout(() => { window.location.hash = '#/settings'; }, 80);
-  } else {
-    navigateTo('index.html#/settings');
-  }
-};
+settingsLi.onclick = () => navigateHomeHash('#/settings','settings');
 settingsLi.style.display = 'none';
 ul.appendChild(settingsLi);
 // تسجيل الدخول / الخروج

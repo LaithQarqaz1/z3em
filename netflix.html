@@ -3,7 +3,7 @@
  <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>فري فاير | متجر زعيم</title>
+<title>نتفلكس | متجر زعيم</title>
 <link rel="icon" href="emp.png" type="image/png">
   <link rel="apple-touch-icon" href="emp.png" sizes="180x180">
   <meta property="og:image" content="emp.png">
@@ -156,7 +156,75 @@
   </script>
   
   <!-- تهيئة Firebase أولاً -->
-  <script src="script1.js"></script>
+  <script>
+    // حقن الهيدر X-Game لجميع طلبات هذه الصفحة (نتفلكس)
+    (function(){
+      var GAME = 'netflix';
+      var ROUTER = 'https://z3em-manwal.laithqarqaz1.workers.dev/';
+      try{ if(!window.MANWAL_ROUTER_BASE) window.MANWAL_ROUTER_BASE = ROUTER; }catch(_){ }
+      var ofetch = window.fetch;
+      window.fetch = function(i, init){
+        init = init || {}; var h = new Headers(init.headers || {});
+        if (!h.has('X-Game')) h.set('X-Game', GAME);
+        // إعادة توجيه الطلبات لراوتر manwal إذا كان الأصل (origin) للعامل القديم
+        try{
+          var urlStr = (typeof i === 'string') ? i : (i && i.url ? i.url : '');
+          if (urlStr){
+            var u = new URL(urlStr, window.location.href);
+            if (u.origin === 'https://divine-butterfly-bc16.stwrqsy.workers.dev'){
+              // حافظ على باراميترات الاستعلام
+              i = ROUTER + (u.search || '');
+            }
+          }
+        }catch(_){ }
+        init.headers = h; return ofetch(i, init);
+      };
+    })();
+
+    // إعداد Turnstile على مستوى الصفحة (sitekey)
+    (function(){
+      var SITE_KEY = '0x4AAAAAABmiVmi7wosqeHQT';
+      if (!window.TURNSTILE_SITE_KEY) window.TURNSTILE_SITE_KEY = SITE_KEY;
+      if (!window.getTurnstileTokenInteractive) {
+        var _tsWidgetId = null, _tsReadyPromise = null, _tsToken = '';
+        function ensureTurnstileScript(){
+          if (window.turnstile) return Promise.resolve();
+          if (_tsReadyPromise) return _tsReadyPromise;
+          _tsReadyPromise = new Promise(function(resolve){
+            var s = document.createElement('script');
+            s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+            s.async = true; s.defer = true; s.onload = resolve; s.onerror = resolve; document.head.appendChild(s);
+          });
+          return _tsReadyPromise;
+        }
+        function themeIsDark(){
+          try{
+            var t = (document.documentElement.getAttribute('data-theme')||'').toLowerCase();
+            if (t==='dark') return true; if (t==='light') return false; return document.body.classList.contains('dark-mode');
+          }catch(_){ return false; }
+        }
+        window.getTurnstileTokenInteractive = async function(){
+          try { await ensureTurnstileScript(); } catch {}
+          var holder = document.getElementById('cf-turnstile-container');
+          if (!holder){
+            holder = document.createElement('div'); holder.id = 'cf-turnstile-container'; holder.style.cssText='margin-top:10px;display:block;';
+            (document.querySelector('#purchase-modal .pm-card')||document.body).appendChild(holder);
+          }
+          var opts = { sitekey: (window.TURNSTILE_SITE_KEY||SITE_KEY), theme: themeIsDark()? 'dark' : 'light', callback: function(t){ _tsToken = t||''; }, 'expired-callback': function(){ _tsToken=''; try{ window.turnstile && _tsWidgetId!=null && window.turnstile.reset(_tsWidgetId);}catch(_){} } };
+          if (!_tsWidgetId && window.turnstile && window.turnstile.render) { _tsWidgetId = window.turnstile.render(holder, opts); }
+          else if (window.turnstile && window.turnstile.reset && _tsWidgetId!=null) { try{ window.turnstile.reset(_tsWidgetId);}catch(_){} }
+          var started = Date.now();
+          while (Date.now() - started < 15000){
+            try{ if (window.turnstile && _tsWidgetId!=null){ var r = window.turnstile.getResponse(_tsWidgetId); if (r){ _tsToken = r; break; } } }catch(_){ }
+            if (_tsToken) break; await new Promise(function(r){ setTimeout(r,200); });
+          }
+          if (!_tsToken) throw new Error('turnstile_token_missing');
+          return _tsToken;
+        };
+      }
+    })();
+  </script>
+  <script src="‏‏script1canva.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
   <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js" async></script>
@@ -245,7 +313,7 @@
     .voucher .sep{ unicode-bidi: isolate; display:inline-block; padding: 0 .15rem; }
     .voucher .price{ white-space: nowrap; }
 
-    /* شريط البحث + شبكة الكروت (مطابقة لطابع freefireinbut) */
+    /* شريط البحث + شبكة الكروت (مطابقة لطابع netflixinbut) */
     .search-container {
       max-width: 1100px;
       margin: 0 auto 24px auto;
@@ -694,8 +762,8 @@ html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
             </div>
           </div>
           <div class="pm-input">
-            <input id="player-id" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ادخل الايدي هنا" />
-            
+            <input id="player-id" type="email" autocomplete="email" aria-label="البريد الإلكتروني" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ادخل رقم واتساب للتواصل" />
+
           </div>
           <div class="pm-actions">
             <button type="button" id="pm-cancel" class="btn btn-outline">إلغاء</button>
@@ -708,7 +776,7 @@ html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
       
 
       
-      <!-- شريط البحث (مطابق لـ freefireinbut) -->
+      <!-- شريط البحث (مطابق لـ netflixinbut) -->
       <div class="search-container">
         <input type="text" id="ffSearchInput" placeholder="ابحث عن الباقات..." aria-label="بحث" />
       </div>
@@ -779,7 +847,7 @@ html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
       img.src = imgSrc; img.alt = imgAlt;
       img.loading = 'lazy'; img.decoding = 'async'; img.setAttribute('fetchpriority','low');
       div.appendChild(img);
-      const h2 = document.createElement("h2"); h2.textContent = jewels ? `${jewels} جوهرة` : offer; div.appendChild(h2);
+      const h2 = document.createElement("h2"); h2.textContent = jewels ? `${jewels} شهر` : offer; div.appendChild(h2);
       // إضافة السعر أسفل الاسم
       const priceDiv = document.createElement("div");
       priceDiv.className = "offer-price";
@@ -796,11 +864,7 @@ html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
   const offersBox = document.createElement("div"); offersBox.className = "offers-box";
   const grid = document.createElement("section"); grid.className = "categories"; offersBox.appendChild(grid);
   const topupOffers = [
-    { jewels: 110, imgSrc: "IMGS/jewels.jpg", imgAlt: "110 جوهرة" },
-    { jewels: 210, imgSrc: "IMGS/jewels.jpg", imgAlt: "213 جوهرة" },
-    { jewels: 583, imgSrc: "IMGS/jewels.jpg", imgAlt: "583 جوهرة" },
-    { jewels: 1188, imgSrc: "IMGS/jewels.jpg", imgAlt: "1188 جوهرة" },
-    { jewels: 2420, imgSrc: "IMGS/jewels.jpg", imgAlt: "2420 جوهرة" },
+    { jewels: 1, imgSrc: "IMGS/netflix.jpg", imgAlt: "1 شهر" },
 
   ];
   // حفظ آخر حالة للعروض
@@ -950,7 +1014,7 @@ function toggleOffer(element) {
   const price = offersPrices[key];
   if (price !== undefined) {
     total += Number(price);
-const nameText  = element.dataset.jewels ? `${element.dataset.jewels} جوهرة` : element.dataset.offer;
+const nameText  = element.dataset.jewels ? `${element.dataset.jewels} شهر` : element.dataset.offer;
 const priceText = `${Number(price).toFixed(2)} $`;
 breakdownLines.push(
   `<span class="item-name">${nameText}</span> : <span class="item-price">${priceText}</span>`
@@ -972,7 +1036,7 @@ if (breakdownLines.length === 0) {
   el.classList.remove("no-selection");
 }
 
-// فلترة البحث بنفس أسلوب freefireinbut + إظهار رسالة لا نتائج كالرئيسية
+// فلترة البحث بنفس أسلوب netflixinbut + إظهار رسالة لا نتائج كالرئيسية
 function filterCardsBySearch(ev){
   const raw = (ev.target.value || '').toString();
   const norm = s => s.toLowerCase()
@@ -1034,7 +1098,7 @@ function _readOfferPriceForElement(el){
     document.querySelectorAll('.offer-box.selected').forEach(x => x.classList.remove('selected'));
     el.classList.add('selected');
     window._pm_currentCard = el;
-    const title = el.dataset.jewels ? `${el.dataset.jewels} جوهرة` : (el.dataset.offer || '—');
+    const title = el.dataset.jewels ? `${el.dataset.jewels} شهر` : (el.dataset.offer || '—');
     const { priceText } = _readOfferPriceForElement(el);
     document.getElementById('pm-title').textContent = title;
     document.getElementById('pm-price').textContent = priceText;
@@ -1127,7 +1191,7 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { toast.style.transform = 'translateY(100px)'; toast.style.opacity = '0'; setTimeout(() => { toast.style.visibility = 'hidden'; }, 500); }, duration);
   }
 
-  // زر لصق الايدي
+  // زر لصق البريد الإلكتروني
   async function pastePlayerId(){
     try{
       const input = document.getElementById('player-id');
@@ -1150,7 +1214,7 @@ window.addEventListener('DOMContentLoaded', () => {
       input.value = val;
       try{ input.dispatchEvent(new Event('input', {bubbles:true})); }catch(_){}
       input.focus();
-      showToast('تم لصق الايدي', 'success');
+      showToast('تم لصق البريد الإلكتروني', 'success');
     }catch(e){
       showToast('تعذر قراءة الحافظة. الصق يدوياً', 'warning');
     }
@@ -1183,8 +1247,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener("DOMContentLoaded", async () => {
     try {
-      // جلب من topup > freefire والحقل state نص JSON
-      const stateDoc = await firebase.firestore().collection("topup").doc("freefire").get();
+      // جلب من topup > netflix والحقل state نص JSON
+      const stateDoc = await firebase.firestore().collection("topup").doc("netflix").get();
       if (stateDoc.exists) {
         let stateData = stateDoc.data();
         if (stateData && typeof stateData.state === 'string') {
@@ -1237,7 +1301,7 @@ window.addEventListener('DOMContentLoaded', () => {
           }
         });
       } else {
-        console.warn("⚠️ لم يتم العثور على وثيقة الحالة في Firestore (topup/freefire)");
+        console.warn("⚠️ لم يتم العثور على وثيقة الحالة في Firestore (topup/netflix)");
       }
     } catch (e) { console.error("❌ فشل في جلب حالة العروض:", e); }
   });

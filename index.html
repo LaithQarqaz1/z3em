@@ -1199,27 +1199,23 @@ button#logoutBtn:hover{background:#990000}
 <main>
   <section class="categories" id="categoriesContainer">
     <a href="games.html" class="card" data-title="الألعاب">
-      <img draggable="false" src="https://i.ibb.co/1GYPyKMj/1447-02-27-23-46-21-df66c84f.jpg" alt="ألعاب" loading="eager" decoding="async" fetchpriority="high" />
+      <img draggable="false" src="IMGS/العاب.jpg" alt="ألعاب" loading="eager" decoding="async" fetchpriority="high" />
       <h2>الألعاب</h2>
     </a>
     <a href="social.html" class="card" data-title="مواقع التواصل الاجتماعي">
-      <img draggable="false" src="https://i.ibb.co/Vcq1dr69/1756157590278.jpg" alt="التواصل الاجتماعي" loading="eager" decoding="async" fetchpriority="high" />
+      <img draggable="false" src="IMGS/تواصل.jpg" alt="التواصل الاجتماعي" loading="eager" decoding="async" fetchpriority="high" />
       <h2>مواقع التواصل</h2>
     </a>
     <a href="software.html" class="card" data-title="اشتراكات البرامج">
-      <img draggable="false" src="https://i.ibb.co/XZHyMGSG/1756247096045.jpg" alt="البرامج" loading="eager" decoding="async" fetchpriority="high" />
+      <img draggable="false" src="IMGS/اشتراكات.jpg" alt="برامج" loading="eager" decoding="async" fetchpriority="high" />
       <h2>اشتراكات البرامج</h2>
     </a>
 
         <a href="sahb.html" class="card" data-title="العملات الرقمية">
-      <img draggable="false" src="https://i.ibb.co/XZHyMGSG/17096045.jpg" alt="العملات الرقمية" loading="eager" decoding="async" fetchpriority="high" />
+      <img draggable="false" src="IMGS/sahb.jpg" alt="العملات الرقمية" loading="eager" decoding="async" fetchpriority="high" />
       <h2>العملات الرقمية</h2>
     </a>
 
-    <a href="webdev.html" class="card" data-title="تطوير مواقع">
-      <img draggable="false" src="https://i.ibb.co/XZHyMGSG/1756247096045.jpg" alt="تطوير مواقع" loading="eager" decoding="async" fetchpriority="high" />
-      <h2>تطوير مواقع</h2>
-    </a>
 
   </section>
   <p class="no-results" id="noResults" style="display:none;">عذراً، لم يتم العثور على نتائج.</p>
@@ -1562,6 +1558,20 @@ button#logoutBtn:hover{background:#990000}
       }
     }
 
+    function cardStateKey(card) {
+      try {
+        if (card && card.dataset) {
+          if (card.dataset.stateKey) return card.dataset.stateKey;
+          if (card.dataset.originalStateKey) return card.dataset.originalStateKey;
+        }
+        var href = (card.dataset && card.dataset.originalHref) || card.getAttribute('href') || '';
+        href = href.split('?')[0].split('#')[0];
+        return href.replace(/\.html$/,'');
+      } catch(_) {
+        return '';
+      }
+    }
+
     function applyCardsVisibility() {
       const cards = document.querySelectorAll('.card');
       // أضف انيميشن التحميل مؤقتًا
@@ -1569,6 +1579,9 @@ button#logoutBtn:hover{background:#990000}
         if (!card.dataset.originalHref) {
           const href = card.getAttribute('href');
           if (href) card.dataset.originalHref = href;
+        }
+        if (card.dataset && card.dataset.stateKey && !card.dataset.originalStateKey) {
+          card.dataset.originalStateKey = card.dataset.stateKey;
         }
         const titleEl = card.querySelector('h2');
         if (!card.dataset.originalTitle && titleEl) {
@@ -1582,7 +1595,7 @@ button#logoutBtn:hover{background:#990000}
       try { cached = readStatesCache(window.__SKIP_FIREBASE__ ? true : false); } catch(_) { cached = null; }
       if (cached && typeof cached === 'object') {
         cards.forEach(card => {
-          const pageName = (card.dataset.originalHref || card.getAttribute('href') || '').replace('.html','');
+          const pageName = cardStateKey(card);
           const state = Object.prototype.hasOwnProperty.call(cached, pageName) ? cached[pageName] : 'on';
           // طبّق الإغلاق فقط فورًا، واترك الفتح إلى حين رد الشبكة أو انتهاء المهلة
           if (state === 'off') applyCardState(card, 'off');
@@ -1603,7 +1616,7 @@ button#logoutBtn:hover{background:#990000}
           const map = (result && result.map) ? result.map : (readStatesCache(false) || {});
           const resolved = map || {};
           cards.forEach(card => {
-            const pageName = (card.dataset.originalHref || card.getAttribute('href') || '').replace('.html','');
+            const pageName = cardStateKey(card);
             const state = Object.prototype.hasOwnProperty.call(resolved, pageName) ? resolved[pageName] : 'on';
             applyCardState(card, state);
           });
@@ -2105,11 +2118,12 @@ button#logoutBtn:hover{background:#990000}
           }
         }
 
-      return {
-        build: build,
-        onShow: onShow
-      };
-    })();
+        return {
+          build: build,
+          onShow: onShow,
+          ready: function(){ return typeof window.__initReviewsPage === 'function'; }
+        };
+      })();
 
       var walletRoute = (function(){
         var state = {
@@ -2148,36 +2162,219 @@ button#logoutBtn:hover{background:#990000}
         }
 
         function init(){
-          if (state.initialized) return;
-          if (!document.getElementById('walletList')) return;
+          if (state.initialized) return false;
+          if (!document.getElementById('walletList')) return false;
           if (typeof window.__initWalletPage === 'function'){
             window.__initWalletPage();
             state.initialized = true;
+            return true;
           }
+          return false;
         }
 
-        function onShow(){
-          init();
+        function onShow(ctx){
+          var context = ctx || {};
+          var firstInit = init();
           if (typeof window.__WALLET_REFRESH__ === 'function'){
-            try { window.__WALLET_REFRESH__(); } catch(_){}
+            var opts = { skipSkeleton: !!firstInit };
+            if (context.forced) opts.force = true;
+            try { window.__WALLET_REFRESH__(opts); } catch(_){}
           }
         }
 
         return {
           build: build,
-          onShow: onShow
+          onShow: onShow,
+          ready: function(){ return typeof window.__initWalletPage === 'function'; }
+        };
+      })();
+
+      var manualGamesInline = (function(){
+        var cache = null;
+        var lastFetched = 0;
+        var inflight = null;
+        var DEFAULT_BASE = "https://z3em-manwal.laithqarqaz1.workers.dev/";
+        var FETCH_TTL = 2 * 60 * 1000;
+
+        function getBase(){
+          try{
+            var stored = localStorage.getItem("MANWAL_ROUTER_BASE");
+            if (stored) return stored;
+          }catch(_){}
+          return DEFAULT_BASE;
+        }
+
+        function normalizeCategory(value){
+          return (value || "")
+            .toString()
+            .trim()
+            .toLowerCase();
+        }
+
+        function matchesTarget(gameCategory, targets){
+          var normalized = normalizeCategory(gameCategory);
+          if (!normalized || normalized === "manual") normalized = "games";
+          if (!targets || !targets.length) return normalized === "games";
+          return targets.some(function(target){
+            if (target === "*") return true;
+            if (target === "games") return normalized === "games";
+            return normalized === target;
+          });
+        }
+
+        function fetchList(force){
+          var now = Date.now();
+          if (!force && cache && (now - lastFetched) < FETCH_TTL) return Promise.resolve(cache);
+          if (inflight) return inflight;
+          var url;
+          try {
+            url = new URL(getBase());
+          } catch {
+            url = new URL(DEFAULT_BASE);
+          }
+          url.searchParams.set("mode", "games");
+          inflight = fetch(url.toString(), {
+            headers: { "X-Game": "other" },
+            cache: "no-store"
+          }).then(async function(res){
+            if (!res.ok) throw new Error("manual_games_fetch_failed");
+            var data = await res.json().catch(function(){ return {}; });
+            var games = Array.isArray(data.games) ? data.games : [];
+            cache = games;
+            lastFetched = Date.now();
+            return games;
+          }).catch(function(err){
+            console.error("Manual games fetch error:", err);
+            return [];
+          }).finally(function(){ inflight = null; });
+          return inflight;
+        }
+
+        function ensureMessage(section){
+          if (!section) return null;
+          var msg = section.querySelector(".manual-games-empty");
+          if (!msg){
+            msg = document.createElement("p");
+            msg.className = "manual-games-empty";
+            msg.style.display = "none";
+            msg.dir = "rtl";
+            section.appendChild(msg);
+          }
+          return msg;
+        }
+
+        function fallbackImage(){
+          return "IMGS/freefiremanual.jpg";
+        }
+
+        function createCard(game){
+          var card = document.createElement("a");
+          card.className = "card manual-card";
+          card.setAttribute("data-manual-card", "1");
+          card.setAttribute("data-title", game.name || game.slug || "لعبة يدوية");
+          card.setAttribute("href", "manual-game.html?slug=" + encodeURIComponent(game.slug));
+          card.dataset.stateKey = game.slug;
+          if (game.category) {
+            card.dataset.category = normalizeCategory(game.category);
+          }
+
+          var img = document.createElement("img");
+          img.setAttribute("draggable", "false");
+          img.setAttribute("alt", game.name || "Manual game");
+          img.setAttribute("loading", "lazy");
+          img.src = (game.imageUrl && game.imageUrl.trim()) ? game.imageUrl : fallbackImage();
+
+          var title = document.createElement("h2");
+          title.textContent = game.name || game.slug || "لعبة";
+
+          card.appendChild(img);
+          card.appendChild(title);
+          return card;
+        }
+
+        function removeOldCards(section){
+          if (!section) return;
+          section.querySelectorAll('.card[data-manual-card="1"]').forEach(function(node){ node.remove(); });
+        }
+
+        function render(section, options){
+          options = options || {};
+          if (!section) return;
+          var attr = (section.dataset && section.dataset.manualTarget) || "";
+          var targets = attr.split(",").map(function(x){ return normalizeCategory(x); }).filter(Boolean);
+          if (options.target) {
+            var optTargets = Array.isArray(options.target) ? options.target : [options.target];
+            targets = optTargets.map(function(x){ return normalizeCategory(x); }).filter(Boolean);
+          }
+          if (!targets.length) targets = ["games"];
+          var anchor = section.querySelector("[data-manual-anchor]");
+          var message = ensureMessage(section);
+          if (message) message.style.display = "none";
+          if (!anchor) {
+            anchor = document.createElement("span");
+            anchor.setAttribute("data-manual-anchor", "1");
+            anchor.style.display = "none";
+            section.appendChild(anchor);
+          }
+
+          fetchList(options.force === true).then(function(games){
+            removeOldCards(section);
+            var filtered = games.filter(function(game){
+              return matchesTarget(game.category, targets);
+            });
+            if (!filtered.length){
+              if (message) message.style.display = "";
+              try { applyCardsVisibility(); } catch(_){}
+              return;
+            }
+            var frag = document.createDocumentFragment();
+            filtered.forEach(function(game){
+              if (!game || !game.slug) return;
+              try {
+                frag.appendChild(createCard(game));
+              } catch(err){
+                console.warn("manual card build failed:", err);
+              }
+            });
+            var insertBeforeNode = null;
+            if (message && message.parentNode === section) {
+              insertBeforeNode = message;
+            } else if (anchor && anchor.parentNode === section) {
+              insertBeforeNode = anchor;
+            }
+            if (insertBeforeNode) section.insertBefore(frag, insertBeforeNode);
+            else section.appendChild(frag);
+            if (message) message.style.display = "none";
+            try { applyCardsVisibility(); } catch(_){}
+          });
+        }
+
+        return {
+          render: render,
+          refresh: function(section){ return render(section, { force: true }); }
         };
       })();
 
       var routes = {
-        'games':         { url: 'games.html',         title: 'الألعاب' },
+        'games': {
+          url: 'games.html',
+          title: 'الألعاب',
+          onShow: function(){
+            try{
+              var section = inlineBox ? inlineBox.querySelector('.categories') : null;
+              if (section) section.setAttribute('data-manual-target', 'games');
+              manualGamesInline.render(section);
+            } catch(err){
+              console.warn("manual games render failed:", err);
+            }
+          }
+        },
         'social':        { url: 'social.html',        title: 'مواقع التواصل' },
         'software':      { url: 'software.html',      title: 'اشتراكات البرامج' },
         'freefireinbut': { url: 'freefireinbut.html', title: 'فري فاير' },
-        'webdev':        { url: 'webdev.html',        title: 'تطوير مواقع' },
         'settings':      { title: 'إعدادات الحساب', build: settingsRoute.build, onShow: settingsRoute.onShow },
-        'reviews':       { title: 'التقييمات', build: reviewsRoute.build, onShow: reviewsRoute.onShow },
-        'wallet':        { title: 'محفظتي', build: walletRoute.build, onShow: walletRoute.onShow }
+        'reviews':       { title: 'التقييمات', build: reviewsRoute.build, onShow: reviewsRoute.onShow, ready: reviewsRoute.ready },
+        'wallet':        { title: 'محفظتي', build: walletRoute.build, onShow: walletRoute.onShow, ready: walletRoute.ready }
       };
 
       var home = {
@@ -2276,7 +2473,7 @@ button#logoutBtn:hover{background:#990000}
           '<div class="search-container">\n' +
             '<input type="text" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" />\n' +
           '</div>\n' +
-          '<section class="categories">\n' +
+          '<section class="categories" data-manual-target="games">\n' +
             '<a href="freefireinbut.html" class="card auto" data-title="فري فاير">\n' +
               '<img draggable="false" src="IMGS/freefire.jpg" alt="فري فاير"/>\n' +
               '<h2>فري فاير</h2>\n' +
@@ -2289,10 +2486,23 @@ button#logoutBtn:hover{background:#990000}
               '<img draggable="false" src="IMGS/jawaker.jpg" alt="جواكر تلقائي"/>\n' +
               '<h2>جواكر</h2>\n' +
             '</a>\n' +
-            '<a href="clashofclans.html" class="card auto" data-title="كلاش اوف كلانس تلقائي">\n' +
-              '<img draggable="false" src="IMGS/clashofclans.jpg" alt="كلاش اوف كلانس تلقائي"/>\n' +
-              '<h2>كلاش اوف كلانس </h2>\n' +
+            '<a href="fortnight.html" class="card auto" data-title="فورتنايت تلقائي">\n' +
+              '<img draggable="false" src="IMGS/fortnight.jpg" alt="فورتنايت تلقائي"/>\n' +
+              '<h2>فورتنايت</h2>\n' +
             '</a>\n' +
+            '<a href="roblox.html" class="card auto" data-title="روبلوكس تلقائي">\n' +
+              '<img draggable="false" src="IMGS/roblox.jpg" alt="روبلوكس تلقائي"/>\n' +
+              '<h2>روبلوكس</h2>\n' +
+            '</a>\n' +
+            '<a href="8ball.html" class="card auto" data-title="بلياردو تلقائي">\n' +
+              '<img draggable="false" src="IMGS/8ball.jpg" alt="بلياردو تلقائي"/>\n' +
+              '<h2>بلياردو</h2>\n' +
+            '</a>\n' +
+            '<a href="clashroyal.html" class="card auto" data-title="كلاش رويال تلقائي">\n' +
+              '<img draggable="false" src="IMGS/clashroyal.jpg" alt="كلاش رويال تلقائي"/>\n' +
+              '<h2>كلاش رويال</h2>\n' +
+            '</a>\n' +
+            '<span data-manual-anchor class="manual-games-anchor" aria-hidden="true" style="display:none"></span>\n' +
           '</section>',
         social:
           '<div class="search-container">\n' +
@@ -2343,12 +2553,12 @@ button#logoutBtn:hover{background:#990000}
               '<img draggable="false" src="IMGS/freefiren.jpg" alt="فري فاير نيجيري"/>\n' +
               '<h2>فري فاير نيجيري</h2>\n' +
             '</a>\n' +
-            '<a href="freefire.html" class="card" data-title="فري فاير يدوي">\n' +
-              '<img draggable="false" src="IMGS/freefiremanual.jpg" alt="فري فاير يدوي"/>\n' +
+             '<a href="freefire.html" class="card" data-title="فري فاير يدوي">\n' +
+              '<img draggable="false" src="IMGS/freefiren.jpg" alt="فري فاير يدوي"/>\n' +
               '<h2>فري فاير يدوي</h2>\n' +
             '</a>\n' +
-            '<a href="freefiremembership.html" class="card" data-title="فري فاير يدوي">\n' +
-              '<img draggable="false" src="IMGS/freefiremanual.jpg" alt="فري فاير يدوي"/>\n' +
+            '<a href="freefiremembership.html" class="card" data-title="فري فاير عضويات">\n' +
+              '<img draggable="false" src="IMGS/freefiremanual.jpg" alt="فري فاير عضويات"/>\n' +
               '<h2>فري فاير عضويات</h2>\n' +
             '</a>\n' +
           '</section>',
@@ -2357,9 +2567,6 @@ button#logoutBtn:hover{background:#990000}
             '<input type="text" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" />\n' +
           '</div>\n' +
           '<section class="categories">\n' +
-            '<a href="webdev.html" class="card" data-title="تطوير موقع">\n' +
-              '<img draggable="false" src="https://i.ibb.co/XZHyMGSG/1756247096045.jpg" alt="تطوير موقع"/>\n' +
-              '<h2>تطوير موقع</h2>\n' +
             '</a>\n' +
           '</section>'
       };
@@ -2434,8 +2641,25 @@ button#logoutBtn:hover{background:#990000}
         if(!routes[key]) return;
         if (location.hash !== '#/'+key) { history.pushState({key:key}, '', '#/'+key); }
         try { if (typeof showPageLoader === 'function') showPageLoader(); } catch(_){ }
-        loadInline(key);
+        try { window.__INLINE_FORCE_ROUTE__ = key; } catch(_){}
+        try {
+          loadInline(key);
+        } finally {
+          try { window.__INLINE_FORCE_ROUTE__ = null; } catch(_){}
+        }
       }
+      window.__reloadInlineRoute = function(key){
+        try{
+          if (!key) return;
+          var normalized = String(key).replace(/^#\//,'').replace(/^\/+/,'');
+          if (!normalized || !routes[normalized]) return;
+          try {
+            loadInline(normalized);
+          } finally {
+            try { window.__INLINE_FORCE_ROUTE__ = null; }catch(_){}
+          }
+        }catch(_){ }
+      };
       function navigateHome(){
         history.pushState({}, '', '#/');
         updateViewForInline(false);
@@ -2446,7 +2670,11 @@ button#logoutBtn:hover{background:#990000}
       function initFromHash(){
         var h = (location.hash||'').replace(/^#\/?/, '');
         if (!h || h === '/') { updateViewForInline(false); return; }
-        if (routes[h]) { loadInline(h); }
+        if (routes[h]) {
+          try { window.__INLINE_FORCE_ROUTE__ = h; } catch(_){}
+          try { loadInline(h); }
+          finally { try { window.__INLINE_FORCE_ROUTE__ = null; } catch(_){ } }
+        }
         else { updateViewForInline(false); }
       }
 
@@ -2475,8 +2703,12 @@ button#logoutBtn:hover{background:#990000}
       document.addEventListener('pointerdown', handleCardNavEvent, true);
       document.addEventListener('click', handleCardNavEvent, true);
 
-      // Boot from hash if present
-      initFromHash();
+      // Boot from hash once dependent scripts (deferred) are guaranteed to be ready
+      if (document.readyState === 'complete') {
+        initFromHash();
+      } else {
+        document.addEventListener('DOMContentLoaded', initFromHash, { once: true });
+      }
 
       // Expose for back button in toolbar
       window.navigateHome = navigateHome;
@@ -2558,19 +2790,3 @@ button#logoutBtn:hover{background:#990000}
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
