@@ -135,10 +135,45 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
 (function setupCurrency(){
   try {
     const CURRENCY_KEY = 'currency:selected';
-    // No local overrides — rates come only from Firebase
+    const RATES_CACHE_KEY = 'currency:rates:cache';
+    const RATES_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
-    // Rates map — filled from Firebase only
+    // Rates map — filled from cache or Firebase
     const CURRENCIES = {};
+    let ratesListenerStarted = false;
+    let ratesCacheMeta = { updatedAt: 0 };
+
+    function readCachedRates(){
+      try {
+        const raw = localStorage.getItem(RATES_CACHE_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (!data || typeof data !== 'object') return null;
+        const updatedAt = Number(data.updatedAt);
+        const rates = data.rates;
+        const base = typeof data.base === 'string' ? data.base.toUpperCase() : 'USD';
+        if (!updatedAt || !rates || typeof rates !== 'object') return null;
+        ratesCacheMeta.updatedAt = updatedAt;
+        return { updatedAt, rates, base };
+      } catch { return null; }
+    }
+    function writeCachedRates(rates, base){
+      try {
+        const payload = {
+          updatedAt: Date.now(),
+          base: (base || 'USD'),
+          rates
+        };
+        ratesCacheMeta.updatedAt = payload.updatedAt;
+        localStorage.setItem(RATES_CACHE_KEY, JSON.stringify(payload));
+      } catch {}
+    }
+    function isRatesCacheFresh(){
+      if (!ratesCacheMeta.updatedAt) return false;
+      try {
+        return (Date.now() - ratesCacheMeta.updatedAt) < RATES_CACHE_TTL_MS;
+      } catch { return false; }
+    }
 
     function getSelected(){
       try {
@@ -418,6 +453,23 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
     window.addEventListener('DOMContentLoaded', attachSelector);
     // Retry a few times in case sidebar renders slightly later
     try { setTimeout(attachSelector, 200); setTimeout(attachSelector, 1000); } catch {}
+    const cachedRatesPayload = readCachedRates();
+    if (cachedRatesPayload && cachedRatesPayload.rates && Object.keys(cachedRatesPayload.rates).length) {
+      const baseFromCache = (cachedRatesPayload.base || 'USD');
+      try { window.__CURRENCY_BASE__ = baseFromCache; } catch {}
+      applyRatesMap(cachedRatesPayload.rates, { base: baseFromCache, cache: false });
+    }
+
+    function ensureRatesFresh(){
+      if (isRatesCacheFresh()) return;
+      initRatesListener();
+    }
+
+    if (!isRatesCacheFresh()) {
+      ensureRatesFresh();
+    }
+
+    try { window.addEventListener('firebase:ready', ensureRatesFresh); } catch {}
 
     // Live rates from Firestore (config/currency.ratesJson)
     function normalizeRates(obj){
@@ -439,13 +491,21 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
       } catch {}
       return out;
     }
-    function applyRatesMap(map){
+    function applyRatesMap(map, options){
       try {
+        const opts = options || {};
         const overrides = normalizeRates(map);
         const merged = Object.assign({}, overrides);
         Object.keys(overrides).forEach(k => { if (!merged[k]) merged[k] = overrides[k]; });
+        if (opts.base) {
+          try { window.__CURRENCY_BASE__ = opts.base; } catch {}
+        }
         window.__CURRENCIES__ = merged;
         try { window.__CURRENCIES_READY__ = true; } catch {}
+        if (opts.cache !== false && Object.keys(merged).length) {
+          const baseForCache = opts.base || getFxBase() || 'USD';
+          writeCachedRates(merged, baseForCache);
+        }
         try { applyCurrencyNow(); } catch {}
         try {
           const base = (typeof window.__BAL_BASE__ !== 'undefined') ? window.__BAL_BASE__ : null;
@@ -459,6 +519,8 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
       } catch {}
     }
     function initRatesListener(){
+      if (ratesListenerStarted) return;
+      ratesListenerStarted = true;
       const PID_FALLBACK = 'z3em-d9b11';
       try {
         if (typeof firebase !== 'undefined' && firebase.firestore) {
@@ -483,11 +545,12 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
                   parsed = JSON.parse(s);
                 }
               } catch { parsed = {}; }
+              let base = 'USD';
               try {
                 const b = String(data.baseCode || '').trim().toUpperCase();
-                window.__CURRENCY_BASE__ = b || 'USD';
-              } catch { try { window.__CURRENCY_BASE__ = 'USD'; } catch {} }
-              applyRatesMap(parsed);
+                base = b || 'USD';
+              } catch { base = 'USD'; }
+              applyRatesMap(parsed, { base });
             } catch {}
           };
           const handleErr = () => {
@@ -512,8 +575,9 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
                       parsed = JSON.parse(s);
                     }
                   } catch { parsed = {}; }
-                  try { const b = (fields.baseCode && fields.baseCode.stringValue) ? String(fields.baseCode.stringValue).toUpperCase() : 'USD'; window.__CURRENCY_BASE__ = b || 'USD'; } catch { try { window.__CURRENCY_BASE__ = 'USD'; } catch {} }
-                  applyRatesMap(parsed);
+                  let base = 'USD';
+                  try { const b = (fields.baseCode && fields.baseCode.stringValue) ? String(fields.baseCode.stringValue).toUpperCase() : 'USD'; base = b || 'USD'; } catch { base = 'USD'; }
+                  applyRatesMap(parsed, { base });
                 } catch {}
               }).catch(()=>{});
             } catch {}
@@ -601,21 +665,19 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
               }
             } catch { parsed = {}; }
 
+            let base = 'USD';
             try {
               const b = (fields.baseCode && fields.baseCode.stringValue)
                 ? String(fields.baseCode.stringValue).toUpperCase()
                 : (fields.base && fields.base.stringValue ? String(fields.base.stringValue).toUpperCase() : 'USD');
-              window.__CURRENCY_BASE__ = b || 'USD';
-            } catch { try { window.__CURRENCY_BASE__ = 'USD'; } catch {} }
+              base = b || 'USD';
+            } catch { base = 'USD'; }
 
-            applyRatesMap(parsed);
+            applyRatesMap(parsed, { base });
           } catch {}
         }).catch(()=>{});
       } catch {}
     }
-    try { initRatesListener(); } catch {}
-    try { window.addEventListener('firebase:ready', initRatesListener); } catch {}
-
   } catch {}
 })();
 document.addEventListener('visibilitychange', () => { try { if (sessionStorage.getItem('nav:loader:expected') === '1') return; } catch {} if (document.visibilityState === 'visible') hidePageLoader(); });
@@ -655,16 +717,78 @@ logoLink.style.marginRight = 'auto';
 logoLink.appendChild(logo);
 
 // Balance display with deposit shortcut
+if (!document.getElementById('header-balance-style')) {
+  try {
+    const style = document.createElement('style');
+    style.id = 'header-balance-style';
+    style.textContent = `
+      .header-balance {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        direction: rtl;
+        color: #e2e8f0;
+        letter-spacing: 0.15px;
+        padding: 0;
+        margin: 0;
+      }
+      .header-balance__metrics {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        direction: ltr;
+      }
+      .header-balance__currency {
+        font-size: 12px;
+        font-weight: 700;
+        color: rgba(148, 163, 184, 0.82);
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        direction: ltr;
+        unicode-bidi: plaintext;
+      }
+      .header-balance__value {
+        direction: ltr;
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: 0.45px;
+        background: linear-gradient(90deg, #fef3c7 0%, #fefce8 30%, #c084fc 65%, #38bdf8 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        font-feature-settings: 'tnum' 1, 'kern' 1;
+        text-shadow: 0 8px 20px rgba(56, 189, 248, 0.22);
+      }
+      @media (max-width: 600px) {
+        .header-balance__metrics {
+          gap: 3px;
+        }
+        .header-balance__currency {
+          font-size: 10px;
+        }
+        .header-balance__value {
+          font-size: 17px;
+          letter-spacing: 0.35px;
+        }
+      }
+`;
+    (document.head || document.documentElement).appendChild(style);
+  } catch {}
+}
 const balanceSpan = document.createElement('span');
 balanceSpan.id = 'balanceHeader';
 balanceSpan.className = 'header-balance';
 balanceSpan.style.marginRight = '0px';
+balanceSpan.style.flex = '0 0 auto';
+balanceSpan.style.padding = '0';
+balanceSpan.style.minWidth = '0';
 balanceSpan.innerHTML = `
-  <i class="fas fa-coins"></i>
-  <span id="headerBalanceText">…</span>
-  <i id="depositShortcut" class="fas fa-plus" style="color: white; cursor: pointer; margin-left: 0px;"></i>
+  <span class="header-balance__metrics">
+    <span class="header-balance__currency" id="headerBalanceCurrency">—</span>
+    <span class="header-balance__value" id="headerBalanceText">…</span>
+  </span>
 `;
-balanceSpan.querySelector('#depositShortcut').onclick = () => { try{ showPageLoader(); }catch{} window.location.href = 'edaa.html'; };
 
 const leftContainer = document.createElement('div');
 leftContainer.style.display = 'flex';
@@ -681,7 +805,36 @@ let unsubscribeBalance = null;
 const BAL_KEY = (uid) => `balance:cache:${uid}`;
 const LAST_UID_KEY = 'auth:lastUid';
 const LAST_LOGGED_KEY = 'auth:lastLoggedIn';
-function setHeaderBalance(text){ const el = document.getElementById('headerBalanceText') || balanceSpan.querySelector('#headerBalanceText'); if (el) el.textContent = text; }
+function setHeaderBalance(text){
+  const valueEl = document.getElementById('headerBalanceText') || balanceSpan.querySelector('#headerBalanceText');
+  const currencyEl = document.getElementById('headerBalanceCurrency') || balanceSpan.querySelector('#headerBalanceCurrency');
+  if (!valueEl) return;
+  if (typeof text !== 'string') {
+    valueEl.textContent = text;
+    if (currencyEl) currencyEl.textContent = '—';
+    return;
+  }
+  const trimmed = text.trim();
+  if (!trimmed) {
+    valueEl.textContent = '—';
+    if (currencyEl) currencyEl.textContent = '—';
+    return;
+  }
+  const hasDigits = /[0-9٠-٩]/.test(trimmed);
+  if (!hasDigits) {
+    valueEl.textContent = trimmed;
+    if (currencyEl) currencyEl.textContent = '—';
+    return;
+  }
+  const match = trimmed.match(/^(.+?)\s*([^\s]+)$/);
+  if (match) {
+    valueEl.textContent = match[1];
+    if (currencyEl) currencyEl.textContent = match[2] || '—';
+  } else {
+    valueEl.textContent = trimmed;
+    if (currencyEl) currencyEl.textContent = '—';
+  }
+}
 function readCachedBalance(uid){ try { const s = localStorage.getItem(BAL_KEY(uid)); if (s == null) return null; const n = Number(s); return Number.isFinite(n) ? n : null; } catch { return null; } }
 function writeCachedBalance(uid, val){ try { localStorage.setItem(BAL_KEY(uid), String(val)); } catch {} }
 function broadcastBalance(value){

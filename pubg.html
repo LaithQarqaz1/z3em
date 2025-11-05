@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>PUBG | متجر زعيم</title>
-  <link rel="icon" href="https://i.ibb.co/zHC1tQ8b/1757362837638.png" type="image/png">
+  <link rel="icon" href="emp.png" type="image/png">
 
   <!-- حارس مبكر: منع فتح الصفحة مباشرةً أو إن كانت البطاقة مغلقة -->
   <script>
@@ -185,9 +185,6 @@
     /* متغيرات للألوان ليتوافق المودال مع الثيم */
     :root{ --card-bg:#ffffff; --card-text:#111827; --card-border:#e5e7eb; --input-bg:#ffffff; --input-text:#111827; --btn-bg:#6366f1; --btn-bg-hover:#4f46e5; --btn-text:#ffffff }
     html[data-theme="dark"], body.dark-mode{ --card-bg:#0f1024; --card-text:#f0f1ff; --card-border:#2b2d52; --input-bg:#05050b; --input-text:#f0f1ff; --btn-bg:#475569; --btn-bg-hover:#64748b; --btn-text:#ffffff }
-    /* اتجاه عام مساعد */
-    .rtl { direction: rtl; text-align: right; unicode-bidi: embed; }
-
     /* Modal theme-aware */
     #purchase-modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(15,23,42,0.28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); z-index:10000 }
     #purchase-modal.show{ display:flex }
@@ -197,27 +194,7 @@
     #purchase-modal .pm-title{ font-weight:800; font-size:16px; display:flex; align-items:center; gap:8px }
     #purchase-modal .pm-input{ width:100%; margin:12px 0 6px }
     #purchase-modal .pm-input input{ width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); font-size:16px; outline:none; background:var(--input-bg); color:var(--input-text) }
-    /* زر اللصق بجانب حقل الايدي داخل المودال */
     #purchase-modal .pm-input{ position: relative; }
-    /* لم يعد هناك زر لصق؛ نعيد الحشو الافتراضي من القاعدة الأساسية */
-    #purchase-modal .pm-paste{
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      inset-inline-end: 10px;
-      background: var(--input-bg);
-      color: var(--input-text);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 8px 10px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 800;
-    }
-    #purchase-modal .pm-paste i{ pointer-events: none; }
-    #purchase-modal .pm-paste:hover{ filter: brightness(0.98); }
     #purchase-modal .pm-actions{ display:flex; gap:12px; margin-top:12px }
     #purchase-modal .btn{ flex:1; padding:12px 16px; border-radius:14px; font-weight:800; cursor:pointer; border:1px solid transparent }
     #purchase-modal .btn-primary{ background:var(--btn-bg); color:var(--btn-text) }
@@ -229,34 +206,9 @@
     body.modal-open .offer-box.selected{ outline:none !important; border-color:transparent !important; box-shadow:none !important }
     body.modal-open .offer-box.selected::after{ display:none !important; content:none !important }
 
-    /* صندوق الملخص */
-    #selected-amount-container {
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-      text-align: center !important;
-      margin:20px auto;max-width:400px;padding:20px;
-      border:2px solid #5c5ebf;border-radius:10px;background:#f9f9f9;font-weight:bold;
-    }
-    #selected-amount-container h2 { margin-bottom: 10px !important; }
-
-    /* ✅ القسيمة RTL مع عزل الإنجليزية */
-    #selected-amount-container .voucher{
-      display:block !important;
-      margin:0 auto !important;
-      direction: rtl;
-      text-align: right;
-      unicode-bidi: isolate;
-      font-weight: 700;
-    }
-    .voucher .line{ direction: rtl; text-align: right; margin: 10px 0; }
-    .voucher .ltr{ direction: ltr; unicode-bidi: isolate; display:inline-block; white-space: nowrap; }
-    .voucher .sep{ unicode-bidi: isolate; display:inline-block; padding: 0 .15rem; }
-    .voucher .price{ white-space: nowrap; }
-
-    /* شريط البحث + شبكة الكروت (مطابقة لطابع pubginbut) */
+    /* شريط البحث + شبكة الكروت (مطابقة لطابع canvainbut) */
     .search-container {
-      max-width: 600px;
+      max-width: 1100px;
       margin: 0 auto 24px auto;
       display: flex;
       justify-content: center;
@@ -276,9 +228,6 @@
       max-width: 100%;
     }
     .search-container input[type="text"]:focus{box-shadow:0 0 6px rgba(65,67,145,.5);border-color:#414391}
-    .search-container button{background:#5c5ebf;border:none;padding:12px 20px;border-radius:25px;color:#fff;font-size:1rem;cursor:pointer;transition:.3s}
-    .search-container button:hover{background:#414391}
-
     /* نظام الشبكة والبطاقات مطابق للرئيسية index.html */
     .categories {
       display: grid;
@@ -397,9 +346,6 @@ body.dark-mode .offer-box .offer-price {
     /* منع صعود البطاقة حتى لا تتداخل مع الصف الذي فوقها */
     .offer-box.card:hover{transform:none;box-shadow:0 8px 20px rgba(0,0,0,.15)}
     .offer-box.card h2{font-weight:700;font-size:1rem;margin:0;line-height:1.4;word-break:break-word}
-    .offer-box.card .caption{margin-top:8px; line-height:1.35}
-    .offer-box.card .caption .uc{display:block; color:#475569; font-weight:700}
-    .offer-box.card .caption .price{display:block; color:#0f1024; font-weight:800}
     .offer-box.card img{width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;object-position:center;border-radius:8px;user-select:none;background-color:#f0f0f0;display:block;margin:0 auto}
 
     /* رسالة لا نتائج مثل الرئيسية */
@@ -412,8 +358,6 @@ body.dark-mode .offer-box .offer-price {
     body.dark-mode .search-container button:hover{background:#64748b}
     body.dark-mode .offer-box.card{background:#101826;color:#f0f1ff;border-color:#2b2d52;box-shadow:0 2px 10px rgba(0,0,0,.35)}
     body.dark-mode .offer-box.card img{background:#0d0e1d}
-    body.dark-mode .offer-box.card .caption .uc{color:#cbd5e1}
-    body.dark-mode .offer-box.card .caption .price{color:#f0f1ff}
 
     /* البطاقات + تغطية "غير متوفر" */
     .offer-box { position: relative; cursor: pointer; }
@@ -473,55 +417,14 @@ body.dark-mode .offer-box.selected{ outline:2px solid #b9bbef; }
     body.dark-mode .offer-box.disabled .unavailable-badge{ background:rgba(0,0,0,.45); }
 
 /* عناوين الأقسام */
-body.dark-mode .section-title{ color:#9c9ede !important; }
-
-/* زر الشراء */
-body.dark-mode .send-button{
-  background:#3b3e8c !important;
-  color:#f0f1ff !important;
-}
-body.dark-mode .send-button:hover{ background:#7a7cd0 !important; }
-
 /* التوست */
 body.dark-mode #toast{
   background:#0f1024 !important;
   color:#f0f1ff !important;
 }
 
-/* النافذة المنبثقة (دليل المعرف) */
-body.dark-mode #popup > div{
-  background:#111827 !important;
-  color:#f0f1ff !important;
-}
-
 /* محاكاة شيمر أخفت في الوضع الداكن إن وُجد */
 body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
-
-/* === اجعل خلفية قسم لماذا تختارنا مثل الخلفيات الأخرى === */
-
-/* وضع فاتح: لون مسطح مطابق لصناديق الصفحة */
-.footer-icons{
-  background: #f9f9f9 !important;  /* بديل للتدرّج */
-  border: 1px solid #e0e6f7;        /* نفس حدود الصناديق الفاتحة */
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-}
-
-/* تباين عنوان القسم على الخلفية الفاتحة */
-.footer-title{
-  color: #05050b !important;
-}
-
-/* وضع داكن: لون مسطح مطابق لصناديق الوضع الداكن */
-body.dark-mode .footer-icons{
-  background: #2e316f !important;   /* بديل للتدرّج الداكن */
-  border-color: #2b2d52;
-  box-shadow: 0 8px 22px rgba(0,0,0,0.35);
-}
-
-/* نص العنوان في الوضع الداكن */
-body.dark-mode .footer-title{
-  color: #f0f1ff !important;
-}
 
 
     /* استجابة للجوال */
@@ -547,8 +450,6 @@ body.dark-mode .footer-title{
 
 
 /* === نفس سلوك البطاقات كما في الرئيسية (الإبقاء على تأثير الرفع فقط) === */
-
-/* طبّق شكل البطاقة على عناصرك (.offer-box.card) لتطابق .card */
 #myOffersContainer .offer-box.card,
 .card{
   background: var(--card-bg) !important;
@@ -610,24 +511,6 @@ body.dark-mode .footer-title{
   .offers-box {
     max-width: 750px;
   }
-}
-
-/* نسخة auto (اختياري): نفس التنسيق الخاص والرفع الخفيف */
-#myOffersContainer .offer-box.card.auto,
-a.card.auto{
-  border: 1.5px solid transparent;
-  background:
-    linear-gradient(var(--card-bg),var(--card-bg)) padding-box,
-    linear-gradient(135deg,#9c9ede,#10b981) border-box;
-}
-html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
-  background:
-    linear-gradient(var(--card-bg),var(--card-bg)) padding-box,
-    linear-gradient(135deg,#22c55e,#9c9ede) border-box;
-}
-#myOffersContainer .offer-box.card.auto:hover{
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 16px 36px rgba(0,0,0,.18), 0 0 28px rgba(250,204,21,.16);
 }
 
 /* استجابة للشاشات الصغيرة */
@@ -750,35 +633,6 @@ html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
     }
   }catch(e){}
 })();
-  // ===== Footer =====
-  const footer = document.createElement("footer");
-  footer.className = "footer-icons";
-  const footerTitle = document.createElement("h2");
-  footerTitle.className = "footer-title";
-  footerTitle.textContent = "لماذا تختارنا؟";
-  footer.appendChild(footerTitle);
-  const iconBoxesData = [
-    { iconClass: "fas fa-shipping-fast shipping-icon", title: "شحن سريع", desc: "يتميز متجرنا بسرعته الفائقة بالشحن فبمجرد أن تطلب سيتم الشحن لك مباشرة" },
-    { iconClass: "fas fa-lock", title: "آمن 100%", desc: "حماية كاملة للبيانات والمعاملات" },
-    { iconClass: "fas fa-headset", title: "دعم فني مستمر", desc: "دعم فني مستمر لمساعدة العملاء عند الحاجة" },
-    { iconClass: "fas fa-coins special-icon", title: "اسعار مميزة", desc: "نقدم اسعار اقل من اسعار اللعبة" },
-    { iconClass: "fas fa-credit-card", title: "سهولة الدفع", desc: "طرق دفع عديدة" },
-    { iconClass: "fas fa-shield-alt", title: "ضمان على الشحن", desc: "احصل على كامل المبلغ مع تعويض في حالة عدم وصول الشحنه" },
-    { iconClass: "fas fa-sync-alt", title: "تحديثات مستمرة", desc: "نقوم بحل جميع المشاكل بشكل دوري" },
-    { iconClass: "fas fa-tasks", title: "تعقب الطلبات", desc: "يمكنك رؤية حالة الطلبات الخاص بك من تبويب طلباتي" },
-    { iconClass: "fas fa-undo", title: "الغاء الطلبات", desc: "يمكنك الغاء اي طلب قبل اتمام عملية الدفع عبر التواصل مع الدعم الفني" },
-    { iconClass: "fas fa-server", title: "تخزين للطلبات", desc: "يتم وضع الطلبات في سيرفرات لعدم فقدانها تحت اي ضرف" }
-  ];
-
-  iconBoxesData.forEach(({ iconClass, title, desc }) => {
-    const box = document.createElement("div");
-    box.className = "icon-box";
-    const icon = document.createElement("i"); icon.className = iconClass; box.appendChild(icon);
-    const h3 = document.createElement("h3"); h3.textContent = title; box.appendChild(h3);
-    const p = document.createElement("p"); p.textContent = desc; box.appendChild(p);
-    footer.appendChild(box);
-  });
-
   // ===== بطاقات العروض =====
   function createOfferBox({ type, uc, offer, imgSrc, imgAlt }, pricesObj) {
       const div = document.createElement("div");
@@ -863,8 +717,6 @@ html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
       });
     }
   }
-
-  const membershipOffersGrid = document.createElement("div");
   const membershipOffers = [
   ];
 
@@ -925,66 +777,14 @@ html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
     const container = document.getElementById("myOffersContainer");
     if (container) container.appendChild(offersBox);
     // البحث مثل inbut
-    const input = document.getElementById('pgSearchInput');
-    const btn = document.getElementById('pgSearchButton');
-    const apply = () => filterCardsBySearch({ target: { value: input.value } });
-    btn && btn.addEventListener('click', apply);
-    input && input.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); apply(); }});
-    let t; input && input.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(apply,150); });
+    const input = document.getElementById('ffSearchInput');
+    if (input) {
+      const apply = () => filterCardsBySearch({ target: { value: input.value } });
+      input.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); apply(); }});
+      let t;
+      input.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(apply,150); });
+    }
   });
-
-  // ===== حساب السعر وعرضه =====
-function toggleOffer(element) {
-  if (element.classList.contains("disabled")) { 
-    showToast("غير متوفر", "warning"); 
-    return; 
-  }
-
-  // ✅ إلغاء تحديد جميع العروض الأخرى
-  document.querySelectorAll('.offer-box.selected').forEach(el => {
-    el.classList.remove('selected');
-  });
-
-  // ✅ تحديد العنصر الحالي فقط
-
-  const selectedOffers = [{
-    type: element.dataset.type,
-    uc: element.dataset.uc || null,
-    offerName: element.dataset.offer || null
-  }];
-
-  // ✅ قراءة الأسعار من localStorage
-  const raw = JSON.parse(localStorage.getItem("offersPrices") || "{}");
-  const offersPrices = raw.prices || raw;
-
-  let total = 0; 
-  const breakdownLines = [];
-  const key = element.dataset.uc ? `${element.dataset.uc}_uc` : element.dataset.offer;
-  const price = offersPrices[key];
-  if (price !== undefined) {
-    total += Number(price);
-const nameText  = element.dataset.uc ? `${element.dataset.uc} uc` : element.dataset.offer;
-const priceText = `${Number(price).toFixed(2)} $`;
-breakdownLines.push(
-  `<span class="item-name">${nameText}</span> : <span class="item-price">${priceText}</span>`
-);
-
-  } else {
-    breakdownLines.push(`• ${element.dataset.uc || element.dataset.offer}: ❓ غير معروف`);
-  }
-
-const el = document.getElementById("selected-amount");
-
-if (breakdownLines.length === 0) {
-  // لا يوجد أي عنصر مختار
-  el.textContent = "لم يتم اختيار عرض شحن";
-  el.classList.add("no-selection");
-} else 
-  // يوجد عناصر مختارة
-  el.innerHTML = `${breakdownLines.join("<br>")}<br><br><strong>المجموع: ${total.toFixed(2)} $</strong>`;
-  el.classList.remove("no-selection");
-}
-
 // فلترة البحث بنفس أسلوب pubginbut + إظهار رسالة لا نتائج كالرئيسية
 function filterCardsBySearch(ev){
   const raw = (ev.target.value || '').toString();
@@ -1139,41 +939,6 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { toast.style.transform = 'translateY(0)'; toast.style.opacity = '1'; }, 50);
     setTimeout(() => { toast.style.transform = 'translateY(100px)'; toast.style.opacity = '0'; setTimeout(() => { toast.style.visibility = 'hidden'; }, 500); }, duration);
   }
-
-  // زر لصق الايدي
-  async function pastePlayerId(){
-    try{
-      const input = document.getElementById('player-id');
-      if (!input) return;
-      if (!navigator.clipboard || !navigator.clipboard.readText){
-        showToast('المتصفح لا يسمح بالوصول للحافظة تلقائياً', 'warning');
-        input.focus();
-        return;
-      }
-      const text = await navigator.clipboard.readText();
-      let val = (text || '').trim();
-      const im = (input.getAttribute('inputmode')||'').toLowerCase();
-      if (im.includes('numeric') || im.includes('tel')){
-        val = val.replace(/\D+/g, '');
-      }
-      if (!val){
-        showToast('لا يوجد نص في الحافظة', 'warning');
-        return;
-      }
-      input.value = val;
-      try{ input.dispatchEvent(new Event('input', {bubbles:true})); }catch(_){}
-      input.focus();
-      showToast('تم لصق الايدي', 'success');
-    }catch(e){
-      showToast('تعذر قراءة الحافظة. الصق يدوياً', 'warning');
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function(){
-    const btn = document.getElementById('pm-paste');
-    if (btn) btn.addEventListener('click', pastePlayerId);
-  });
-
   // ===== تهيئة بطاقات التفعيل/التعطيل من Firestore =====
   firebase.auth().onAuthStateChanged(async (user) => {
     if (user) {
@@ -1281,6 +1046,18 @@ window.addEventListener('DOMContentLoaded', () => {
   
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

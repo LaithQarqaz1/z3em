@@ -3,7 +3,7 @@
  <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>فيسبوك | متجر زعيم</title>
+<title>فورتنايت | متجر زعيم</title>
 <link rel="icon" href="emp.png" type="image/png">
   <link rel="apple-touch-icon" href="emp.png" sizes="180x180">
   <meta property="og:image" content="emp.png">
@@ -156,7 +156,7 @@
   </script>
   
   <!-- تهيئة Firebase أولاً -->
-  <script src="‏‏script1facebook.js"></script>
+  <script src="script1roblox.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
   <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js" async></script>
@@ -576,24 +576,14 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
               <span id="pm-title">—</span>
             </div>
           </div>
-          <div class="pm-input" style="display:flex; gap:10px; align-items:center;">
-            <div style="flex:1;">
-              <label for="qty-input" style="display:block;font-weight:800;margin:0 0 6px;">العدد</label>
-              <input id="qty-input" type="number" inputmode="numeric" min="100" max="10000" step="1" value="100" aria-label="العدد" placeholder="اكتب الكمية" />
-            </div>
-            <div style="flex:1;">
-              <label style="display:block;font-weight:800;margin:0 0 6px;">الاجمالي</label>
-              <div id="pm-total" class="pm-pill">—</div>
-            </div>
-          </div>
           <div class="pm-input">
-            <input id="player-id" type="url" autocomplete="off" aria-label="الرابط" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="الرابط" />
+            <input id="player-id" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ادخل رقم واتساب للتواصل مع الترميز الدولي" />
+            
           </div>
           <div class="pm-actions">
             <button type="button" id="pm-cancel" class="btn btn-outline">إلغاء</button>
             <button type="button" id="pm-buy" class="btn btn-primary">شراء</button>
           </div>
-          <div id="pm-qty-note" class="pm-note">يجب أن تكون الكمية أكبر من أو تساوي 100 وأصغر من 10000</div>
           
         </div>
       </div>
@@ -601,7 +591,7 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
       
 
       
-      <!-- شريط البحث (مطابق لـ facebookinbut) -->
+      <!-- شريط البحث (مطابق لـ robloxinbut) -->
       <div class="search-container">
         <input type="text" id="ffSearchInput" placeholder="ابحث عن الباقات..." aria-label="بحث" />
       </div>
@@ -643,7 +633,7 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
       img.src = imgSrc; img.alt = imgAlt;
       img.loading = 'lazy'; img.decoding = 'async'; img.setAttribute('fetchpriority','low');
       div.appendChild(img);
-      const h2 = document.createElement("h2"); h2.textContent = jewels ? `${jewels} شهر` : offer; div.appendChild(h2);
+      const h2 = document.createElement("h2"); h2.textContent = jewels ? `${jewels} $` : offer; div.appendChild(h2);
       // إضافة السعر أسفل الاسم
       const priceDiv = document.createElement("div");
       priceDiv.className = "offer-price";
@@ -660,6 +650,10 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
   const offersBox = document.createElement("div"); offersBox.className = "offers-box";
   const grid = document.createElement("section"); grid.className = "categories"; offersBox.appendChild(grid);
   const topupOffers = [
+    { jewels: 10, imgSrc: "IMGS/roblox.jpg", imgAlt: "" },
+    { jewels: 25, imgSrc: "IMGS/roblox.jpg", imgAlt: "" },
+    { jewels: 50, imgSrc: "IMGS/roblox.jpg", imgAlt: "" }
+
   ];
   // حفظ آخر حالة للعروض
   let _lastOffersState = null;
@@ -706,10 +700,9 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
         }
       });
     }
-    try { if (typeof window.__updateFacebookPriceMeta === 'function') window.__updateFacebookPriceMeta(null); } catch(_){}
   }
   const membershipOffers = [
-    { offer: 'متابعين فيسبوك', imgSrc: 'https://i.ibb.co/1tjc3rfj/1758136879014.jpg', imgAlt: 'متابعين فيسبوك' }
+
   ];
 
   // عند تحميل الصفحة، انتظر تحميل الأسعار ثم اعرض البطاقات
@@ -745,9 +738,6 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
       } catch {}
       renderOffers(pricesObj);
       try { if (typeof updatePurchaseModalPriceIfOpen === 'function') updatePurchaseModalPriceIfOpen(); } catch(_){}
-      if (typeof window.__updateFacebookPriceMeta === 'function') {
-        try { window.__updateFacebookPriceMeta(e.newValue); } catch(_){ }
-      }
     }
   });
 
@@ -764,9 +754,6 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
         } catch {}
         renderOffers(pricesObj);
         try { if (typeof updatePurchaseModalPriceIfOpen === 'function') updatePurchaseModalPriceIfOpen(); } catch(_){}
-        if (typeof window.__updateFacebookPriceMeta === 'function') {
-          try { window.__updateFacebookPriceMeta(val); } catch(_){ }
-        }
       }
     };
   })();
@@ -783,7 +770,7 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
       input.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(apply,150); });
     }
   });
-// فلترة البحث بنفس أسلوب facebookinbut + إظهار رسالة لا نتائج كالرئيسية
+// فلترة البحث بنفس أسلوب robloxinbut + إظهار رسالة لا نتائج كالرئيسية
 function filterCardsBySearch(ev){
   const raw = (ev.target.value || '').toString();
   const norm = s => s.toLowerCase()
@@ -818,7 +805,7 @@ function _readOfferPriceForElement(el){
   const key = el.dataset.jewels ? `${el.dataset.jewels}_jewels` : el.dataset.offer;
   const p = prices[key];
   const num = p !== undefined ? Number(p) : NaN;
-  return { key, price: p, priceText: isNaN(num)? '—' : `${num.toFixed(2)} $` }; 
+  return { key, price: p, priceText: isNaN(num)? '—' : `${num.toFixed(3)} $` };
 }
 
   // تحديث سعر المودال لحظياً إن كان مفتوحاً عند وصول الأسعار
@@ -828,10 +815,8 @@ function _readOfferPriceForElement(el){
       if (!pm || !pm.classList.contains('show')) return;
       if (!window._pm_currentCard) return;
       const { priceText } = _readOfferPriceForElement(window._pm_currentCard);
-      const priceEl = document.getElementById('pm-price');
-      if (priceEl) priceEl.textContent = priceText || '—';
-      const totalEl = document.getElementById('pm-total');
-      if (totalEl) totalEl.textContent = priceText || '—';
+      const el = document.getElementById('pm-price');
+      if (el) el.textContent = priceText || '—';
     }catch(_){/* ignore */}
   }
 
@@ -847,33 +832,10 @@ function _readOfferPriceForElement(el){
     document.querySelectorAll('.offer-box.selected').forEach(x => x.classList.remove('selected'));
     el.classList.add('selected');
     window._pm_currentCard = el;
-    const title = el.dataset.jewels ? `${el.dataset.jewels} شهر` : (el.dataset.offer || '—');
+    const title = el.dataset.jewels ? `${el.dataset.jewels} $` : (el.dataset.offer || '—');
     const { priceText } = _readOfferPriceForElement(el);
     document.getElementById('pm-title').textContent = title;
     document.getElementById('pm-price').textContent = priceText;
-    // عيّن الكمية الافتراضية إلى 100 واحسب الإجمالي فوراً كحل احتياطي
-    try {
-      const qtyEl = document.getElementById('qty-input');
-      const totalEl = document.getElementById('pm-total');
-      if (qtyEl) qtyEl.value = '100';
-      if (totalEl) {
-        const per100 = Number(String(priceText||'').replace(/[^0-9.]/g,''));
-        if (Number.isFinite(per100)) {
-          const q = Number(qtyEl && qtyEl.value) || 100;
-          const total = (q/100) * per100;
-          totalEl.textContent = total.toFixed(2) + ' $';
-        } else {
-          totalEl.textContent = priceText || '—';
-        }
-      }
-    } catch(_){}
-      try {
-        if (typeof window.__updateFacebookPriceMeta === 'function') {
-          window.__updateFacebookPriceMeta(null);
-        }
-      } catch(_){}
-    // سيتم تحديث الإجمالي لاحقاً عبر آلية التسعير الديناميكي أيضاً
-    try { document.getElementById('pm-total').textContent = document.getElementById('pm-total').textContent || priceText; } catch(_){ }
     const pid  = document.getElementById('player-id');
     const mpid = document.getElementById('modal-player-id');
     if (pid && mpid) mpid.value = (pid.value || '').trim();
@@ -935,13 +897,6 @@ window.addEventListener('DOMContentLoaded', () => {
     const pid = document.getElementById('player-id');
     if (pid && mpid) pid.value = mpid.value.trim();
     if (!_pm_currentCard){ showToast('الرجاء اختيار عرض', 'warning'); return; }
-    // تحقق من صحة الكمية قبل الإرسال
-    const qtyEl = document.getElementById('qty-input');
-    const q = Number(qtyEl && qtyEl.value);
-    if (!Number.isFinite(q) || q < 100 || q >= 10000) {
-      showToast('الكمية يجب أن تكون أكبر من أو تساوي 100 وأصغر من 10000', 'warning');
-      return;
-    }
     // أرسل الطلب
     try { if (typeof sendOrder === 'function') await sendOrder(); }
     finally { closePurchaseModal(); }
@@ -991,8 +946,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener("DOMContentLoaded", async () => {
     try {
-      // جلب من topup > facebook والحقل state نص JSON
-      const stateDoc = await firebase.firestore().collection("topup").doc("facebook").get();
+      // جلب من topup > roblox والحقل state نص JSON
+      const stateDoc = await firebase.firestore().collection("topup").doc("roblox").get();
       if (stateDoc.exists) {
         let stateData = stateDoc.data();
         if (stateData && typeof stateData.state === 'string') {
@@ -1045,7 +1000,7 @@ window.addEventListener('DOMContentLoaded', () => {
           }
         });
       } else {
-        console.warn("⚠️ لم يتم العثور على وثيقة الحالة في Firestore (topup/facebook)");
+        console.warn("⚠️ لم يتم العثور على وثيقة الحالة في Firestore (topup/roblox)");
       }
     } catch (e) { console.error("❌ فشل في جلب حالة العروض:", e); }
   });
@@ -1075,9 +1030,6 @@ window.addEventListener('DOMContentLoaded', () => {
   
 </body>
 </html>
-
-
-
 
 
 

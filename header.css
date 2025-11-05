@@ -1,4 +1,4 @@
-﻿
+
 body {
   font-family: 'Cairo', sans-serif;
   direction: rtl;
@@ -553,20 +553,6 @@ a img {
 
 
 
-.order-card.flash-in {
-  position: relative;
-  overflow: hidden;
-}
-.order-card.flash-in::after {
-  content: "";
-  position: absolute; inset: 0 100% 0 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-  animation: card-flash 0.6s ease forwards;
-}
-@keyframes card-flash {
-  to { inset: 0 -120% 0 120%; }
-}
-
 
 
 
@@ -830,31 +816,62 @@ a img {
 
 /* الرصيد داخل الهيدر */
 .header-balance {
-  display: flex;
-  align-items: center;
-  font-weight: bold;
-  font-size: 1.05rem; /* ✅ تكبير الخط */
-  color: white;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.10)) padding-box,
-    linear-gradient(135deg,#5c5ebf,#7a7cd0) border-box;
-  border: 1px solid transparent;
-  padding: 8px 16px; /* ✅ زيادة الحشوة */
-  border-radius: 25px;
-  gap: 8px;
-  margin-left: 12px; /* ✅ يحركه لليمين عند RTL */
-  white-space: nowrap;
-  box-shadow: 0 8px 18px rgba(33,35,84,.26);
-  -webkit-backdrop-filter: saturate(140%) blur(8px);
-  backdrop-filter: saturate(140%) blur(8px);
-  transition: all 0.3s ease;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  direction: rtl;
+  gap: 2px;
+  padding: 0;
+  margin: 0;
+  color: #e2e8f0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-.header-balance i {
-  color: gold;
-  font-size: 1.3rem; /* ✅ تكبير الأيقونة */
+.header-balance__metrics {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  direction: ltr;
 }
 
+.header-balance__currency {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.82);
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+
+.header-balance__value {
+  direction: ltr;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.45px;
+  background: linear-gradient(90deg, #fef3c7 0%, #fefce8 30%, #c084fc 65%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-feature-settings: 'tnum' 1, 'kern' 1;
+  text-shadow: 0 8px 20px rgba(56, 189, 248, 0.22);
+}
+
+@media (max-width: 600px) {
+  .header-balance__metrics {
+    gap: 3px;
+  }
+  .header-balance__currency {
+    font-size: 0.7rem;
+  }
+  .header-balance__value {
+    font-size: 0.95rem;
+    letter-spacing: 0.35px;
+  }
+}
 
 
 .support-rights {
@@ -900,49 +917,6 @@ a img {
 }
 
 /* الرصيد */
-.header-balance {
-  font-size: 1.05rem;
-  padding: 8px 16px;
-  transition: all 0.3s ease;
-}
-
-/* ===== استجابة للشاشات المتوسطة ===== */
-@media (max-width: 992px) {
-  .top-header img {
-    height: 50px;
-  }
-  #hamburger {
-    width: 26px;
-    height: 22px;
-  }
-  .header-balance {
-    font-size: 0.95rem;
-    padding: 6px 12px;
-  }
-  .header-balance i {
-    font-size: 1.1rem;
-  }
-}
-
-/* ===== استجابة للشاشات الصغيرة (الموبايل) ===== */
-@media (max-width: 600px) {
-  .top-header img {
-    height: 40px;
-  }
-  #hamburger {
-    width: 22px;
-    height: 18px;
-  }
-  .header-balance {
-    font-size: 0.85rem;
-    padding: 5px 10px;
-    gap: 6px;
-  }
-  .header-balance i {
-    font-size: 1rem;
-  }
-}
-
 
 /* ====== Dark Mode overrides for header & sidebar ====== */
 body.dark-mode {
@@ -966,19 +940,13 @@ body.dark-mode #hamburger:hover span {
 
 /* الرصيد داخل الهيدر */
 body.dark-mode .header-balance {
-  color: #ffffff;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05)) padding-box,
-    linear-gradient(135deg,#4c4fab,#7a7cd0) border-box;
-  border: 1px solid transparent;
-  box-shadow: 0 10px 22px rgba(5,6,18,0.55), 0 0 0 1px rgba(122,124,208,.14) inset;
-  -webkit-backdrop-filter: saturate(150%) blur(8px);
-  backdrop-filter: saturate(150%) blur(8px);
+  color: #f8fafc;
 }
-body.dark-mode .header-balance i {
-  color: #ffd166; /* ذهبي أنعم */
+  color: rgba(226, 232, 240, 0.7);
 }
-
+body.dark-mode .header-balance__currency {
+  color: rgba(191, 219, 254, 0.82);
+}
 /* القائمة الجانبية */
 body.dark-mode #sidebar {
   background: linear-gradient(135deg,#272a61,#4f529c);
@@ -1135,7 +1103,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
-.header-balance:hover { transform: translateY(-1px); }
+.header-balance:hover { color: #f8fafc; }
 
 /* Cards and offers */
 .card, .offer-box {
@@ -1182,31 +1150,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
-}
-
-/* ===== Tap ripple + press effect on cards ===== */
-/* متغير لون افتراضي للرِبّل يتكيّف مع الثيم */
-:root { --ripple-color: rgba(122, 124, 208, 0.32); }
-html[data-theme="dark"], body.dark-mode { --ripple-color: rgba(156, 158, 222, 0.35); }
-
-/* تأثير الضغط الخفيف */
-.card.is-pressed,
-.offer-box.is-pressed { transform: translateY(0) scale(0.985); }
-
-/* عنصر الرِبّل يُحقن عبر JS */
-.card .ripple,
-.offer-box .ripple {
-  position: absolute;
-  border-radius: 50%;
-  background: var(--ripple-color);
-  transform: scale(0);
-  opacity: 0.55;
-  pointer-events: none;
-  animation: ripple-anim 520ms ease-out forwards;
-}
-
-@keyframes ripple-anim {
-  to { transform: scale(3); opacity: 0; }
 }
 
 

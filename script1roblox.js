@@ -14,6 +14,69 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 let pricesFetchOnce = false;
 
+// ===== Turnstile إعداد =====
+const TURNSTILE_SITE_KEY = "0x4AAAAAABmiVmi7wosqeHQT";
+let _tsWidgetId = null;
+let _tsReadyPromise = null;
+let _tsToken = "";
+function ensureTurnstileScript() {
+  if (window.turnstile) return Promise.resolve();
+  if (_tsReadyPromise) return _tsReadyPromise;
+  _tsReadyPromise = new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    s.async = true;
+    s.defer = true;
+    s.onload = () => resolve();
+    s.onerror = () => resolve();
+    document.head.appendChild(s);
+  });
+  return _tsReadyPromise;
+}
+function themeIsDark(){
+  try{
+    const htmlTheme = (document.documentElement.getAttribute('data-theme')||'').toLowerCase();
+    if (htmlTheme === 'dark') return true;
+    if (htmlTheme === 'light') return false;
+    return document.body.classList.contains('dark-mode');
+  }catch(_){ return false; }
+}
+async function getTurnstileTokenInteractive() {
+  try { await ensureTurnstileScript(); } catch {}
+  const modalCard = document.querySelector('#purchase-modal .pm-card') || document.body;
+  let holder = document.getElementById('cf-turnstile-container');
+  if (!holder) {
+    holder = document.createElement('div');
+    holder.id = 'cf-turnstile-container';
+    holder.style.cssText = 'margin-top:10px; display:block;';
+    modalCard.appendChild(holder);
+  }
+  const opts = {
+    sitekey: TURNSTILE_SITE_KEY,
+    theme: themeIsDark()? 'dark' : 'light',
+    callback: (t) => { _tsToken = t || ''; },
+    'expired-callback': () => { _tsToken = ''; try{ window.turnstile && _tsWidgetId!=null && window.turnstile.reset(_tsWidgetId); }catch(_){} },
+  };
+  if (!_tsWidgetId && window.turnstile && window.turnstile.render) {
+    _tsWidgetId = window.turnstile.render(holder, opts);
+  } else if (window.turnstile && window.turnstile.reset && _tsWidgetId != null) {
+    try { window.turnstile.reset(_tsWidgetId); } catch {}
+  }
+  const started = Date.now();
+  while (Date.now() - started < 15000) {
+    try {
+      if (window.turnstile && _tsWidgetId != null) {
+        const r = window.turnstile.getResponse(_tsWidgetId);
+        if (r) { _tsToken = r; break; }
+      }
+    } catch {}
+    if (_tsToken) break;
+    await new Promise(r => setTimeout(r, 200));
+  }
+  if (!_tsToken) throw new Error('turnstile_token_missing');
+  return _tsToken;
+}
+
 /* ================== أدوات محلية للجلسة ================== */
 // نقرأ مفتاح الجلسة من localStorage (حُفظ أثناء الدخول)
 function getLocalSessionKey() {
@@ -23,6 +86,13 @@ function getLocalSessionKey() {
   } catch {
     return "";
   }
+}
+
+function getLocalUid() {
+  try {
+    const s = JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
+    return s?.uid || "";
+  } catch { return ""; }
 }
 
 // نافذة عامة لرسائل انتهاء/فشل الجلسة
@@ -70,6 +140,22 @@ function showSessionExpiredModal() {
   showSessionModal("صلاحية الجلسة منتهية يرجى إعادة تسجيل الدخول");
 }
 
+/* ======= تحكم باللودر أثناء الشراء ======= */
+function showPreloader() {
+  const pre = document.getElementById('preloader');
+  if (!pre) return;
+  pre.classList.remove('hidden');
+  pre.style.display = 'flex';
+  pre.style.opacity = '1';
+}
+
+function hidePreloader() {
+  const pre = document.getElementById('preloader');
+  if (!pre) return;
+  pre.classList.add('hidden');
+  setTimeout(() => { pre.style.display = 'none'; }, 600);
+}
+
 /* ============ توليد وتدوير sessionKey بعد الطلب ============ */
 const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const SYMBOLS = "!@#$%&";
@@ -109,7 +195,7 @@ function persistOffers(data) {
   try {
     const prices = (data && typeof data === 'object' && data.prices) ? data.prices : data;
     if (!prices || typeof prices !== 'object') return;
-    const wrapped = Object.assign({}, prices, { prices, ts: Date.now(), source: 'roblox' });
+    const wrapped = Object.assign({}, prices, { prices, ts: Date.now(), source: 'freefire' });
     localStorage.setItem('offersPrices', JSON.stringify(wrapped));
   } catch (e) { console.warn('persistOffers failed:', e); }
 }
@@ -132,10 +218,10 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
   try {
     // لا نجلب أسعار عامة بدون معرف مستخدم
     if (!useruid) return;
-    const url = new URL('https://qusaishopjawaker.qusaishop1.workers.dev/');
+    const url = new URL('https://z3em-manwal.laithqarqaz1.workers.dev/');
     url.searchParams.set('mode', 'all');
     url.searchParams.set('useruid', useruid);
-    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store' });
+    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store', headers: { 'X-Game': 'roblox' } });
     const data = await res.json();
     if (!data || data.success === false) throw new Error(data?.error || 'فشل جلب الأسعار');
     persistOffers(data);
@@ -152,8 +238,11 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
 (function fastPricesBoot(){
   primeOffersFromCache();
   try {
-    const cachedUid = (function(){ try{ const s=JSON.parse(localStorage.getItem('sessionKeyInfo')||'null'); return s?.uid||''; }catch{ return '';} })();
-    if (cachedUid && !pricesFetchOnce) { pricesFetchOnce = true; loadPrices(cachedUid, { timeoutMs: 6000, silentOnCached: true }).catch(()=>{}); }
+    const cachedUid = getLocalUid();
+    if (cachedUid && !pricesFetchOnce) {
+      pricesFetchOnce = true;
+      loadPrices(cachedUid, { timeoutMs: 6000, silentOnCached: true }).catch(()=>{});
+    }
   } catch {}
   firebase.auth().onAuthStateChanged(async (user) => {
     try {
@@ -172,23 +261,34 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
 
 /* ================== إرسال الطلب (مع كشف فشل رمز الجلسة) ================== */
 async function sendOrder() {
-  const pid = document.getElementById("player-id").value.trim();
-  const selectedOffers = Array.from(document.querySelectorAll('.offer-box.selected')).map(el => ({
+  // التقط قيمة الآيدي من حقل المودال أو الحقل الأساسي إن وُجد
+  const pidInput = document.getElementById("player-id") || document.getElementById("modal-player-id");
+  const pid = pidInput ? (pidInput.value || "").trim() : "";
+
+  // التقط العرض المحدد من الكلاسات، مع احتياط باستخدام _pm_currentCard إن لم توجد كلاس selected
+  let selectedOffers = Array.from(document.querySelectorAll('.offer-box.selected')).map(el => ({
     type: el.dataset.type,
-    tokens: el.dataset.tokens || null,
+    jewels: el.dataset.jewels || null,
     offerName: el.dataset.offer || null
   }));
+  if (selectedOffers.length === 0 && window._pm_currentCard && window._pm_currentCard.dataset) {
+    const el = window._pm_currentCard;
+    selectedOffers = [{
+      type: el.dataset.type,
+      jewels: el.dataset.jewels || null,
+      offerName: el.dataset.offer || null
+    }];
+  }
 
   if (!pid || selectedOffers.length === 0) {
     showToast("❗ يرجى تعبئة الحقول المطلوبة قبل الإرسال!", "error");
     return;
   }
 
-  const turnstileToken = turnstile.getResponse();
-  if (!turnstileToken) {
-    showToast("❗ يرجى اجتياز اختبار الأمان قبل الإرسال!", "error");
-    return;
-  }
+  // التحقق من Turnstile قبل الإرسال
+  let turnstileToken = '';
+  try { turnstileToken = await getTurnstileTokenInteractive(); }
+  catch(_) { showToast('فشل التحقق الأمني، حاول مجدداً', 'error'); return; }
 
   const user = firebase.auth().currentUser;
   if (!user) {
@@ -225,9 +325,9 @@ async function sendOrder() {
   // Quote
   let total, breakdown;
   try {
-    const priceRes = await fetch("https://qusaishopjawaker.qusaishop1.workers.dev/", {
+    const priceRes = await fetch("https://z3em-manwal.laithqarqaz1.workers.dev/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Game": "roblox" },
       body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
     });
     const priceData = await priceRes.json();
@@ -242,22 +342,34 @@ async function sendOrder() {
 
   const currentUrl = window.location.href;
 
-  // Purchase
+  // ====== Purchase (مع اللودر وتعطيل الزر) ======
+  const submitBtn = document.querySelector('.send-button');
   try {
-    const response = await fetch("https://qusaishopjawaker.qusaishop1.workers.dev/", {
+    // إظهار اللودر وتعطيل الزر
+    showPreloader();
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.dataset._oldText = submitBtn.textContent;
+      submitBtn.textContent = 'جاري المعالجة...';
+      submitBtn.style.opacity = '0.7';
+      submitBtn.style.pointerEvents = 'none';
+    }
+
+    const response = await fetch("https://z3em-manwal.laithqarqaz1.workers.dev/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`,
-        "X-SessionKey": sessionKey
+        "X-SessionKey": sessionKey,
+        "X-Game": "roblox"
       },
       body: JSON.stringify({
         playerId: pid,
         offers: selectedOffers,
         currency: "دأ",
         currentUrl,
-        turnstileToken,
-        authkey
+        authkey,
+        turnstileToken
       })
     });
 
@@ -277,7 +389,7 @@ async function sendOrder() {
         return;
       }
       // إن لم يكن خطأ جلسة، عالج كالعادة
-      showToast("❌ فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
+      showToast("فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
       return;
     }
 
@@ -294,11 +406,20 @@ async function sendOrder() {
         showSessionModal("فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى");
         return;
       }
-      showToast("❌ فشل الشراء: " + (result.error || "خطأ غير معروف"), "error");
+      showToast("فشل الشراء: " + (result.error || "خطأ غير معروف"), "error");
     }
   } catch (err) {
     console.error("Worker Error:", err);
-    showToast("❌ حدث خطأ أثناء الشراء", "error");
+    showToast("حدث خطأ أثناء الشراء", "error");
+  } finally {
+    // إخفاء اللودر وإرجاع حالة الزر مهما حصل
+    hidePreloader();
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = submitBtn.dataset._oldText || 'شراء';
+      submitBtn.style.opacity = '';
+      submitBtn.style.pointerEvents = '';
+    }
   }
 }
 
@@ -466,6 +587,7 @@ const detectTheme = () => {
   // صوت نجاح (اختياري)
   try { new Audio("success.mp3").play(); } catch {}
 }
+
 
 // ✅ عند تحميل الصفحة سننتظر onAuthStateChanged لتحديد useruid ثم ننادي loadPrices()
 document.addEventListener('DOMContentLoaded', () => {

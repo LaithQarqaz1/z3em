@@ -15,6 +15,7 @@ const banner1 = document.getElementById("banner1");
 const banner2 = document.getElementById("banner2");
 
 function updateTopBanner() {
+  if (!bannerBackgrounds.length || !banner1 || !banner2) return;
   const nextImage = bannerBackgrounds[currentIndex];
 
   if (showingBanner1) {
@@ -31,13 +32,11 @@ function updateTopBanner() {
   currentIndex = (currentIndex + 1) % bannerBackgrounds.length;
 }
 
-banner1.style.backgroundImage = `url('${bannerBackgrounds[0]}')`;
-banner1.classList.add("active");
-
-setInterval(updateTopBanner, 10000);
-
-
-
+if (banner1 && banner2 && bannerBackgrounds.length) {
+  banner1.style.backgroundImage = `url('${bannerBackgrounds[0]}')`;
+  banner1.classList.add("active");
+  setInterval(updateTopBanner, 10000);
+}
 
 // حساب المبلغ الإجمالي وعرضه
 let totalOrder = 0, currencySymbolOrder = "";

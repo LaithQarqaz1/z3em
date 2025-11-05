@@ -93,13 +93,6 @@ input[type="text"]:focus, select:focus {
 }
 
 /* تنسيقات مجموعة العروض */
-.offers-group {
-  margin-bottom: 30px;
-}
-.offers-group h3 {
-  margin-bottom: 10px;
-}
-
 /* تنسيقات مربعات العروض */
 .offer-box {
   display: inline-block;
@@ -237,39 +230,6 @@ label[for="myOrdersDropdown"] {
 #copyCodeBtn:hover { background: var(--btn-bg-hover); }
 #copyCodeBtn:active { transform: scale(.98); }
 
-/* تنسيقات شبكة خيارات الدفع */
-.payment-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-/* تنسيقات خيار الدفع */
-.payment-option {
-  border: 2px solid #ccc;
-  border-radius: 10px;
-  padding: 10px;
-  text-align: center;
-  cursor: pointer;
-  width: 120px;
-  transition: 0.3s;
-  background-color: #fff;
-}
-
-/* تنسيقات صورة خيار الدفع */
-.payment-option img {
-  max-width: 60px;
-  margin-bottom: 8px;
-}
-
-/* تنسيقات خيار الدفع المحدد */
-.payment-option.selected {
-  border-color: #28a745;
-  background-color: #f9fff9;
-}
-
 /* تنسيقات النافذة المنبثقة */
 .modal {
   display: none;
@@ -297,51 +257,6 @@ label[for="myOrdersDropdown"] {
   top: 10px; left: 15px;
   cursor: pointer;
   font-size: 22px;
-}
-
-/* تنسيقات نافذة اتفاقية المستخدم */
-#user-agreement {
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 9999;
-  align-items: center;
-  justify-content: center;
-}
-
-/* تنسيقات مربع الاتفاقية */
-.agreement-box {
-  background: linear-gradient(145deg, #ffffff, #f1f1f1);
-  width: 90%;
-  max-width: 500px;
-  padding: 30px 25px;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  text-align: right;
-  animation: fadeIn 0.4s ease-in-out;
-}
-
-/* تنسيقات عناوين مربع الاتفاقية */
-.agreement-box h2 {
-  margin-top: 0;
-  color: #222;
-  font-size: 24px;
-}
-
-/* تنسيقات فقرات مربع الاتفاقية */
-.agreement-box p {
-  color: #444;
-  font-size: 16px;
-  margin-bottom: 15px;
-}
-
-/* تنسيقات أزرار الاتفاقية */
-.agreement-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
 }
 
 /* تنسيقات زر القراءة */
@@ -383,28 +298,6 @@ label[for="myOrdersDropdown"] {
 
 
 /* تنسيقات نص الاتفاقية */
-#agreement-text {
-  display: none;
-  background: #fff;
-  margin-top: 20px;
-  padding: 15px;
-  border-radius: 12px;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-}
-
-/* تنسيقات القوائم في نص الاتفاقية */
-#agreement-text ul {
-  padding-right: 20px;
-}
-
-/* تأثير ظهور مربع الاتفاقية */
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
-}
-
 
 .offer-box {
   position: relative;
@@ -444,29 +337,6 @@ label[for="myOrdersDropdown"] {
   overflow: hidden;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
-
-.banner-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-size: cover;   /* ✅ يجعل الصورة تغطي البانر بالكامل */
-  background-position: center;
-  background-repeat: no-repeat;
-  transition: opacity 0.8s ease-in-out;
-  opacity: 0;
-}
-
-
-#banner1.active,
-#banner2.active {
-  opacity: 1;
-}
-
-
-
-
 
 
 /* قسيمة العرض */
@@ -529,33 +399,6 @@ label[for="myOrdersDropdown"] {
   max-width: 300px;
 }
 
-/* زر اختيار ملف */
-.file-input-wrapper {
-  margin-top: 20px;
-}
-
-.file-input-label {
-  display: inline-block;
-  padding: 10px 20px;
-  border: 2px solid #5c5ebf;
-  border-radius: 5px;
-  color: #5c5ebf;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.file-input-label:hover {
-  background-color: #5c5ebf;
-  color: white;
-}
-
-#file-name {
-  display: block;
-  margin-top: 10px;
-  font-size: 16px;
-  color: #555;
-}
-
 /* زر إرسال */
 .send-button {
   margin-top: 30px;
@@ -571,23 +414,6 @@ label[for="myOrdersDropdown"] {
 
 .send-button:hover {
   background-color: #3b3e8c;
-}
-
-/* مؤشر التحميل */
-.loading-indicator {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #7a7cd0;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-right: 5px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 /* نافذة منبثقة */
@@ -668,44 +494,6 @@ label[for="myOrdersDropdown"] {
   background-color: #ffffff;
 }
 
-/* منطقة الرفع */
-.upload-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 200px;
-  height: 180px;
-  margin: 20px auto;
-  border: 2px dashed #999;
-  border-radius: 8px;
-  cursor: pointer;
-  color: #666;
-  font-family: sans-serif;
-  text-align: center;
-  transition: background-color 0.2s, border-color 0.2s;
-}
-
-.upload-area:hover {
-  background-color: #f9f9f9;
-  border-color: #666;
-}
-
-.upload-area svg {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 8px;
-  fill: #999;
-  transition: fill 0.2s;
-}
-
-.upload-area:hover svg {
-  fill: #666;
-}
-
-.upload-area input[type="file"] {
-  display: none;
-}
 
 /* استجابة للشاشات الصغيرة */
 @media (max-width: 600px) {
@@ -774,44 +562,6 @@ body {
   display: block;
 }
 
-.offers-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 15px;
-}
-
-.offer-box {
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 10px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  width: 150px; /* أو أي حجم ثابت تريده */
-}
-
-.offer-box:hover {
-  border-color: #5c5ebf;
-  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
-}
-
-.offer-box img {
-  width: 100%;
-  aspect-ratio: 1 / 1;   /* يجعل العرض مساوي للطول */
-  object-fit: cover;     /* قص الصورة لتملأ المربع بدون تشويه */
-  border-radius: 8px;    /* نفس انحناء المربع */
-  display: block;
-}
-
-
-.offer-box span {
-  display: block;
-  font-size: 14px;
-  color: #333;
-}
-
 /* استجابة للهواتف */
 @media (max-width: 600px) {
   .offers-box {
@@ -823,25 +573,6 @@ body {
     font-size: 13px;
   }
 
-  .offers-grid {
-    gap: 5px; /* تقليل الفراغات بين المربعات أكثر */
-    justify-content: center;
-  }
-
-  .offer-box {
-    width: 110px; /* تصغير العرض أكثر */
-    padding: 5px 4px; /* تصغير الحواف الداخلية */
-  }
-
-  .offer-box img {
-    width: 85%; /* تقليل حجم الصورة بشكل طفيف */
-    margin: 0 auto 3px;
-    display: block;
-  }
-
-  .offer-box span {
-    font-size: 12px; /* تقليل حجم النص */
-  }
 }
 
 
@@ -864,23 +595,6 @@ body {
   border: 1px solid #ddd;
   padding: 20px;
   border-radius: 6px;
-}
-
-.login-title {
-  display: flex;
-  align-items: center;
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 15px;
-}
-
-.login-title span {
-  background-color: red;
-  color: white;
-  border-radius: 4px;
-  padding: 0 6px;
-  margin-right: 6px;
-  font-size: 14px;
 }
 
 label {
@@ -917,25 +631,6 @@ label i {
   border-radius: 0 4px 4px 0;
   cursor: pointer;
   font-size: 14px;
-}
-
-.social-icons {
-  display: flex;
-  justify-content: start;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.social-icons img {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.login-note {
-  font-size: 13px;
-  color: #555;
 }
 
 /* إشعار منبثق */
@@ -1010,86 +705,6 @@ label i {
 }
 
 /* متغيّر موحّد لعرض البانر */
-:root {
-  --banner-max: 700px;
-}
-
-/* تأكيد استخدام المتغيّر في البانر */
-#top-banner {
-  max-width: var(--banner-max);
-}
-
-/* حقول الإدخال والقوائم لتكون بنفس عرض البانر */
-input[type="text"],
-select {
-  width: 100%;
-  max-width: var(--banner-max);
-  box-sizing: border-box;
-  display: block;
-  margin: 20px auto 0;
-}
-
-/* زرّ الشراء بنفس عرض البانر (زر الإرسال لديك) */
-.send-button {
-  width: 100%;
-  max-width: var(--banner-max);
-  box-sizing: border-box;
-  display: block;
-  margin: 30px auto 0;
-}
-
-/* (اختياري) إن كانت لديك حقول محددة للمبلغ والآيدي، يمكنك استهدافها مباشرة */
-#amount,
-#userId {
-  width: 100%;
-  max-width: var(--banner-max);
-  box-sizing: border-box;
-  display: block;
-  margin: 20px auto 0;
-}
-
-/* تحسين الاستجابة على الشاشات الصغيرة */
-@media (max-width: 600px) {
-  input[type="text"], select, .send-button,
-  #amount, #userId {
-    width: 100%;
-    max-width: 100%;
-  }
-}
-
-/* اجعل قياس الحقول مطابقًا للبانر وألغِ أي قواعد سابقة */
-:root { --banner-max: 700px; } /* لو غيرتها لاحقًا، سيتبعها كل شيء */
-
-/* إن كانت الحقول IDs: #amount و #userId */
-#amount, #userId,
-input#amount, input#userId,
-input[name="amount"], input[name="userId"],
-input[type="number"]#amount, input[type="text"]#userId {
-  width: 100% !important;
-  max-width: var(--banner-max) !important;
-  display: block !important;
-  margin: 16px auto !important;
-  padding: 14px 16px !important;
-  font-size: 18px !important;
-  box-sizing: border-box !important;
-}
-
-/* لو كانت داخل حاوية Flex تُضيّق العرض (مثل .input-group) */
-#amount, #userId {
-  flex: 0 0 auto !important;   /* لا تتقلّص داخل flex */
-}
-
-/* (اختياري لكن مفيد) كلاس عام يمكنك إضافته لكلا الحقلين إن اختلفت الـIDs */
-.wide-field {
-  width: 100% !important;
-  max-width: var(--banner-max) !important;
-  display: block !important;
-  margin: 16px auto !important;
-  padding: 14px 16px !important;
-  font-size: 18px !important;
-  box-sizing: border-box !important;
-}
-/* نفس عرض البانر */
 :root { --banner-max: 700px; }
 
 /* 1) صندوق معرّف اللاعب + صندوق المبلغ */
@@ -1184,18 +799,6 @@ body.dark-mode .send-button{
 }
 body.dark-mode .send-button:hover{ background: var(--btn-bg-hover); }
 
-/* خيارات الدفع – تفاعلات سلسة */
-.payment-option{
-  transition: background-color var(--anim-med) var(--ease-soft),
-              color           var(--anim-med) var(--ease-soft),
-              border-color    var(--anim-med) var(--ease-soft),
-              box-shadow      var(--anim-med) var(--ease-soft),
-              transform       var(--anim-fast) var(--ease-snappy);
-}
-.payment-option:hover{ transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,.12); }
-.payment-option:active{ transform: translateY(0); }
-.payment-option.selected{ box-shadow: 0 12px 28px rgba(0,0,0,.16); border-color:#22c55e; }
-
 /* المودال – دخول ناعم */
 .modal .modal-content{
   transition: background-color var(--anim-med) var(--ease-soft),
@@ -1227,13 +830,6 @@ body.dark-mode .offer-box.selected{
   color:#d1fae5;
 }
 
-/* شبكة الدفع */
-body.dark-mode .payment-option{
-  background: var(--card-bg);
-  border-color: var(--card-border);
-  color: var(--card-text);
-}
-
 /* القسيمة والمبلغ المختار */
 body.dark-mode #selected-amount-container{
   background: var(--card-bg);
@@ -1260,14 +856,6 @@ body.dark-mode .modal-content{ background: var(--card-bg); color: var(--card-tex
 body.dark-mode #toast{ background:#0f1024; color: var(--card-text); }
 
 /* منطقة الرفع */
-body.dark-mode .upload-area{
-  background:transparent;
-  border-color:#2b2d52;
-  color:#cbd5e1;
-}
-body.dark-mode .upload-area:hover{ background:#0f1024; }
-body.dark-mode .upload-area svg{ fill:#9ea0d9; }
-
 /* عنوانيْن وأقسام */
 body.dark-mode h1,
 body.dark-mode h2,
@@ -1296,8 +884,6 @@ body.dark-mode .offers-box label{
 }
 
 /* (اختياري) لو أردت تباينًا أعلى داخل الشبكة */
-body.dark-mode .offers-grid{ color:#f0f1ff; }
-
 /* عنوان "المبلغ المطلوب" في الوضع الداكن */
 body.dark-mode #selected-amount-container h2{
   color: #ffffff !important;

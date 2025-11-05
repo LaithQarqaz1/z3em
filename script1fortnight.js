@@ -44,18 +44,12 @@ function themeIsDark(){
 async function getTurnstileTokenInteractive() {
   try { await ensureTurnstileScript(); } catch {}
   const modalCard = document.querySelector('#purchase-modal .pm-card') || document.body;
-  const placeholder = document.getElementById('cf-turnstile-modal');
-  const host = placeholder || modalCard;
   let holder = document.getElementById('cf-turnstile-container');
   if (!holder) {
     holder = document.createElement('div');
     holder.id = 'cf-turnstile-container';
     holder.style.cssText = 'margin-top:10px; display:block;';
-    if (placeholder) {
-      placeholder.classList.add('active');
-      holder.style.marginTop = '0';
-    }
-    host.appendChild(holder);
+    modalCard.appendChild(holder);
   }
   const opts = {
     sitekey: TURNSTILE_SITE_KEY,
@@ -94,7 +88,6 @@ function getLocalSessionKey() {
   }
 }
 
-// محاولة الحصول على uid بسرعة من التخزين المحلي لتسريع جلب الأسعار
 function getLocalUid() {
   try {
     const s = JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
@@ -202,7 +195,7 @@ function persistOffers(data) {
   try {
     const prices = (data && typeof data === 'object' && data.prices) ? data.prices : data;
     if (!prices || typeof prices !== 'object') return;
-    const wrapped = Object.assign({}, prices, { prices, ts: Date.now(), source: 'jawaker' });
+    const wrapped = Object.assign({}, prices, { prices, ts: Date.now(), source: 'freefire' });
     localStorage.setItem('offersPrices', JSON.stringify(wrapped));
   } catch (e) { console.warn('persistOffers failed:', e); }
 }
@@ -225,10 +218,10 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
   try {
     // لا نجلب أسعار عامة بدون معرف مستخدم
     if (!useruid) return;
-    const url = new URL('https://jawaker.qousaistore66.workers.dev/');
+    const url = new URL('https://z3em-manwal.laithqarqaz1.workers.dev/');
     url.searchParams.set('mode', 'all');
     url.searchParams.set('useruid', useruid);
-    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store' });
+    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store', headers: { 'X-Game': 'fortnight' } });
     const data = await res.json();
     if (!data || data.success === false) throw new Error(data?.error || 'فشل جلب الأسعار');
     persistOffers(data);
@@ -244,7 +237,6 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
 // عرض سريع من الكاش + تحديث في الخلفية
 (function fastPricesBoot(){
   primeOffersFromCache();
-  // جلب مبكر باستخدام uid المخزن محلياً إن وُجد
   try {
     const cachedUid = getLocalUid();
     if (cachedUid && !pricesFetchOnce) {
@@ -252,7 +244,6 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
       loadPrices(cachedUid, { timeoutMs: 6000, silentOnCached: true }).catch(()=>{});
     }
   } catch {}
-  // ثم نضمن الالتقاط عبر onAuthStateChanged
   firebase.auth().onAuthStateChanged(async (user) => {
     try {
       if (user && !pricesFetchOnce) {
@@ -277,14 +268,14 @@ async function sendOrder() {
   // التقط العرض المحدد من الكلاسات، مع احتياط باستخدام _pm_currentCard إن لم توجد كلاس selected
   let selectedOffers = Array.from(document.querySelectorAll('.offer-box.selected')).map(el => ({
     type: el.dataset.type,
-    tokens: el.dataset.tokens || null,
+    jewels: el.dataset.jewels || null,
     offerName: el.dataset.offer || null
   }));
   if (selectedOffers.length === 0 && window._pm_currentCard && window._pm_currentCard.dataset) {
     const el = window._pm_currentCard;
     selectedOffers = [{
       type: el.dataset.type,
-      tokens: el.dataset.tokens || null,
+      jewels: el.dataset.jewels || null,
       offerName: el.dataset.offer || null
     }];
   }
@@ -334,9 +325,9 @@ async function sendOrder() {
   // Quote
   let total, breakdown;
   try {
-    const priceRes = await fetch("https://jawaker.qousaistore66.workers.dev/", {
+    const priceRes = await fetch("https://z3em-manwal.laithqarqaz1.workers.dev/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Game": "fortnight" },
       body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
     });
     const priceData = await priceRes.json();
@@ -364,12 +355,13 @@ async function sendOrder() {
       submitBtn.style.pointerEvents = 'none';
     }
 
-    const response = await fetch("https://jawaker.qousaistore66.workers.dev/", {
+    const response = await fetch("https://z3em-manwal.laithqarqaz1.workers.dev/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`,
-        "X-SessionKey": sessionKey
+        "X-SessionKey": sessionKey,
+        "X-Game": "fortnight"
       },
       body: JSON.stringify({
         playerId: pid,
@@ -397,7 +389,7 @@ async function sendOrder() {
         return;
       }
       // إن لم يكن خطأ جلسة، عالج كالعادة
-      showToast("❌ فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
+      showToast("فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
       return;
     }
 
@@ -414,11 +406,11 @@ async function sendOrder() {
         showSessionModal("فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى");
         return;
       }
-      showToast("❌ فشل الشراء: " + (result.error || "خطأ غير معروف"), "error");
+      showToast("فشل الشراء: " + (result.error || "خطأ غير معروف"), "error");
     }
   } catch (err) {
     console.error("Worker Error:", err);
-    showToast("❌ حدث خطأ أثناء الشراء", "error");
+    showToast("حدث خطأ أثناء الشراء", "error");
   } finally {
     // إخفاء اللودر وإرجاع حالة الزر مهما حصل
     hidePreloader();
@@ -601,7 +593,6 @@ const detectTheme = () => {
 document.addEventListener('DOMContentLoaded', () => {
   // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
 });
-
 
 
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>انستا | متجر زعيم</title>
-  <link rel="icon" href="https://i.ibb.co/zHC1tQ8b/1757362837638.png" type="image/png">
+  <link rel="icon" href="emp.png" type="image/png">
 
   <!-- حارس مبكر: منع فتح الصفحة مباشرةً فقط (بدون الاعتماد على كاش الحالات) -->
   <script>
@@ -171,51 +171,18 @@
   
   <style>
     /* متغيرات للألوان ليتوافق المودال مع الثيم */
-    /* ألوان الأزرار مطابقة لباقي الصفحات */
-    :root{ --card-bg:#ffffff; --card-text:#111827; --card-border:#e5e7eb; --input-bg:#ffffff; --input-text:#111827; --btn-bg:#7a7cd0; --btn-bg-hover:#5c5ebf; --btn-text:#ffffff }
-    html[data-theme="dark"], body.dark-mode{ --card-bg:#0f1024; --card-text:#f0f1ff; --card-border:#2b2d52; --input-bg:#05050b; --input-text:#f0f1ff; --btn-bg:#5c5ebf; --btn-bg-hover:#7a7cd0; --btn-text:#ffffff }
-    /* اتجاه عام مساعد */
-    .rtl { direction: rtl; text-align: right; unicode-bidi: embed; }
-
+    :root{ --card-bg:#ffffff; --card-text:#111827; --card-border:#e5e7eb; --input-bg:#ffffff; --input-text:#111827; --btn-bg:#6366f1; --btn-bg-hover:#4f46e5; --btn-text:#ffffff }
+    html[data-theme="dark"], body.dark-mode{ --card-bg:#0f1024; --card-text:#f0f1ff; --card-border:#2b2d52; --input-bg:#05050b; --input-text:#f0f1ff; --btn-bg:#475569; --btn-bg-hover:#64748b; --btn-text:#ffffff }
     /* Modal theme-aware */
     #purchase-modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(15,23,42,0.28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); z-index:10000 }
     #purchase-modal.show{ display:flex }
     #purchase-modal .pm-card{ width:min(560px,92vw); background:var(--card-bg); color:var(--card-text); border:1px solid var(--card-border); border-radius:18px; box-shadow:0 24px 70px rgba(0,0,0,.35); padding:22px 20px; direction:rtl }
     #purchase-modal .pm-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px }
     #purchase-modal .pm-pill{ background:var(--input-bg); color:var(--text); border-radius:999px; padding:8px 14px; font-weight:800; border:1px solid var(--card-border) }
-    /* Make total look like input: equal size, rounded corners */
-    /* اجعل حقل الإجمالي مماثلاً تماماً لحقل العدد */
-    #purchase-modal #pm-total.pm-pill{
-      display:flex; align-items:center; justify-content:center;
-      width:100%; padding:12px 14px; border-radius:12px;
-      border:1px solid var(--card-border);
-      background:var(--input-bg); color:var(--input-text);
-      text-align:center; font-size:16px; box-sizing:border-box; height:46px;
-    }
     #purchase-modal .pm-title{ font-weight:800; font-size:16px; display:flex; align-items:center; gap:8px }
     #purchase-modal .pm-input{ width:100%; margin:12px 0 6px }
-    #purchase-modal .pm-input input{ width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); font-size:16px; outline:none; background:var(--input-bg); color:var(--input-text); box-sizing:border-box; height:46px; }
-    /* زر اللصق بجانب حقل الايدي داخل المودال */
+    #purchase-modal .pm-input input{ width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); font-size:16px; outline:none; background:var(--input-bg); color:var(--input-text) }
     #purchase-modal .pm-input{ position: relative; }
-    /* لم يعد هناك زر لصق؛ نعيد الحشو الافتراضي من القاعدة الأساسية */
-    #purchase-modal .pm-paste{
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      inset-inline-end: 10px;
-      background: var(--input-bg);
-      color: var(--input-text);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 8px 10px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 800;
-    }
-    #purchase-modal .pm-paste i{ pointer-events: none; }
-    #purchase-modal .pm-paste:hover{ filter: brightness(0.98); }
     #purchase-modal .pm-actions{ display:flex; gap:12px; margin-top:12px }
     #purchase-modal .btn{ flex:1; padding:12px 16px; border-radius:14px; font-weight:800; cursor:pointer; border:1px solid transparent }
     #purchase-modal .btn-primary{ background:var(--btn-bg); color:var(--btn-text) }
@@ -227,32 +194,7 @@
     body.modal-open .offer-box.selected{ outline:none !important; border-color:transparent !important; box-shadow:none !important }
     body.modal-open .offer-box.selected::after{ display:none !important; content:none !important }
 
-    /* صندوق الملخص */
-    #selected-amount-container {
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-      text-align: center !important;
-      margin:20px auto;max-width:400px;padding:20px;
-      border:2px solid #5c5ebf;border-radius:10px;background:#f9f9f9;font-weight:bold;
-    }
-    #selected-amount-container h2 { margin-bottom: 10px !important; }
-
-    /* ✅ القسيمة RTL مع عزل الإنجليزية */
-    #selected-amount-container .voucher{
-      display:block !important;
-      margin:0 auto !important;
-      direction: rtl;
-      text-align: right;
-      unicode-bidi: isolate;
-      font-weight: 700;
-    }
-    .voucher .line{ direction: rtl; text-align: right; margin: 10px 0; }
-    .voucher .ltr{ direction: ltr; unicode-bidi: isolate; display:inline-block; white-space: nowrap; }
-    .voucher .sep{ unicode-bidi: isolate; display:inline-block; padding: 0 .15rem; }
-    .voucher .price{ white-space: nowrap; }
-
-    /* شريط البحث + شبكة الكروت (مطابقة لطابع instafinbut) */
+    /* شريط البحث + شبكة الكروت (مطابقة لطابع canvainbut) */
     .search-container {
       max-width: 1100px;
       margin: 0 auto 24px auto;
@@ -274,9 +216,6 @@
       max-width: 100%;
     }
     .search-container input[type="text"]:focus{box-shadow:0 0 6px rgba(65,67,145,.5);border-color:#414391}
-    .search-container button{background:#5c5ebf;border:none;padding:12px 20px;border-radius:25px;color:#fff;font-size:1rem;cursor:pointer;transition:.3s}
-    .search-container button:hover{background:#414391}
-
     /* نظام الشبكة والبطاقات مطابق للرئيسية index.html */
     .categories {
       display: grid;
@@ -395,9 +334,6 @@ body.dark-mode .offer-box .offer-price {
     /* منع صعود البطاقة حتى لا تتداخل مع الصف الذي فوقها */
     .offer-box.card:hover{transform:none;box-shadow:0 8px 20px rgba(0,0,0,.15)}
     .offer-box.card h2{font-weight:700;font-size:1rem;margin:0;line-height:1.4;word-break:break-word}
-    .offer-box.card .caption{margin-top:8px; line-height:1.35}
-    .offer-box.card .caption .jewels{display:block; color:#475569; font-weight:700}
-    .offer-box.card .caption .price{display:block; color:#0f1024; font-weight:800}
     .offer-box.card img{width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;object-position:center;border-radius:8px;user-select:none;background-color:#f0f0f0;display:block;margin:0 auto}
 
     /* رسالة لا نتائج مثل الرئيسية */
@@ -410,8 +346,6 @@ body.dark-mode .offer-box .offer-price {
     body.dark-mode .search-container button:hover{background:#64748b}
     body.dark-mode .offer-box.card{background:#101826;color:#f0f1ff;border-color:#2b2d52;box-shadow:0 2px 10px rgba(0,0,0,.35)}
     body.dark-mode .offer-box.card img{background:#0d0e1d}
-    body.dark-mode .offer-box.card .caption .jewels{color:#cbd5e1}
-    body.dark-mode .offer-box.card .caption .price{color:#f0f1ff}
 
     /* البطاقات + تغطية "غير متوفر" */
     .offer-box { position: relative; cursor: pointer; }
@@ -471,55 +405,14 @@ body.dark-mode .offer-box.selected{ outline:2px solid #b9bbef; }
     body.dark-mode .offer-box.disabled .unavailable-badge{ background:rgba(0,0,0,.45); }
 
 /* عناوين الأقسام */
-body.dark-mode .section-title{ color:#9c9ede !important; }
-
-/* زر الشراء */
-body.dark-mode .send-button{
-  background:#3b3e8c !important;
-  color:#f0f1ff !important;
-}
-body.dark-mode .send-button:hover{ background:#7a7cd0 !important; }
-
 /* التوست */
 body.dark-mode #toast{
   background:#0f1024 !important;
   color:#f0f1ff !important;
 }
 
-/* النافذة المنبثقة (دليل المعرف) */
-body.dark-mode #popup > div{
-  background:#111827 !important;
-  color:#f0f1ff !important;
-}
-
 /* محاكاة شيمر أخفت في الوضع الداكن إن وُجد */
 body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
-
-/* === اجعل خلفية قسم لماذا تختارنا مثل الخلفيات الأخرى === */
-
-/* وضع فاتح: لون مسطح مطابق لصناديق الصفحة */
-.footer-icons{
-  background: #f9f9f9 !important;  /* بديل للتدرّج */
-  border: 1px solid #e0e6f7;        /* نفس حدود الصناديق الفاتحة */
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-}
-
-/* تباين عنوان القسم على الخلفية الفاتحة */
-.footer-title{
-  color: #05050b !important;
-}
-
-/* وضع داكن: لون مسطح مطابق لصناديق الوضع الداكن */
-body.dark-mode .footer-icons{
-  background: #2e316f !important;   /* بديل للتدرّج الداكن */
-  border-color: #2b2d52;
-  box-shadow: 0 8px 22px rgba(0,0,0,0.35);
-}
-
-/* نص العنوان في الوضع الداكن */
-body.dark-mode .footer-title{
-  color: #f0f1ff !important;
-}
 
 
     /* استجابة للجوال */
@@ -545,8 +438,6 @@ body.dark-mode .footer-title{
 
 
 /* === نفس سلوك البطاقات كما في الرئيسية (الإبقاء على تأثير الرفع فقط) === */
-
-/* طبّق شكل البطاقة على عناصرك (.offer-box.card) لتطابق .card */
 #myOffersContainer .offer-box.card,
 .card{
   background: var(--card-bg) !important;
@@ -608,24 +499,6 @@ body.dark-mode .footer-title{
   .offers-box {
     max-width: 750px;
   }
-}
-
-/* نسخة auto (اختياري): نفس التنسيق الخاص والرفع الخفيف */
-#myOffersContainer .offer-box.card.auto,
-a.card.auto{
-  border: 1.5px solid transparent;
-  background:
-    linear-gradient(var(--card-bg),var(--card-bg)) padding-box,
-    linear-gradient(135deg,#9c9ede,#10b981) border-box;
-}
-html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
-  background:
-    linear-gradient(var(--card-bg),var(--card-bg)) padding-box,
-    linear-gradient(135deg,#22c55e,#9c9ede) border-box;
-}
-#myOffersContainer .offer-box.card.auto:hover{
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 16px 36px rgba(0,0,0,.18), 0 0 28px rgba(250,204,21,.16);
 }
 
 /* استجابة للشاشات الصغيرة */
@@ -773,35 +646,6 @@ html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
     }
   }catch(e){}
 })();
-  // ===== Footer =====
-  const footer = document.createElement("footer");
-  footer.className = "footer-icons";
-  const footerTitle = document.createElement("h2");
-  footerTitle.className = "footer-title";
-  footerTitle.textContent = "لماذا تختارنا؟";
-  footer.appendChild(footerTitle);
-  const iconBoxesData = [
-    { iconClass: "fas fa-shipping-fast shipping-icon", title: "شحن سريع", desc: "يتميز متجرنا بسرعته الفائقة بالشحن فبمجرد أن تطلب سيتم الشحن لك مباشرة" },
-    { iconClass: "fas fa-lock", title: "آمن 100%", desc: "حماية كاملة للبيانات والمعاملات" },
-    { iconClass: "fas fa-headset", title: "دعم فني مستمر", desc: "دعم فني مستمر لمساعدة العملاء عند الحاجة" },
-    { iconClass: "fas fa-coins special-icon", title: "اسعار مميزة", desc: "نقدم اسعار اقل من اسعار اللعبة" },
-    { iconClass: "fas fa-credit-card", title: "سهولة الدفع", desc: "طرق دفع عديدة" },
-    { iconClass: "fas fa-shield-alt", title: "ضمان على الشحن", desc: "احصل على كامل المبلغ مع تعويض في حالة عدم وصول الشحنه" },
-    { iconClass: "fas fa-sync-alt", title: "تحديثات مستمرة", desc: "نقوم بحل جميع المشاكل بشكل دوري" },
-    { iconClass: "fas fa-tasks", title: "تعقب الطلبات", desc: "يمكنك رؤية حالة الطلبات الخاص بك من تبويب طلباتي" },
-    { iconClass: "fas fa-undo", title: "الغاء الطلبات", desc: "يمكنك الغاء اي طلب قبل اتمام عملية الدفع عبر التواصل مع الدعم الفني" },
-    { iconClass: "fas fa-server", title: "تخزين للطلبات", desc: "يتم وضع الطلبات في سيرفرات لعدم فقدانها تحت اي ضرف" }
-  ];
-
-  iconBoxesData.forEach(({ iconClass, title, desc }) => {
-    const box = document.createElement("div");
-    box.className = "icon-box";
-    const icon = document.createElement("i"); icon.className = iconClass; box.appendChild(icon);
-    const h3 = document.createElement("h3"); h3.textContent = title; box.appendChild(h3);
-    const p = document.createElement("p"); p.textContent = desc; box.appendChild(p);
-    footer.appendChild(box);
-  });
-
   // ===== بطاقات العروض =====
   function createOfferBox({ type, jewels, offer, imgSrc, imgAlt }, pricesObj) {
       const div = document.createElement("div");
@@ -879,8 +723,6 @@ html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
     }
     try { if (typeof window.__updateinstafPriceMeta === 'function') window.__updateinstafPriceMeta(null); } catch(_){}
   }
-
-  const membershipOffersGrid = document.createElement("div");
   const membershipOffers = [
     { offer: 'متابعين انستا', imgSrc: 'https://i.ibb.co/7dCJ2CzL/1758136568739.jpg', imgAlt: 'متابعين انستا' }
   ];
@@ -949,65 +791,13 @@ html[data-theme="dark"] #myOffersContainer .offer-box.card.auto{
     if (container) container.appendChild(offersBox);
     // البحث مثل inbut
     const input = document.getElementById('ffSearchInput');
-    const btn = document.getElementById('ffSearchButton');
-    const apply = () => filterCardsBySearch({ target: { value: input.value } });
-    btn && btn.addEventListener('click', apply);
-    input && input.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); apply(); }});
-    let t; input && input.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(apply,150); });
+    if (input) {
+      const apply = () => filterCardsBySearch({ target: { value: input.value } });
+      input.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); apply(); }});
+      let t;
+      input.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(apply,150); });
+    }
   });
-
-  // ===== حساب السعر وعرضه =====
-function toggleOffer(element) {
-  if (element.classList.contains("disabled")) { 
-    showToast("غير متوفر", "warning"); 
-    return; 
-  }
-
-  // ✅ إلغاء تحديد جميع العروض الأخرى
-  document.querySelectorAll('.offer-box.selected').forEach(el => {
-    el.classList.remove('selected');
-  });
-
-  // ✅ تحديد العنصر الحالي فقط
-
-  const selectedOffers = [{
-    type: element.dataset.type,
-    jewels: element.dataset.jewels || null,
-    offerName: element.dataset.offer || null
-  }];
-
-  // ✅ قراءة الأسعار من localStorage
-  const raw = JSON.parse(localStorage.getItem("offersPrices") || "{}");
-  const offersPrices = raw.prices || raw;
-
-  let total = 0; 
-  const breakdownLines = [];
-  const key = element.dataset.jewels ? `${element.dataset.jewels}_jewels` : element.dataset.offer;
-  const price = offersPrices[key];
-  if (price !== undefined) {
-    total += Number(price);
-const nameText  = element.dataset.jewels ? `${element.dataset.jewels} شهر` : element.dataset.offer;
-const priceText = `${Number(price).toFixed(2)} $`;
-breakdownLines.push(
-  `<span class="item-name">${nameText}</span> : <span class="item-price">${priceText}</span>`
-);
-
-  } else {
-    breakdownLines.push(`• ${element.dataset.jewels || element.dataset.offer}: ❓ غير معروف`);
-  }
-
-const el = document.getElementById("selected-amount");
-
-if (breakdownLines.length === 0) {
-  // لا يوجد أي عنصر مختار
-  el.textContent = "لم يتم اختيار عرض شحن";
-  el.classList.add("no-selection");
-} else 
-  // يوجد عناصر مختارة
-  el.innerHTML = `${breakdownLines.join("<br>")}<br><br><strong>المجموع: ${total.toFixed(2)} $</strong>`;
-  el.classList.remove("no-selection");
-}
-
 // فلترة البحث بنفس أسلوب instafinbut + إظهار رسالة لا نتائج كالرئيسية
 function filterCardsBySearch(ev){
   const raw = (ev.target.value || '').toString();
@@ -1194,349 +984,6 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { toast.style.transform = 'translateY(0)'; toast.style.opacity = '1'; }, 50);
     setTimeout(() => { toast.style.transform = 'translateY(100px)'; toast.style.opacity = '0'; setTimeout(() => { toast.style.visibility = 'hidden'; }, 500); }, duration);
   }
-
-  // زر لصق البريد الإلكتروني
-  async function pastePlayerId(){
-    try{
-      const input = document.getElementById('player-id');
-      if (!input) return;
-      if (!navigator.clipboard || !navigator.clipboard.readText){
-        showToast('المتصفح لا يسمح بالوصول للحافظة تلقائياً', 'warning');
-        input.focus();
-        return;
-      }
-      const text = await navigator.clipboard.readText();
-      let val = (text || '').trim();
-      const im = (input.getAttribute('inputmode')||'').toLowerCase();
-      if (im.includes('numeric') || im.includes('tel')){
-        val = val.replace(/\D+/g, '');
-      }
-      if (!val){
-        showToast('لا يوجد نص في الحافظة', 'warning');
-        return;
-      }
-      input.value = val;
-      try{ input.dispatchEvent(new Event('input', {bubbles:true})); }catch(_){}
-      input.focus();
-      showToast('تم لصق البريد الإلكتروني', 'success');
-    }catch(e){
-      showToast('تعذر قراءة الحافظة. الصق يدوياً', 'warning');
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function(){
-    const btn = document.getElementById('pm-paste');
-    if (btn) btn.addEventListener('click', pastePlayerId);
-  });
-
-  // ===== منطق تسعير الكمية المتغيرة لانستا =====
-  (function setupDynamicinstafQty(){
-    const qtyEl = document.getElementById('qty-input');
-    const totalEl = document.getElementById('pm-total');
-    const bubbleEl = document.getElementById('pm-price');
-    const noteEl = document.getElementById('pm-qty-note');
-
-    const DEFAULT_LIMITS = Object.freeze({ min: 250, max: 2000, step: 1 });
-    const originalNoteText = noteEl ? noteEl.textContent : '';
-
-    let meta = null;
-    let initialPriceApplied = false;
-    function updateOfferCardPrice(text){
-      const priceText = (typeof text === 'string' && text.trim()) ? text : '—';
-      try {
-        const activeCard = window._pm_currentCard;
-        if (activeCard){
-          const priceEl = activeCard.querySelector('.offer-price');
-          if (priceEl) priceEl.textContent = priceText;
-        }
-      } catch(_){}
-      try {
-        const membershipCard = document.querySelector('.offer-box[data-type="membership"] .offer-price');
-        if (membershipCard) membershipCard.textContent = priceText;
-      } catch(_){}
-    }
-
-
-    function applyInitialPriceIfNeeded(info){
-      if (initialPriceApplied || !qtyEl || !info) return;
-      let desired = 100;
-      const min = Number(info.min);
-      if (Number.isFinite(min) && desired < min) desired = Math.round(min);
-      const stepVal = Number(info.step);
-      const safeStep = Number.isFinite(stepVal) && stepVal > 0 ? Math.round(stepVal) : 1;
-      if (safeStep > 1){
-        const remainder = desired % safeStep;
-        if (remainder !== 0) desired += (safeStep - remainder);
-      }
-      qtyEl.value = String(desired);
-      initialPriceApplied = true;
-    }
-
-    function parseOffersPayload(rawValue){
-      if (rawValue == null) {
-        rawValue = localStorage.getItem('offersPrices');
-      }
-      let parsed = {};
-      if (typeof rawValue === 'string') {
-        try { parsed = JSON.parse(rawValue || '{}') || {}; }
-        catch (_) { parsed = {}; }
-      } else if (rawValue && typeof rawValue === 'object') {
-        parsed = rawValue;
-      }
-      const prices = (parsed && typeof parsed === 'object' && parsed.prices) ? parsed.prices : parsed;
-      const metaData = (parsed && typeof parsed === 'object') ? (parsed.meta || null) : null;
-      const level = (parsed && typeof parsed === 'object' && Object.prototype.hasOwnProperty.call(parsed, 'level')) ? parsed.level : null;
-      return {
-        prices: (prices && typeof prices === 'object') ? prices : {},
-        meta: (metaData && typeof metaData === 'object') ? metaData : null,
-        level
-      };
-    }
-
-    function toNumber(value, fallback){
-      const num = Number(value);
-      return Number.isFinite(num) ? num : fallback;
-    }
-
-    function buildMetaFromSource(source){
-      const prices = source.prices || {};
-      const metaData = source.meta || {};
-      const stepValue = Math.max(1, toNumber(metaData.step, DEFAULT_LIMITS.step));
-      return {
-        min: toNumber(metaData.min, DEFAULT_LIMITS.min),
-        max: toNumber(metaData.max, DEFAULT_LIMITS.max),
-        step: stepValue,
-        unit: {
-          per: toNumber(metaData.unit && metaData.unit.per, 0),
-          price: toNumber(metaData.unit && metaData.unit.price, 0)
-        },
-        prices,
-        level: source.level || null
-      };
-    }
-
-    function setMetaFromRaw(rawValue){
-      const parsed = parseOffersPayload(rawValue);
-      if (!parsed.meta && (!parsed.prices || Object.keys(parsed.prices).length === 0)) {
-        return meta;
-      }
-      meta = buildMetaFromSource(parsed);
-      applyInitialPriceIfNeeded(meta);
-      return meta;
-    }
-
-    function ensureMetaFromCache(){
-      if (meta && meta.prices && Object.keys(meta.prices).length) {
-        return meta;
-      }
-      return setMetaFromRaw(null);
-    }
-
-    function customRound(value){
-      const num = Number(value);
-      if (!Number.isFinite(num)) return null;
-      const parts = num.toString().split('.');
-      if (parts.length === 1) {
-        return Number(num.toFixed(2));
-      }
-      const decimals = (parts[1] + '000').slice(0, 3);
-      const thirdDigit = Number(decimals[2] || '0');
-      let result = Math.floor(num * 100) / 100;
-      if (thirdDigit >= 5) result += 0.01;
-      return Number(result.toFixed(2));
-    }
-
-    function computePrice(tokens, info){
-      if (!info) return null;
-      const q = Number(tokens);
-      if (!Number.isFinite(q)) return null;
-
-      const { unit, prices, step } = info;
-      const per = Number(unit && unit.per);
-      const pricePer = Number(unit && unit.price);
-      if (per > 0 && pricePer > 0){
-        return customRound((q / per) * pricePer);
-      }
-
-      const priceMap = prices || {};
-      const directKeys = [`${q}_tokens`, `topup:${q}`, String(q)];
-      for (const key of directKeys){
-        if (key in priceMap){
-          const val = Number(priceMap[key]);
-          if (Number.isFinite(val)) return customRound(val);
-        }
-      }
-
-      const stepVal = Number(step);
-      if (Number.isFinite(stepVal) && stepVal > 0){
-        const baseKeys = [`${stepVal}_tokens`, `topup:${stepVal}`, String(stepVal)];
-        for (const key of baseKeys){
-          if (key in priceMap){
-            const basePrice = Number(priceMap[key]);
-            if (Number.isFinite(basePrice)){
-              return customRound((q / stepVal) * basePrice);
-            }
-          }
-        }
-      }
-      return null;
-    }
-
-    function formatCurrency(value){
-      const num = Number(value);
-      if (!Number.isFinite(num)) return '—';
-      return num.toFixed(2) + ' $';
-    }
-
-    // حساب احتياطي عندما لا تتوفر الميتا بعد: نعتمد سعر 100 من فقاعة السعر
-    function fallbackTotalForQty(q){
-      try{
-        const txt = bubbleEl ? bubbleEl.textContent : '';
-        const per100 = Number(String(txt||'').replace(/[^0-9.]/g,''));
-        if (!Number.isFinite(per100)) return null;
-        const total = (Number(q)||0) / 100 * per100;
-        if (!Number.isFinite(total)) return null;
-        return customRound(total);
-      }catch{return null}
-    }
-
-    function updateNote(info, isValid){
-      if (!noteEl) return;
-      const minAllowed = info ? info.min : DEFAULT_LIMITS.min;
-      const maxAllowed = info ? info.max : DEFAULT_LIMITS.max;
-      const stepAllowed = info ? info.step : DEFAULT_LIMITS.step;
-      const minText = Math.round(minAllowed);
-      const maxText = Math.round(maxAllowed);
-      const stepText = Math.max(1, Math.round(stepAllowed));
-      if (stepText > 1){
-        noteEl.textContent = `يجب أن تكون الكمية بين ${minText} و ${maxText} وبمضاعفات ${stepText}`;
-      } else if (originalNoteText){
-        noteEl.textContent = originalNoteText;
-      }
-      noteEl.style.color = isValid ? '#16a34a' : '#ef4444';
-    }
-
-    function refreshQuote(){
-      if (!qtyEl) return;
-      const info = ensureMetaFromCache();
-      const minAllowed = info ? info.min : DEFAULT_LIMITS.min;
-      const maxAllowed = info ? info.max : DEFAULT_LIMITS.max;
-      const stepAllowed = info ? info.step : DEFAULT_LIMITS.step;
-
-      const q = Number(qtyEl.value);
-      const intQty = Number.isInteger(q);
-      const stepMismatch = intQty && stepAllowed > 1 ? (q % stepAllowed !== 0) : false;
-      const invalid = !Number.isFinite(q) || q < minAllowed || q > maxAllowed || !intQty || stepMismatch;
-
-      updateNote(info, !invalid);
-
-      if (invalid){
-        if (totalEl) totalEl.textContent = '—';
-        if (bubbleEl) bubbleEl.textContent = '—';
-        updateOfferCardPrice('—');
-        return;
-      }
-
-      let total = computePrice(q, info);
-      if (total == null) {
-        // إن لم تتوفر ميتا بعد، استخدم السعر الاحتياطي المباشر (سعر 100 من الفقاعة)
-        total = fallbackTotalForQty(q);
-      }
-      if (total != null){
-        const txt = formatCurrency(total);
-        if (totalEl) totalEl.textContent = txt;
-        if (bubbleEl) bubbleEl.textContent = txt;
-        updateOfferCardPrice(txt);
-      } else {
-        if (totalEl) totalEl.textContent = '—';
-        if (bubbleEl) bubbleEl.textContent = '—';
-        updateOfferCardPrice('—');
-      }
-    }
-    window.__updateinstafPriceMeta = function(rawValue){
-      setMetaFromRaw(rawValue);
-      refreshQuote();
-    };
-
-    const initialMeta = setMetaFromRaw(null);
-    if (initialMeta && initialPriceApplied){
-      refreshQuote();
-    }
-
-    if (qtyEl){
-      qtyEl.addEventListener('input', () => { refreshQuote(); });
-      setTimeout(refreshQuote, 50);
-    }
-  })();
-
-  // ===== override: sendOrder (صفحة انستا — كمية متغيرة) =====
-  async function sendOrder(){
-    const pidInput = document.getElementById('player-id');
-    const qtyEl = document.getElementById('qty-input');
-    const pid = pidInput ? (pidInput.value || '').trim() : '';
-    const q = Number(qtyEl && qtyEl.value);
-    if (!pid || !Number.isFinite(q) || q < 100 || q >= 10000){
-      showToast('يرجى إدخال رابط صحيح واختيار كمية صحيحة', 'error');
-      return;
-    }
-
-    const user = firebase.auth().currentUser;
-    if (!user){ showToast('❌ يجب تسجيل الدخول أولاً', 'error'); showSessionExpiredModal(); return; }
-    const sessionKey = (typeof getLocalSessionKey==='function') ? getLocalSessionKey() : '';
-    if (!sessionKey){ showSessionExpiredModal(); return; }
-
-    let authkey = null; let idToken = null;
-    try {
-      const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
-      if (userDoc.exists) authkey = userDoc.data().authkey || null;
-      idToken = await user.getIdToken(true);
-    } catch { showToast('فشل التحقق من الحساب', 'error'); return; }
-
-    const workerUrl = 'https://instaf.stwrqsy.workers.dev/';
-
-    // Quote
-    let total, breakdown;
-    try{
-      const r = await fetch(workerUrl + '/', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ offers: [{ type:'topup', tokens: q }], useruid: user.uid })
-      });
-      const j = await r.json();
-      if (j?.success === false) throw new Error(j?.error || 'quote failed');
-      total = j.total; breakdown = j.breakdown;
-    }catch(e){ showToast('❌ فشل في حساب السعر', 'error'); return; }
-
-    const submitBtn = document.getElementById('pm-buy');
-    try{
-      showPreloader && showPreloader();
-      if (submitBtn){ submitBtn.disabled = true; submitBtn.dataset._oldText = submitBtn.textContent; submitBtn.textContent = 'جاري المعالجة...'; submitBtn.style.opacity='0.7'; submitBtn.style.pointerEvents='none'; }
-      const resp = await fetch(workerUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}`, 'X-SessionKey': sessionKey },
-        body: JSON.stringify({ playerId: pid, offers: [{ type:'topup', tokens: q }], currency: 'دأ', currentUrl: window.location.href, authkey })
-      });
-      if (resp.status === 401){
-        let err = {}; try{ err = await resp.json(); }catch{}
-        const code = (err?.code||'').toLowerCase();
-        const sessionFail = code.startsWith('session_');
-        if (sessionFail){ showSessionModal && showSessionModal('فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى'); return; }
-        showToast('فشل الشراء: ' + (err?.error||'Unknown'), 'error'); return;
-      }
-      const result = await resp.json();
-      if (result?.success){
-        showConfirmation && showConfirmation(result.orderCode);
-        try{ rotateSessionKeyAfterOrder && rotateSessionKeyAfterOrder(user.uid); }catch{}
-      } else {
-        const code = (result?.code||'').toLowerCase();
-        if (code.startsWith('session_')){ showSessionModal && showSessionModal('فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى'); return; }
-        showToast('فشل الشراء: ' + (result?.error||'خطأ غير معروف'), 'error');
-      }
-    } finally {
-      hidePreloader && hidePreloader();
-      if (submitBtn){ submitBtn.disabled = false; submitBtn.textContent = submitBtn.dataset._oldText || 'شراء'; submitBtn.style.opacity=''; submitBtn.style.pointerEvents=''; }
-    }
-  }
-
   // ===== تهيئة بطاقات التفعيل/التعطيل من Firestore =====
   firebase.auth().onAuthStateChanged(async (user) => {
     if (user) {
@@ -1643,6 +1090,18 @@ window.addEventListener('DOMContentLoaded', () => {
   
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
