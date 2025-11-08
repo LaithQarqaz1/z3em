@@ -276,10 +276,6 @@
         var st = data.status || data.state || data.depositStatus || 'pending';
         var change = resolveChange(data);
         var balances = resolveBalances(data);
-        var balancePieces = [];
-        if (balances.after != null) balancePieces.push('<span class="balance-after">' + formatBalanceValue(balances.after) + '</span>');
-        if (balances.before != null) balancePieces.push('<span class="balance-before">' + formatBalanceValue(balances.before) + '</span>');
-        var balancesHtml = balancePieces.length ? '<div class="txn-balances">' + balancePieces.join('') + '</div>' : '';
         var method = data.methodName || data.method || '';
         var titleBase = kind === 'withdraw' ? 'طلب سحب' : 'طلب إيداع';
         var title = method ? titleBase + ' - ' + method : titleBase;
@@ -289,31 +285,40 @@
         var longDate = formatDate(ts);
         var proof = data.proof || data.proofUrl || '';
         var actionIcon = kind === 'withdraw' ? 'fa-arrow-up-right' : 'fa-arrow-down-left';
+
+        var balancePieces = [];
+        if (balances.after != null) {
+          balancePieces.push('<span class="balance-after">' + formatBalanceValue(balances.after) + '</span>');
+        }
+        if (balances.before != null) {
+          balancePieces.push('<span class="balance-before">' + formatBalanceValue(balances.before) + '</span>');
+        }
+        var balancesHtml = balancePieces.length ? '<div class="txn-balances">' + balancePieces.join('') + '</div>' : '';
+
         return [
           '<div class="txn-body">',
-            '<div class="txn-amount ', change.className, '">',
-              '<div class="txn-value">',
-                '<span class="sign">', change.signSymbol, '</span>',
-                '<span class="number">', change.numberText, '</span>',
-                change.currency ? '<span class="currency">' + change.currency + '</span>' : '',
-              '</div>',
-              balancesHtml,
-            '</div>',
-            '<div class="txn-middle">',
-              '<div class="txn-title-row">',
-                '<span class="txn-title">', title, '</span>',
-                '<span class="', statusClass(st), '" data-role="status">', statusLabel(st), '</span>',
-              '</div>',
-              metaHtml ? ('<div class="txn-meta">' + metaHtml + '</div>') : '',
-            '</div>',
-            '<button class="txn-action code-status-btn ' + (kind === 'withdraw' ? 'withdraw' : 'deposit') + '" data-code="' + code + '" title="تحديث الطلب">',
-              '<i class="fas ' + actionIcon + '"></i>',
-            '</button>',
+        '<div class="txn-middle">',
+          '<div class="txn-title-row">',
+            '<span class="txn-title">', title, '</span>',
+            '<span class="', statusClass(st), '" data-role="status">', statusLabel(st), '</span>',
+          '</div>',
+          metaHtml ? ('<div class="txn-meta">' + metaHtml + '</div>') : '',
+        '</div>',
+        '<div class="txn-amount ', change.className, '">',
+          '<div class="txn-value">',
+            '<span class="sign">', change.signSymbol, '</span>',
+            '<span class="number">', change.numberText, '</span>',
+            change.currency ? '<span class="currency">' + change.currency + '</span>' : '',
+          '</div>',
+          balancesHtml,
+        '</div>',
+          '<i class="fas ' + actionIcon + '"></i>',
+        '</button>',
           '</div>',
           '<div class="txn-footer">',
-            '<span class="txn-code">كود: <button class="code-btn" data-code="' + code + '">' + code + '</button></span>',
-            shortDate ? '<span class="txn-date" title="' + longDate + '"><i class="fas fa-clock"></i> ' + shortDate + '</span>' : '',
-            proof ? '<span class="txn-proof"><i class="fas fa-image"></i> <a href="' + proof + '" target="_blank" rel="noopener">إثبات</a></span>' : '',
+        '<span class="txn-code">كود: <button class="code-btn" data-code="' + code + '">' + code + '</button></span>',
+        shortDate ? '<span class="txn-date" title="' + longDate + '"><i class="fas fa-clock"></i> ' + shortDate + '</span>' : '',
+        proof ? '<span class="txn-proof"><i class="fas fa-image"></i> <a href="' + proof + '" target="_blank" rel="noopener">إثبات</a></span>' : '',
           '</div>'
         ].join('');
       }

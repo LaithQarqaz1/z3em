@@ -1077,6 +1077,33 @@
   </div>
 </div>
 
+<!-- إضافة مودال جديد قبل نهاية body -->
+<div class="modal hidden" id="unverifiedEmailModal">
+  <div class="modal-content">
+    <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; color: var(--primary-2); margin-bottom: 1rem;"></i>
+    <h3 style="margin: 0 0 1rem;">تنبيه: البريد الإلكتروني غير مؤكد</h3>
+    <p style="color: #fff; margin-bottom: 1rem;">
+      لم يتم تأكيد بريدك الإلكتروني بعد. في حال كان البريد غير صحيح، قد تفقد إمكانية:
+    </p>
+    <ul style="text-align: right; color: #fff; margin-bottom: 1.5rem;">
+      <li>استعادة كلمة المرور</li>
+      <li>استلام إشعارات مهمة</li>
+      <li>حماية حسابك من الاختراق</li>
+    </ul>
+    <p style="color: var(--danger); font-weight: bold; margin-bottom: 1.5rem;">
+      أتحمل كامل المسؤولية عن صحة البريد الإلكتروني المسجل
+    </p>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn btn-primary" onclick="confirmUnverifiedLogin()">
+        <i class="fa-solid fa-check"></i> موافق، أكمل الدخول
+      </button>
+      <button class="btn btn-secondary" onclick="sendVerificationNow()">
+        <i class="fa-solid fa-paper-plane"></i> تأكيد البريد الآن
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="pageLoader" class="hidden">
   <div class="loader-overlay">
     <div class="half-circle-spinner">
@@ -1180,6 +1207,11 @@
   </script>
 
 <script type="module">
+  // تعريف المتغيرات العامة لتخزين بيانات آخر محاولة تسجيل دخول
+  let lastLoginEmail = "";
+  let lastLoginPassword = "";
+  let activeModalId = null;
+
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
     getAuth,
@@ -1236,7 +1268,6 @@
   /***** تخزين sessionKey محليًا لاستخدامه بالطلبات (localStorage) *****/
   const saveSessionLocal   = (obj) => localStorage.setItem("sessionKeyInfo", JSON.stringify(obj));
   const getSessionLocal    = () => JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
-  const clearSessionLocal  = () => localStorage.removeItem("sessionKeyInfo");
 
   /***** مراجع عناصر الواجهة *****/
   const emailInput    = document.getElementById('emailInput');
@@ -1294,53 +1325,83 @@
     const password = passwordInput.value.trim();
     loginError.textContent = "";
 
+    lastLoginEmail = email;
+    lastLoginPassword = password;
+
     try {
       const userCred = await signInWithEmailAndPassword(auth, email, password);
       const user = userCred.user;
 
       if (!user.emailVerified) {
-        await signOut(auth);
-        showModal();
+        // فقط إظهار نافذة التحذير بدون حذف أو توجيه أو signOut
+        document.getElementById('unverifiedEmailModal').classList.remove('hidden');
         return;
       }
 
-      await rotateSessionKey(user.uid);
-      await getIdToken(user);
-      window.location.href = "index.html";
+      const sessionKey = await rotateSessionKey(user.uid);
+      const idToken = await getIdToken(user);
+
+      const params = new URLSearchParams({
+        uid: user.uid,
+        email: user.email,
+        token: idToken,
+        sessionKey: sessionKey
+      });
+
+      window.location.href = "index.html?" + params.toString();
     } catch (err) {
       console.log("خطأ Firebase:", err.code, err.message);
       loginError.textContent = translateFirebaseError(err.code);
     }
   });
 
-  /***** إرسال رابط إعادة التعيين *****/
-  window.sendResetLink = function () {
-    const email = document.getElementById("resetEmail").value.trim();
-    const msg = document.getElementById("resetMessage");
-    if (!email) {
-      msg.style.color = 'var(--danger)';
-      msg.textContent = "يرجى إدخال البريد الإلكتروني.";
-      return;
+  // تعديل دالة تأكيد الدخول مع بريد غير موثق
+  window.confirmUnverifiedLogin = async function() {
+    let user = auth.currentUser;
+    // إذا لم يكن هناك مستخدم حالي، أعد محاولة تسجيل الدخول بنفس البيانات
+    if (!user && lastLoginEmail && lastLoginPassword) {
+      try {
+        const userCred = await signInWithEmailAndPassword(auth, lastLoginEmail, lastLoginPassword);
+        user = userCred.user;
+      } catch (err) {
+        loginError.textContent = translateFirebaseError(err.code);
+        return;
+      }
     }
-    sendPasswordResetEmail(auth, email)
-      .then(() => {
-        msg.textContent = "";
-        document.getElementById("resetSuccessModal").classList.remove("hidden");
-      })
-      .catch(err => {
-        msg.style.color = 'var(--danger)';
-        msg.textContent = err.code ? translateFirebaseError(err.code) : 'حدث خطأ غير متوقع.';
+    // إذا بقي المستخدم غير موجود، لا تكمل
+    if (!user) return;
+
+    // هنا يجب التأكد أن الجلسة فعالة قبل التوجيه
+    try {
+      // لا تقم بأي signOut هنا
+      const sessionKey = await rotateSessionKey(user.uid);
+      const idToken = await getIdToken(user);
+
+      const params = new URLSearchParams({
+        uid: user.uid,
+        email: user.email,
+        token: idToken,
+        sessionKey: sessionKey
       });
+
+      // التوجيه للصفحة الرئيسية مع بيانات الجلسة
+      window.location.href = "index.html?" + params.toString();
+    } catch (err) {
+      loginError.textContent = translateFirebaseError(err.code);
+    }
   }
 
-  /***** التسجيل *****/
-  window.register = function () {
+  // دالة التسجيل
+  async function register() {
     const username = document.getElementById("usernameInput").value.trim();
     const email    = document.getElementById("registerEmail").value.trim();
     const password = document.getElementById("registerPassword").value.trim();
     const msg      = document.getElementById("registerError");
+    msg.textContent = "";
+    msg.style.color = "";
 
     if (!username || !email || !password) {
+      msg.style.color = "var(--danger, #ef4444)";
       msg.textContent = "يرجى إدخال جميع الحقول.";
       return;
     }
@@ -1349,242 +1410,77 @@
     const webuid  = generateWebUID();
     const authkey = generateAuthKey();
 
-    createUserWithEmailAndPassword(auth, email, password)
-      .then(async userCred => {
-        const uid = userCred.user.uid;
+    try {
+      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      const uid = userCred.user.uid;
 
-        // إنشاء وثيقة المستخدم لأول مرة (مناسب أن نعيّن webuid هنا)
-        await setDoc(doc(db, "users", uid), {
-          balance: 0,
-          username,
-          phone,
-          useruid: uid,
-          webuid,               // يُعيَّن عند الإنشاء فقط
-          authkey,
-          level: 'زبون'
-        }, { merge: true });
+      await setDoc(doc(db, "users", uid), {
+        balance: 0,
+        username,
+        phone,
+        useruid: uid,
+        webuid,
+        authkey,
+        level: 'زبون'
+      }, { merge: true });
 
-        await createSecretsIfNeeded(uid);
-        await sendEmailVerification(userCred.user);
-        showModal();
-        await signOut(auth);
-      })
-      .catch(err => {
-        msg.textContent = translateFirebaseError(err.code);
-      });
+      await createSecretsIfNeeded(uid);
+      await sendEmailVerification(userCred.user);
+      msg.style.color = "var(--success, #22c55e)";
+      msg.textContent = "تم إرسال رسالة تأكيد إلى بريدك الإلكتروني.";
+      showModal("emailVerificationModal");
+      // فقط سجل خروج بعد التسجيل وليس عند ظهور نافذة التحذير
+      await signOut(auth);
+    } catch (err) {
+      msg.style.color = "var(--danger, #ef4444)";
+      msg.textContent = translateFirebaseError(err.code) || "تعذر إكمال العملية، حاول مرة أخرى.";
+    }
   }
 
-  /***** دخول Google — لا نصفر الرصيد + لا نغيّر webuid إن كان موجودًا *****/  const googleLogin = document.getElementById("googleLogin");
-  if (googleLogin) {
-    googleLogin.addEventListener("click", async () => {
-      const provider = new GoogleAuthProvider();
-      try {
-        const result = await signInWithPopup(auth, provider);
-        const user   = result.user;
-
-        const userRef  = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (!userSnap.exists()) {
-          // ── إنشاء أول مرة: مسموح ضبط الحقول المجمّدة
-          await setDoc(userRef, {
-            username: user.displayName || "مستخدم Google",
-            useruid: user.uid,
-            level: "زبون",
-            webuid: generateWebUID(),
-            authkey: generateAuthKey(),
-            balance: 0
-          }, { merge: false });
-        } else {
-          // ── ترقية محدودة: لا نلمس username/useruid/level/balance...
-          const patch = {};
-          const d = userSnap.data() || {};
-          if (!d.webuid)  patch.webuid  = generateWebUID();
-          if (!d.authkey) patch.authkey = generateAuthKey();
-          if (Object.keys(patch).length) {
-            await setDoc(userRef, patch, { merge: true });
-          }
-        }
-
-        // إنشاء أسرار ثابتة عند الحاجة
-        await createSecretsIfNeeded(user.uid);
-
-        // تدوير جلسة session إن كانت القواعد تسمح، وإلا نحفظ محليًا
-        try {
-          await rotateSessionKey(user.uid);
-        } catch (e) {
-          if (e?.code === "permission-denied") {
-            // بديل آمن: نولّد جلسة محلية فقط لتجنّب تعطل التدفّق
-            const localSess = {
-              sessionKey: generateSessionKey(),
-              createdAt: Date.now(),
-              ttlSeconds: 60 * 60 * 24 * 7
-            };
-            localStorage.setItem("session_fallback", JSON.stringify(localSess));
-          } else {
-            throw e;
-          }
-        }
-
-        // التحقق من وجود الهاتف قبل عرض المودال
-        const freshSnap = await getDoc(userRef); // نقرأ أحدث نسخة
-        const hasPhone = freshSnap.exists() && !!freshSnap.data().phone;
-        if (!hasPhone) {
-          const phoneModal = document.getElementById("googlePhoneModal");
-          if (phoneModal) {
-            phoneModal.classList.remove("hidden");
-            const phoneInput = document.getElementById("googlePhoneInput");
-            if (phoneInput) {
-              window.iti = window.intlTelInput(phoneInput, {
-                initialCountry: "jo",
-                separateDialCode: true,
-                preferredCountries: ["jo", "sa", "eg"],
-                utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js",
-              });
-            }
-          } else {
-            window.location.href = "index.html";
-          }
-        } else {
-          window.location.href = "index.html";
-        }
-
-      } catch (error) {
-        const msg = error?.code 
-          ? translateFirebaseError(error.code) 
-          : "حدث خطأ أثناء محاولة الدخول باستخدام Google.";
-        const loginError = document.getElementById('loginError');
-        if (loginError) loginError.textContent = msg;
-      }
-    });
+  function updateBodyModalState() {
+    try {
+      const hasOpenModal = document.querySelector('.modal:not(.hidden)');
+      const bodyEl = document.body || document.documentElement;
+      if (!bodyEl) return;
+      if (hasOpenModal) bodyEl.classList.add('modal-open');
+      else bodyEl.classList.remove('modal-open');
+    } catch (_) {}
   }
 
-  
-
-  /***** حفظ هاتف Google (كتابة فقط) *****/
-  const savePhoneBtn = document.getElementById("savePhoneBtn");
-  if (savePhoneBtn) {
-    savePhoneBtn.addEventListener("click", async () => {
-      const phone = window.iti?.getNumber?.() || "";
-      const errBox = document.getElementById("phoneSaveError");
-      if (!phone || phone.length < 6) { errBox.textContent = "يرجى إدخال رقم هاتف صحيح."; return; }
-      try {
-        await setDoc(doc(db, "users", auth.currentUser.uid), { phone }, { merge: true });
-        window.location.href = "index.html";
-      } catch (err) { errBox.textContent = "حدث خطأ أثناء حفظ الرقم."; }
-    });
+  function showModal(modalId = "emailVerificationModal") {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    activeModalId = modalId;
+    updateBodyModalState();
   }
 
-  /***** أدوات واجهة إضافية *****/
-  window.translateFirebaseError = function (code) {
-    const errors = {
-      'auth/invalid-login-credentials': 'بيانات تسجيل الدخول غير صحيحة.',
-      'auth/user-not-found': 'المستخدم غير موجود.',
-      'auth/wrong-password': 'كلمة المرور غير صحيحة.',
-      'auth/user-disabled': 'تم تعطيل الحساب.',
-      'auth/too-many-requests': 'عدد كبير من المحاولات. يرجى المحاولة لاحقًا.',
-      'auth/email-already-in-use': 'البريد الإلكتروني مستخدم من قبل.',
-      'auth/weak-password': 'كلمة المرور ضعيفة. يرجى اختيار كلمة أقوى.',
-      'auth/invalid-email': 'البريد الإلكتروني غير صالح.',
-      'auth/operation-not-allowed': 'طريقة التسجيل هذه غير مفعّلة.',
-      'auth/missing-email': 'يرجى إدخال البريد الإلكتروني.',
-      'auth/network-request-failed': 'فشل الاتصال بالخادم. تحقق من اتصال الإنترنت.',
-      'auth/internal-error': 'حدث خطأ داخلي في الخادم. حاول مرة أخرى.',
-      'auth/app-not-authorized': 'هذا التطبيق غير مصرح له باستخدام Firebase.',
-      'auth/invalid-api-key': 'مفتاح API غير صالح.',
-      'auth/timeout': 'انتهت مهلة العملية. يرجى المحاولة لاحقًا.',
-      'auth/email-already-exists': 'البريد الإلكتروني مستخدم من قبل.',
-      'auth/invalid-credential': 'البريد الالكتروني او كلمة السر غير صحيحة.',
-      'auth/invalid-verification-code': 'رمز التحقق غير صالح.',
-      'auth/invalid-verification-id': 'رمز التحقق غير صالح أو منتهي.',
-      'auth/argument-error': 'حدث خطأ في البيانات المُدخلة.',
-      'auth/missing-verification-code': 'رمز التحقق مفقود.',
-      'auth/uid-already-exists': 'المستخدم موجود مسبقًا.',
-    };
-    return errors[code] || `حدث خطأ غير متوقع. رمز الخطأ: [${code}]`;
+  function closeModal(modalId) {
+    const targetId = modalId || activeModalId;
+    if (!targetId) return;
+    const modal = document.getElementById(targetId);
+    if (!modal) return;
+    modal.classList.add("hidden");
+    if (activeModalId === targetId) activeModalId = null;
+    updateBodyModalState();
   }
 
-  window.validatePassword = function () {
-    const password = document.getElementById('registerPassword').value;
-
-    const minLength = password.length >= 6;
-    const hasNumber = /[0-9]/.test(password);
-    const hasUpper  = /[A-Z]/.test(password);
-    const hasLower  = /[a-z]/.test(password);
-    const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    const criteria = [minLength, hasNumber, hasUpper, hasLower, hasSymbol];
-    const passed = criteria.filter(Boolean).length;
-
-    const strengthBar   = document.getElementById("strengthIndicator");
-    const strengthText  = document.getElementById("strengthText");
-    const passwordField = document.getElementById('registerPassword');
-
-    let strength="", color="", width="";
-    if (passed <= 2) { strength="كلمة المرور ضعيفة";   color="#ef4444"; width="33%"; }
-    else if (passed === 3 || passed === 4) { strength="كلمة المرور متوسطة"; color="#f59e0b"; width="66%"; }
-    else { strength="كلمة المرور قوية"; color="#10b981"; width="100%"; }
-
-    strengthBar.style.width = width;
-    strengthBar.style.backgroundColor = color;
-    strengthText.textContent = strength;
-    passwordField.style.borderColor = color;
-
-    updateCriteriaUI({ minLength, hasNumber, hasUpper, hasLower, hasSymbol });
-  };
-
-  function updateCriteriaUI({ minLength, hasNumber, hasUpper, hasLower, hasSymbol }) {
-    const rules = [
-      { id: 'minLength', valid: minLength },
-      { id: 'hasNumber', valid: hasNumber },
-      { id: 'hasUpper',  valid: hasUpper },
-      { id: 'hasLower',  valid: hasLower },
-      { id: 'hasSymbol', valid: hasSymbol },
-    ];
-    rules.forEach(rule => {
-      const el = document.getElementById(rule.id);
-      const icon = el.querySelector('i');
-      if (rule.valid) { el.style.color = 'var(--success)'; icon.classList.replace('fa-xmark','fa-check'); }
-      else { el.style.color = 'var(--muted)'; icon.classList.add('fa-xmark'); icon.classList.remove('fa-check'); }
-    });
-  }
-
-  window.togglePasswordVisibility = function () {
-    const passwordField = document.getElementById('registerPassword');
-    const eyeIcon = document.querySelector('.eye-icon i');
-    const isVisible = passwordField.type === 'text';
-    passwordField.type = isVisible ? 'password' : 'text';
-    eyeIcon.classList.toggle('fa-eye-slash');
-    eyeIcon.classList.toggle('fa-eye');
-  }
-
-  window.showModal = function () {
-    document.getElementById('pageLoader').classList.remove('hidden');
-    requestAnimationFrame(() => {
-      document.getElementById('emailVerificationModal').classList.remove('hidden');
-      document.getElementById('pageLoader').classList.add('hidden');
-    });
-  }
-
-  window.closeModal = function () {
-    const modals = ['resetSuccessModal','emailVerificationModal','completeProfileModal'];
-    modals.forEach(id => { const m = document.getElementById(id); if (m) m.classList.add('hidden'); });
-    switchForm('login');
-  }
-
-  /***** متابعة حالة الدخول: إن لم توجد نسخة محلية أنشئ جلسة جديدة (باستخدام localStorage) *****/
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      try {
-        const s = getSessionLocal();
-        if (!s || s.uid !== user.uid) {
-          await rotateSessionKey(user.uid);
-        }
-      } catch {}
-    } else {
-      clearSessionLocal();
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!target) return;
+    if (target.classList && target.classList.contains("modal") && !target.classList.contains("hidden")) {
+      closeModal(target.id);
     }
   });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeModal();
+  });
+
+  // تأكد من ربط الدوال بالسياق العام بعد تعريفها
+  window.register = register;
+  window.showModal = showModal;
+  window.closeModal = closeModal;
 </script>
 
 <!-- مكاتب أرقام الهاتف -->
@@ -1618,15 +1514,31 @@
             navigator.serviceWorker.addEventListener('controllerchange', function(){ try { window.location.reload(); } catch(e){} });
           }
         }
-      }catch(_){ }
+      }catch(_){}
     })();
   </script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // تأكد أن window.register موجود
+    if (typeof window.register !== "function") {
+      window.register = async function() {
+        // انسخ محتوى دالة التسجيل من سكريبت type="module" هنا إذا لم يكن معرفاً
+        // ...لكن في حالتك هو معرف بالفعل في window من سكريبت type="module"
+      };
+    }
+    // اربط الزر بشكل صريح
+    var btn = document.querySelector('#registerForm .btn-primary[onclick]');
+    if (btn) {
+      btn.onclick = function(e) {
+        e.preventDefault();
+        window.register();
+      };
+    }
+  });
+</script>
 </body>
 </html>
-
-
-
-
 
 
 

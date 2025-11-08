@@ -287,32 +287,34 @@
           const dislikeActive = userVote === -1 ? ' active' : '';
           const firstLetter = escapeHTML(String(userName).trim().charAt(0) || 'م');
           const toggleRepliesHTML = repliesCount > 0 
-            ? '<button class="vote-btn toggle-replies" type="button" aria-label="إظهار الردود" aria-expanded="false"><span class="vote-count replies-count">'+repliesCount+'</span><i class="fa-regular fa-comments"></i></button>'
-            : '';
+        ? '<button class="vote-btn toggle-replies" type="button" aria-label="إظهار الردود" aria-expanded="false"><span class="vote-count replies-count">'+repliesCount+'</span><i class="fa-regular fa-comments"></i></button>'
+        : '';
           reviewItem.innerHTML = [
-            '<div class="review-main">',
-            '  <div class="review-header">',
-            '    <span class="header-avatar" aria-hidden="true">'+firstLetter+'</span>',
-            '    <span class="username">@'+escapeHTML(userName)+'</span>',
-            rel ? '    <span class="sep">•</span><span class="time">'+rel+'</span>' : '',
-            data.rating ? '    <span class="mini-stars" aria-label="'+data.rating+' نجوم">'+getStarsHTML(data.rating)+'</span>' : '',
-            '  </div>',
-            '  <p class="review-text">'+escapeHTML(comment)+'</p>',
-            '  <div class="review-actions" data-id="'+escapeHTML(String(data.id||''))+'">',
-            '    <button class="vote-btn like'+likeActive+'" type="button" aria-label="أعجبني"><span class="vote-count like-count">'+Number(data.likes||0)+'</span><i class="fa-regular fa-thumbs-up"></i></button>',
-            '    <button class="vote-btn dislike'+dislikeActive+'" type="button" aria-label="لم يعجبني"><span class="vote-count dislike-count">'+Number(data.dislikes||0)+'</span><i class="fa-regular fa-thumbs-down"></i></button>',
-            toggleRepliesHTML,
-            '    <button class="vote-btn reply" type="button" aria-label="رد"><i class="fa-regular fa-comment"></i><span class="reply-label">رد</span></button>',
-            '    <div class="reply-box">',
-            '      <textarea class="reply-input" placeholder="أكتب ردّك..."></textarea>',
-            '      <div>',
-            '        <button class="send-reply" type="button">إرسال الرد</button>',
-            '        <button class="cancel-reply" type="button">إلغاء</button>',
-            '      </div>',
-            '    </div>',
-            '  </div>',
-            renderRepliesHTML(data.replies),
-            '</div>'
+        '<div class="review-main">',
+        '  <div class="review-header">',
+        '    <div class="user-info">',
+        '      <span class="header-avatar" aria-hidden="true">'+firstLetter+'</span>',
+        '      <span class="username">@'+escapeHTML(userName)+'</span>',
+        rel ? '<span class="sep">&nbsp;&nbsp;•&nbsp;&nbsp;</span><span class="time">'+rel+'</span>' : '',
+        '    </div>',
+        data.rating ? '    <span class="mini-stars" aria-label="'+data.rating+' نجوم">'+getStarsHTML(data.rating)+'</span>' : '',
+        '  </div>',
+        '  <p class="review-text">'+escapeHTML(comment)+'</p>',
+        '  <div class="review-actions" data-id="'+escapeHTML(String(data.id||''))+'">',
+        '    <button class="vote-btn like'+likeActive+'" type="button" aria-label="أعجبني"><span class="vote-count like-count">'+Number(data.likes||0)+'</span><i class="fa-regular fa-thumbs-up"></i></button>',
+        '    <button class="vote-btn dislike'+dislikeActive+'" type="button" aria-label="لم يعجبني"><span class="vote-count dislike-count">'+Number(data.dislikes||0)+'</span><i class="fa-regular fa-thumbs-down"></i></button>',
+        toggleRepliesHTML,
+        '    <button class="vote-btn reply" type="button" aria-label="رد"><i class="fa-regular fa-comment"></i><span class="reply-label">رد</span></button>',
+        '    <div class="reply-box">',
+        '      <textarea class="reply-input" placeholder="أكتب ردّك..."></textarea>',
+        '      <div>',
+        '        <button class="send-reply" type="button">إرسال الرد</button>',
+        '        <button class="cancel-reply" type="button">إلغاء</button>',
+        '      </div>',
+        '    </div>',
+        '  </div>',
+        renderRepliesHTML(data.replies),
+        '</div>'
           ].join('');
           reviewsList.appendChild(reviewItem);
         });
@@ -465,7 +467,6 @@
                       '<div class="review-header">'+
                         '<span class="header-avatar small" aria-hidden="true">'+escapeHTML(first)+'</span>'+ 
                         '<span class="username">@'+n+'</span>'+ 
-                        (rel ? '<span class="sep">•</span><span class="time">'+rel+'</span>' : '')+
                       '</div>'+ 
                       '<div class="reply-text">'+t+'</div>'+ 
                       '<div class="review-actions reply-actions" data-parent-rid="'+escapeHTML(rid)+'" data-parent-index="'+escapeHTML(idxPath)+'">'+

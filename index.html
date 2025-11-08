@@ -1385,7 +1385,65 @@ button#logoutBtn:hover{background:#990000}
     }
     var STATES_TTL_MS = 5*60*1000;
     var STATES_CACHE_KEY = 'statesCache';
-    function saveStatesCache(map){ try{ localStorage.setItem(STATES_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), map: map||{} })); }catch(_){ } }
+    var stateHub = (function(){
+      var KEY = '__CARD_STATE_HUB__';
+      try{
+        if (typeof window.__getCardStateHub === 'function'){
+          var existing = window.__getCardStateHub();
+          if (existing && typeof existing === 'object') return existing;
+        }
+      }catch(_){}
+      try{
+        var globalHub = window[KEY];
+        if (globalHub && typeof globalHub === 'object'){
+          globalHub.setMap = globalHub.setMap || function(map){
+            this.map = (map && typeof map === 'object') ? Object.assign({}, map) : {};
+            return this.map;
+          };
+          globalHub.mergeMap = globalHub.mergeMap || function(map){
+            if (!map || typeof map !== 'object') return this.map || {};
+            if (!this.map) this.map = {};
+            Object.assign(this.map, map);
+            return this.map;
+          };
+          globalHub.getMap = globalHub.getMap || function(){ return this.map; };
+          globalHub.setLoading = globalHub.setLoading || function(p){ this.loading = p; };
+          globalHub.clearLoading = globalHub.clearLoading || function(p){ if (this.loading === p) this.loading = null; };
+          window.__getCardStateHub = window.__getCardStateHub || function(){ return globalHub; };
+          return globalHub;
+        }
+      }catch(_){}
+      var hub = {
+        map: null,
+        loading: null,
+        setMap: function(map){
+          this.map = (map && typeof map === 'object') ? Object.assign({}, map) : {};
+          return this.map;
+        },
+        mergeMap: function(map){
+          if (!map || typeof map !== 'object') return this.map || {};
+          if (!this.map) this.map = {};
+          Object.assign(this.map, map);
+          return this.map;
+        },
+        getMap: function(){ return this.map; },
+        setLoading: function(p){ this.loading = p; },
+        clearLoading: function(p){ if (this.loading === p) this.loading = null; }
+      };
+      try{
+        window[KEY] = hub;
+        window.__getCardStateHub = function(){ return hub; };
+      }catch(_){}
+      return hub;
+    })();
+    function saveStatesCache(map){
+      try{ localStorage.setItem(STATES_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), map: map||{} })); }catch(_){ }
+      try{
+        if (stateHub && map && typeof map === 'object' && typeof stateHub.mergeMap === 'function'){
+          stateHub.mergeMap(map);
+        }
+      }catch(_){}
+    }
     function readStatesCache(ignoreTTL){
       try{
         var raw = localStorage.getItem(STATES_CACHE_KEY);
@@ -1412,14 +1470,60 @@ button#logoutBtn:hover{background:#990000}
     }
     async function loadStatesMap(){
       try{
-        if (typeof firebase==='undefined' || !firebase.firestore) return null;
-        var ref = firebase.firestore().collection('config').doc('states');
-        var snap = await ref.get({ source:'server' }).catch(function(){ return ref.get(); });
-        if (!snap || !snap.exists) return null;
-        var map = parseStatesDoc(snap.data()||{});
-        saveStatesCache(map);
-        return map;
-      }catch(_){ return null; }
+        if (stateHub && stateHub.loading) return stateHub.loading;
+      }catch(_){}
+      if (typeof firebase==='undefined' || !firebase.firestore){
+        var existing = null;
+        try{
+          if (stateHub && typeof stateHub.getMap === 'function') existing = stateHub.getMap();
+        }catch(_){ existing = null; }
+        if (existing && typeof existing === 'object') return { map: existing, fromCache: true };
+        var cachedOnly = null;
+        try{ cachedOnly = readStatesCache(true); }catch(_){ cachedOnly = null; }
+        if (cachedOnly && stateHub && typeof stateHub.setMap === 'function'){
+          try{ stateHub.setMap(cachedOnly); }catch(_){}
+        }
+        if (cachedOnly) return { map: cachedOnly, fromCache: true };
+        return null;
+      }
+      var promise;
+      promise = (async function(){
+        try{
+          var ref = firebase.firestore().collection('config').doc('states');
+          var snap = await ref.get({ source:'server' }).catch(function(){ return ref.get(); });
+          if (!snap || !snap.exists){
+            var cachedFallback = null;
+            try{ cachedFallback = readStatesCache(true); }catch(_){ cachedFallback = null; }
+            if (cachedFallback && stateHub && typeof stateHub.setMap === 'function'){
+              try{ stateHub.setMap(cachedFallback); }catch(_){}
+            }
+            return { map: cachedFallback || {}, fromCache: true };
+          }
+          var map = parseStatesDoc(snap.data()||{});
+          saveStatesCache(map);
+          try{
+            if (stateHub && typeof stateHub.setMap === 'function') stateHub.setMap(map);
+          }catch(_){}
+          return { map: map, fromCache: false };
+        }catch(__){
+          var fallback = null;
+          try{ fallback = readStatesCache(true); }catch(_){ fallback = null; }
+          if (fallback && stateHub && typeof stateHub.setMap === 'function'){
+            try{ stateHub.setMap(fallback); }catch(_){}
+          }
+          return { map: fallback || {}, fromCache: true };
+        } finally {
+          try{
+            if (stateHub && typeof stateHub.clearLoading === 'function') stateHub.clearLoading(promise);
+            else if (stateHub && stateHub.loading === promise) stateHub.loading = null;
+          }catch(_){}
+        }
+      })();
+      try{
+        if (stateHub && typeof stateHub.setLoading === 'function') stateHub.setLoading(promise);
+        else if (stateHub) stateHub.loading = promise;
+      }catch(_){}
+      return promise;
     }
     function applyStatesToPage(){
       try{
@@ -1427,36 +1531,88 @@ button#logoutBtn:hover{background:#990000}
         if (!cards.length) return;
         cards.forEach(prepCard);
 
-        // أضف انيميشن التحميل مؤقتًا
-        try { cards.forEach(function(card){ card.classList.add('pending-state'); }); } catch(_){ }
+        var hubMap = null;
+        try{
+          if (stateHub && typeof stateHub.getMap === 'function') hubMap = stateHub.getMap();
+        }catch(_){ hubMap = null; }
 
-      // طبّق الكاش سريعًا إن وجد
-      var cached = null;
-      try { cached = readStatesCache(window.__SKIP_FIREBASE__ ? true : false); } catch(_) { cached = null; }
-      if (cached && typeof cached === 'object'){
+        var cached = (hubMap && typeof hubMap === 'object') ? hubMap : null;
+        if (!cached){
+          try { cached = readStatesCache(window.__SKIP_FIREBASE__ ? true : false); } catch(_) { cached = null; }
+          if (cached && stateHub && typeof stateHub.setMap === 'function'){
+            try{ stateHub.setMap(cached); hubMap = stateHub.getMap(); }catch(_){}
+          }
+        }
+        if (!cached && hubMap && typeof hubMap === 'object') cached = hubMap;
+
+        var hasCache = cached && typeof cached === 'object';
+        var pending = [];
+        var snapshot = {};
+
         cards.forEach(function(card){
           var name = getPageNameFromCard(card);
-          var s = (name && Object.prototype.hasOwnProperty.call(cached, name)) ? cached[name] : 'on';
-          // إن كانت الحالة مغلقة طبقها فورًا، وإلا اترك الانيميشن حتى يتم تحديث الشبكة أو انتهاء المهلة
-          if (s === 'off') applyCardState(card, 'off');
+          if (!name) return;
+          var state = null;
+          if (hasCache && Object.prototype.hasOwnProperty.call(cached, name)) {
+            state = cached[name];
+          } else if (hubMap && typeof hubMap === 'object' && Object.prototype.hasOwnProperty.call(hubMap, name)) {
+            state = hubMap[name];
+          }
+          if (state === 'off') {
+            applyCardState(card, 'off');
+            snapshot[name] = 'off';
+          } else if (state === 'on') {
+            applyCardState(card, 'on');
+            snapshot[name] = 'on';
+          } else {
+            if (!card.classList.contains('pending-state')) {
+              card.classList.add('pending-state');
+            }
+            pending.push(card);
+          }
         });
-        // مهلة أمان لإنهاء الانيميشن إن لم تصل الشبكة سريعًا
-        setTimeout(function(){ cards.forEach(function(card){ if (card.classList.contains('pending-state')) applyCardState(card, 'on'); }); }, 1200);
-      } else {
-        // لا يوجد كاش: لا تترك الانيميشن عالقة
-        setTimeout(function(){ cards.forEach(function(card){ applyCardState(card, 'on'); }); }, 800);
-      }
 
-        // إن لم نكن في وضع التخطي، حمّل من الشبكة وحدث الحالة لاحقًا (ويُنهي الانيميشن)
+        try{
+          if (stateHub && typeof stateHub.mergeMap === 'function' && Object.keys(snapshot).length){
+            stateHub.mergeMap(snapshot);
+          }
+        }catch(_){}
+
+        if (pending.length) {
+          var releasePending = function(){
+            var update = {};
+            pending.forEach(function(card){
+              applyCardState(card, 'on');
+              var name = getPageNameFromCard(card);
+              if (name) update[name] = 'on';
+            });
+            try{
+              if (stateHub && typeof stateHub.mergeMap === 'function' && Object.keys(update).length){
+                stateHub.mergeMap(update);
+              }
+            }catch(_){}
+          };
+          setTimeout(releasePending, hasCache ? 1200 : 800);
+        }
+
         if (!window.__SKIP_FIREBASE__){
           loadStatesMap().then(function(result){
             var map = (result && result.map) ? result.map : result;
             map = map || readStatesCache(false) || {};
+            var normalized = {};
             cards.forEach(function(card){
               var name = getPageNameFromCard(card);
+              if (!name) return;
               var s = (name && map && Object.prototype.hasOwnProperty.call(map, name)) ? map[name] : 'on';
               applyCardState(card, s);
+              normalized[name] = s;
             });
+            if (Object.keys(normalized).length){
+              try{
+                if (stateHub && typeof stateHub.mergeMap === 'function') stateHub.mergeMap(normalized);
+                saveStatesCache(normalized);
+              }catch(_){}
+            }
           }).catch(function(){ /* تجاهل */ });
         }
       }catch(_){ }
@@ -1598,9 +1754,76 @@ button#logoutBtn:hover{background:#990000}
     // حمل خريطة الحالات من وثيقة واحدة بصيغة JSON لتقليل القراءات
     const STATES_TTL_MS = 5 * 60 * 1000; // مدة صلاحية الكاش العادي (5 دقائق)
     const STATES_CACHE_KEY = 'statesCache';
+    const stateHub = (() => {
+      try {
+        if (typeof window.__getCardStateHub === 'function') {
+          const hub = window.__getCardStateHub();
+          if (hub && typeof hub === 'object') return hub;
+        }
+      } catch (_) {}
+      try {
+        const existing = window.__CARD_STATE_HUB__;
+        if (existing && typeof existing === 'object') {
+          if (typeof existing.setMap !== 'function') {
+            existing.setMap = function(map){
+              this.map = (map && typeof map === 'object') ? Object.assign({}, map) : {};
+              return this.map;
+            };
+          }
+          if (typeof existing.mergeMap !== 'function') {
+            existing.mergeMap = function(map){
+              if (!map || typeof map !== 'object') return this.map || {};
+              if (!this.map) this.map = {};
+              Object.assign(this.map, map);
+              return this.map;
+            };
+          }
+          if (typeof existing.getMap !== 'function') {
+            existing.getMap = function(){ return this.map; };
+          }
+          if (typeof existing.setLoading !== 'function') {
+            existing.setLoading = function(p){ this.loading = p; };
+          }
+          if (typeof existing.clearLoading !== 'function') {
+            existing.clearLoading = function(p){ if (this.loading === p) this.loading = null; };
+          }
+          if (typeof window.__getCardStateHub !== 'function') {
+            window.__getCardStateHub = () => existing;
+          }
+          return existing;
+        }
+      } catch (_) {}
+      const hub = {
+        map: null,
+        loading: null,
+        setMap(map){
+          this.map = (map && typeof map === 'object') ? Object.assign({}, map) : {};
+          return this.map;
+        },
+        mergeMap(map){
+          if (!map || typeof map !== 'object') return this.map || {};
+          if (!this.map) this.map = {};
+          Object.assign(this.map, map);
+          return this.map;
+        },
+        getMap(){ return this.map; },
+        setLoading(p){ this.loading = p; },
+        clearLoading(p){ if (this.loading === p) this.loading = null; }
+      };
+      try {
+        window.__CARD_STATE_HUB__ = hub;
+        window.__getCardStateHub = () => hub;
+      } catch (_) {}
+      return hub;
+    })();
 
     function saveStatesCache(map){
       try { localStorage.setItem(STATES_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), map: map||{} })); } catch(_){}
+      try {
+        if (stateHub && map && typeof map === 'object' && typeof stateHub.mergeMap === 'function') {
+          stateHub.mergeMap(map);
+        }
+      } catch (_) {}
     }
     function readStatesCache(ignoreTTL){
       try{
@@ -1632,46 +1855,90 @@ button#logoutBtn:hover{background:#990000}
       }catch(_){ return null; }
     }
     async function loadStatesMap() {
-      if (!firebaseAvailable || !db || typeof db.collection !== 'function') { return { map: {}, fromCache: true }; }
+      if (!firebaseAvailable || !db || typeof db.collection !== 'function') {
+        let existing = null;
+        try {
+          if (stateHub && typeof stateHub.getMap === 'function') existing = stateHub.getMap();
+        } catch (_) { existing = null; }
+        if (existing && typeof existing === 'object') return { map: existing, fromCache: true };
+        let cachedOnly = null;
+        try { cachedOnly = readStatesCache(true); } catch(_) { cachedOnly = null; }
+        if (cachedOnly && stateHub && typeof stateHub.setMap === 'function') {
+          try { stateHub.setMap(cachedOnly); } catch(_) {}
+        }
+        return { map: cachedOnly || {}, fromCache: true };
+      }
+      try {
+        if (stateHub && stateHub.loading) return stateHub.loading;
+      } catch (_) {}
       const ref = db.collection('config').doc('states');
       const tryGet = async () => {
         try { return await ref.get({ source: 'server' }); } catch(_) { return await ref.get(); }
       };
-      try {
-        let doc = await tryGet();
-        if (!doc.exists) throw new Error('not-found');
-        const data = doc.data() || {};
-        let map = {};
-        if (typeof data.stateJson === 'string') {
-          try { map = JSON.parse(data.stateJson); } catch(_) { map = {}; }
-        } else if (data.map && typeof data.map === 'object') {
-          map = data.map;
-        } else {
-          map = data;
-        }
-        // خزِّن في الكاش للاستخدام لاحقًا عند حظر القراءات
-        try { saveStatesCache(map); } catch(_){}
-        return { map, fromCache: false };
-      } catch (e) {
-        // إن كانت الأذونات تمنع القراءة، يمكن تفعيل الدخول المجهول عند الحاجة
+      let promise;
+      promise = (async () => {
         try {
-          var ENABLE_ANON = false; // عطِّل افتراضيًا لتجنّب أخطاء 400
-          if (ENABLE_ANON && e && e.code === 'permission-denied' && auth && !auth.currentUser && auth.signInAnonymously) {
-            await auth.signInAnonymously();
-            const doc = await tryGet();
-            if (doc && doc.exists) {
-              const data = doc.data() || {};
-              let map = {};
-              if (typeof data.stateJson === 'string') { try { map = JSON.parse(data.stateJson); } catch(_) { map = {}; } }
-              else if (data.map && typeof data.map === 'object') { map = data.map; }
-              else { map = data; }
-              try { saveStatesCache(map); } catch(_){}
-              return { map, fromCache: false };
+          let doc = await tryGet();
+          if (!doc || !doc.exists) {
+            let cachedFallback = null;
+            try { cachedFallback = readStatesCache(true); } catch(_) { cachedFallback = null; }
+            if (cachedFallback && stateHub && typeof stateHub.setMap === 'function') {
+              try { stateHub.setMap(cachedFallback); } catch(_) {}
             }
+            return { map: cachedFallback || {}, fromCache: true };
           }
-        } catch(_) { /* تجاهل */ }
-        return { map: {}, fromCache: true };
-      }
+          const data = doc.data() || {};
+          let map = {};
+          if (typeof data.stateJson === 'string') {
+            try { map = JSON.parse(data.stateJson); } catch(_) { map = {}; }
+          } else if (data.map && typeof data.map === 'object') {
+            map = data.map;
+          } else {
+            map = data;
+          }
+          saveStatesCache(map);
+          try {
+            if (stateHub && typeof stateHub.setMap === 'function') stateHub.setMap(map);
+          } catch (_) {}
+          return { map, fromCache: false };
+        } catch (e) {
+          try {
+            var ENABLE_ANON = false; // عطِّل افتراضيًا لتجنّب أخطاء 400
+            if (ENABLE_ANON && e && e.code === 'permission-denied' && auth && !auth.currentUser && auth.signInAnonymously) {
+              await auth.signInAnonymously();
+              const doc = await tryGet();
+              if (doc && doc.exists) {
+                const data = doc.data() || {};
+                let map = {};
+                if (typeof data.stateJson === 'string') { try { map = JSON.parse(data.stateJson); } catch(_) { map = {}; } }
+                else if (data.map && typeof data.map === 'object') { map = data.map; }
+                else { map = data; }
+                saveStatesCache(map);
+                try {
+                  if (stateHub && typeof stateHub.setMap === 'function') stateHub.setMap(map);
+                } catch (_) {}
+                return { map, fromCache: false };
+              }
+            }
+          } catch(_) { /* تجاهل */ }
+          let fallback = null;
+          try { fallback = readStatesCache(true); } catch(_) { fallback = null; }
+          if (fallback && stateHub && typeof stateHub.setMap === 'function') {
+            try { stateHub.setMap(fallback); } catch(_) {}
+          }
+          return { map: fallback || {}, fromCache: true };
+        } finally {
+          try {
+            if (stateHub && typeof stateHub.clearLoading === 'function') stateHub.clearLoading(promise);
+            else if (stateHub && stateHub.loading === promise) stateHub.loading = null;
+          } catch (_) {}
+        }
+      })();
+      try {
+        if (stateHub && typeof stateHub.setLoading === 'function') stateHub.setLoading(promise);
+        else if (stateHub) stateHub.loading = promise;
+      } catch (_) {}
+      return promise;
     }
 
     function cardStateKey(card) {
@@ -1690,7 +1957,8 @@ button#logoutBtn:hover{background:#990000}
 
     function applyCardsVisibility() {
       const cards = document.querySelectorAll('.card');
-      // أضف انيميشن التحميل مؤقتًا
+      if (!cards.length) return;
+
       cards.forEach(card => {
         if (!card.dataset.originalHref) {
           const href = card.getAttribute('href');
@@ -1703,39 +1971,88 @@ button#logoutBtn:hover{background:#990000}
         if (!card.dataset.originalTitle && titleEl) {
           card.dataset.originalTitle = titleEl.textContent;
         }
-        card.classList.add('pending-state');
       });
 
-      // طبّق الكاش إن وجد
-      let cached = null;
-      try { cached = readStatesCache(window.__SKIP_FIREBASE__ ? true : false); } catch(_) { cached = null; }
-      if (cached && typeof cached === 'object') {
-        cards.forEach(card => {
-          const pageName = cardStateKey(card);
-          const state = Object.prototype.hasOwnProperty.call(cached, pageName) ? cached[pageName] : 'on';
-          // طبّق الإغلاق فقط فورًا، واترك الفتح إلى حين رد الشبكة أو انتهاء المهلة
-          if (state === 'off') applyCardState(card, 'off');
-        });
-        // مهلة أمان لإنهاء الانيميشن إن لم تصل الشبكة سريعًا
-        setTimeout(() => { cards.forEach(card => { if (card.classList.contains('pending-state')) applyCardState(card, 'on'); }); }, 1200);
-      } else {
-        // لا يوجد كاش: لا تترك الانيميشن عالقة
-        setTimeout(() => { cards.forEach(card => applyCardState(card, 'on')); }, 800);
+      let hubMap = null;
+      try {
+        if (stateHub && typeof stateHub.getMap === 'function') hubMap = stateHub.getMap();
+      } catch (_) { hubMap = null; }
+      let cached = (hubMap && typeof hubMap === 'object') ? hubMap : null;
+      if (!cached) {
+        try { cached = readStatesCache(window.__SKIP_FIREBASE__ ? true : false); } catch(_) { cached = null; }
+        if (cached && stateHub && typeof stateHub.setMap === 'function') {
+          try { stateHub.setMap(cached); hubMap = stateHub.getMap(); } catch(_) {}
+        }
+      }
+      if (!cached && hubMap && typeof hubMap === 'object') cached = hubMap;
+
+      const hasCache = cached && typeof cached === 'object';
+      const pendingCards = [];
+      const snapshot = {};
+
+      cards.forEach(card => {
+        const pageName = cardStateKey(card);
+        if (!pageName) return;
+        let state = null;
+        if (hasCache && Object.prototype.hasOwnProperty.call(cached, pageName)) {
+          state = cached[pageName];
+        } else if (hubMap && typeof hubMap === 'object' && Object.prototype.hasOwnProperty.call(hubMap, pageName)) {
+          state = hubMap[pageName];
+        }
+
+        if (state === 'off') {
+          applyCardState(card, 'off');
+          snapshot[pageName] = 'off';
+        } else if (state === 'on') {
+          applyCardState(card, 'on');
+          snapshot[pageName] = 'on';
+        } else {
+          if (!card.classList.contains('pending-state')) {
+            card.classList.add('pending-state');
+          }
+          pendingCards.push(card);
+        }
+      });
+
+      if (stateHub && typeof stateHub.mergeMap === 'function' && Object.keys(snapshot).length) {
+        try { stateHub.mergeMap(snapshot); } catch(_) {}
       }
 
-      // إذا كنا في وضع التخطي لا نقرأ من الشبكة
+      if (pendingCards.length) {
+        const releasePending = () => {
+          const update = {};
+          pendingCards.forEach(card => {
+            applyCardState(card, 'on');
+            const pageName = cardStateKey(card);
+            if (pageName) update[pageName] = 'on';
+          });
+          if (stateHub && typeof stateHub.mergeMap === 'function' && Object.keys(update).length) {
+            try { stateHub.mergeMap(update); } catch(_) {}
+          }
+        };
+        setTimeout(releasePending, hasCache ? 1200 : 800);
+      }
+
       if (window.__SKIP_FIREBASE__) return;
 
-      // حدّث من الشبكة لاحقًا (ويُنهي الانيميشن)
       loadStatesMap()
         .then(result => {
-          const map = (result && result.map) ? result.map : (readStatesCache(false) || {});
-          const resolved = map || {};
+          const map = (result && result.map) ? result.map : result;
+          const resolved = map || readStatesCache(false) || {};
+          const normalized = {};
           cards.forEach(card => {
             const pageName = cardStateKey(card);
-            const state = Object.prototype.hasOwnProperty.call(resolved, pageName) ? resolved[pageName] : 'on';
+            if (!pageName) return;
+            const state = (pageName && Object.prototype.hasOwnProperty.call(resolved, pageName)) ? resolved[pageName] : 'on';
             applyCardState(card, state);
+            normalized[pageName] = state;
           });
+          if (Object.keys(normalized).length) {
+            try {
+              if (stateHub && typeof stateHub.mergeMap === 'function') stateHub.mergeMap(normalized);
+              saveStatesCache(normalized);
+            } catch (_) {}
+          }
         })
         .catch(() => { /* تجاهل */ });
     }
@@ -2112,7 +2429,7 @@ button#logoutBtn:hover{background:#990000}
           state.unsubAuth = state.auth.onAuthStateChanged(function(user){
             if (!state.refs) return;
             if (!user){
-              try { window.location.href = 'login.html'; } catch(_){}
+              try { window.location.href = 'login.html'; } catch(_){ }
               return;
             }
             state.currentUid = user.uid;

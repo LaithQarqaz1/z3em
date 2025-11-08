@@ -927,10 +927,16 @@ function navigateHomeHash(targetHash, routeKey){
     navigateTo('index.html' + targetHash);
   }
 }
-
+//
 // Sidebar
 const sidebar = document.createElement('nav');
 sidebar.id = 'sidebar';
+
+// Add CSS for scrolling
+sidebar.style.overflowY = 'auto'; // Enable vertical scrolling
+sidebar.style.overflowX = 'hidden'; // Prevent horizontal scrolling
+sidebar.style.maxHeight = '100vh'; // Full viewport height
+
 const ul = document.createElement('ul');
 // الرئيسية
 const homeLi = document.createElement('li');
@@ -1048,7 +1054,7 @@ try {
     const settingsBtn = document.getElementById('settingsBtn');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    if (user && user.emailVerified) {
+    if (user) {
       try { localStorage.setItem(LAST_UID_KEY, user.uid); } catch {}
       try { localStorage.setItem(LAST_LOGGED_KEY, '1'); } catch {}
       if (loginBtn) loginBtn.style.display = 'none';
@@ -1152,14 +1158,14 @@ function wirePageBalanceBox(){
 (function(){
   try {
     const section = document.createElement('section'); section.className = 'support-section'; section.id = 'support';
-    const title = document.createElement('h2'); title.className = 'support-title'; title.textContent = 'هل تحتاج إلى المساعدة؟ تواصل معنا عبر'; section.appendChild(title);
+    const title = document.createElement('h2'); title.className = 'support-title'; title.textContent = 'متواجدون لمساعدتك'; section.appendChild(title);
     const iconsDiv = document.createElement('div'); iconsDiv.className = 'support-icons';
     const contacts = [
-      { href: 'https://t.me/962790809441', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/telegram.svg', class: 'telegram' },
-      { href: 'https://www.instagram.com/qus2i_shop/', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/instagram.svg', class: 'instagram' },
-      { href: 'https://wa.me/962790809441', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg', class: 'whatsapp' },
-      { href: 'https://www.facebook.com/share/17Eodommb4/', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg', class: 'facebook' },
-      { href: 'https://mail.google.com/mail/?view=cm&to=qusialfalahat2@gmail.com', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/gmail.svg', class: 'email' },
+      { href: '', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/telegram.svg', class: 'telegram' },
+      { href: '', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/instagram.svg', class: 'instagram' },
+      { href: '', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg', class: 'whatsapp' },
+      { href: '', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg', class: 'facebook' },
+      { href: '', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/gmail.svg', class: 'email' },
     ];
     contacts.forEach(c => { const a = document.createElement('a'); a.href = c.href; a.target = '_blank'; a.className = 'support-icon ' + c.class; const img = document.createElement('img'); img.src = c.iconURL; img.alt = c.class + ' icon'; img.style.width = '32px'; img.style.height = '32px'; a.appendChild(img); iconsDiv.appendChild(a); });
     section.appendChild(iconsDiv);
@@ -1233,31 +1239,93 @@ function wirePageBalanceBox(){
   }catch(_){ }
 })();
 
-// Remove developer credit in Support section ("تطوير ليث")
-(function removeDevCreditFromSupport(){
+// Ensure developer credit under the Support section
+(function ensureSupportDevCredit(){
   try{
-    function tryRemove(){
+    var CREDIT = {
+      href: 'https://wa.me/962790108559', 
+      label: '🔗 تم تطوير المنصة بواسطة LaithDev.',
+      tagline: ''
+    };
+
+    // Add style to limit clickable area
+    const creditStyle = document.createElement('style');
+    creditStyle.textContent = `
+      .support-rights {
+      pointer-events: none; /* Disable clicks on container */
+      }
+      .support-rights a {
+      pointer-events: auto; /* Re-enable clicks just on link */
+      display: inline-block; /* Contains the clickable area */
+      padding: 5px 10px; /* Add some padding for better touch target */
+      }
+    `;
+    document.head.appendChild(creditStyle);
+
+    function applyCredit(){
       try{
-        var anchors = document.querySelectorAll('a');
-        anchors.forEach(function(a){
-          try{
-            var txt = (a.textContent || '').replace(/\s+/g,' ').trim();
-            if (!txt) return;
-            var isDevCredit = /هذا الموقع من تطوير|تطوير\s+ليث|ليث\s+قرقز/.test(txt);
-            if (isDevCredit) { if (a && a.parentElement) a.remove(); }
-          }catch(_){ }
-        });
+        var section = document.querySelector('section.support-section');
+        if (!section) return;
+
+        var rights = section.querySelector('.support-rights');
+        if (!rights){
+          rights = document.createElement('div');
+          rights.className = 'support-rights';
+          // Add link-like styling
+          rights.style.textAlign = 'center';
+          rights.style.marginTop = '15px';
+          section.appendChild(rights);
+        }
+
+        var anchor = rights.querySelector('a');
+        if (!anchor){
+          anchor = document.createElement('a');
+          // Add link styling
+          anchor.style.color = '#3b82f6'; // Blue color
+          anchor.style.textDecoration = 'none';
+          anchor.style.transition = 'all 0.2s';
+          
+          // Hover effect
+          anchor.addEventListener('mouseover', () => {
+            anchor.style.color = '#2563eb';
+            anchor.style.textDecoration = 'underline';
+          });
+          anchor.addEventListener('mouseout', () => {
+            anchor.style.color = '#3b82f6';
+            anchor.style.textDecoration = 'none';
+          });
+
+          if (rights.firstChild){
+            rights.insertBefore(anchor, rights.firstChild);
+          } else {
+            rights.appendChild(anchor);
+          }
+        }
+        anchor.href = CREDIT.href;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        anchor.textContent = CREDIT.label;
+
+        var tagline = rights.querySelector('p');
+        if (!tagline){
+          tagline = document.createElement('p');
+          rights.appendChild(tagline);
+        }
+        tagline.textContent = CREDIT.tagline;
       }catch(_){ }
     }
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function(){ tryRemove(); setTimeout(tryRemove, 200); setTimeout(tryRemove, 1000); });
-    } else { tryRemove(); setTimeout(tryRemove, 200); setTimeout(tryRemove, 1000); }
+
+    function schedule(){
+      applyCredit();
+      setTimeout(applyCredit, 200);
+      setTimeout(applyCredit, 1000);
+    }
+
+    if (document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', schedule);
+    } else {
+      schedule();
+    }
   }catch(_){ }
 })();
-
-
-
-
-
-
 
