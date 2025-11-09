@@ -57,6 +57,7 @@ async function getTurnstileTokenInteractive() {
     callback: (t) => { _tsToken = t || ''; },
     'expired-callback': () => { _tsToken = ''; try{ window.turnstile && _tsWidgetId!=null && window.turnstile.reset(_tsWidgetId); }catch(_){} },
   };
+  _tsToken = '';
   if (!_tsWidgetId && window.turnstile && window.turnstile.render) {
     _tsWidgetId = window.turnstile.render(holder, opts);
   } else if (window.turnstile && window.turnstile.reset && _tsWidgetId != null) {
@@ -75,7 +76,9 @@ async function getTurnstileTokenInteractive() {
     await new Promise(r => setTimeout(r, 200));
   }
   if (!_tsToken) throw new Error('turnstile_token_missing');
-  return _tsToken;
+  const freshToken = _tsToken;
+  _tsToken = '';
+  return freshToken;
 }
 
 /* ================== أدوات محلية للجلسة ================== */

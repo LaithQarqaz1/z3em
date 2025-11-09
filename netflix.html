@@ -211,6 +211,7 @@
             (document.querySelector('#purchase-modal .pm-card')||document.body).appendChild(holder);
           }
           var opts = { sitekey: (window.TURNSTILE_SITE_KEY||SITE_KEY), theme: themeIsDark()? 'dark' : 'light', callback: function(t){ _tsToken = t||''; }, 'expired-callback': function(){ _tsToken=''; try{ window.turnstile && _tsWidgetId!=null && window.turnstile.reset(_tsWidgetId);}catch(_){} } };
+          _tsToken = '';
           if (!_tsWidgetId && window.turnstile && window.turnstile.render) { _tsWidgetId = window.turnstile.render(holder, opts); }
           else if (window.turnstile && window.turnstile.reset && _tsWidgetId!=null) { try{ window.turnstile.reset(_tsWidgetId);}catch(_){} }
           var started = Date.now();
@@ -219,7 +220,9 @@
             if (_tsToken) break; await new Promise(function(r){ setTimeout(r,200); });
           }
           if (!_tsToken) throw new Error('turnstile_token_missing');
-          return _tsToken;
+          const freshToken = _tsToken;
+          _tsToken = '';
+          return freshToken;
         };
       }
     })();

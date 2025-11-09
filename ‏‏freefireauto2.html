@@ -3,38 +3,11 @@
  <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>كانفا | متجر زعيم</title>
+  <title>فري فاير | متجر زعيم</title>
 <link rel="icon" href="emp.png" type="image/png">
   <link rel="apple-touch-icon" href="emp.png" sizes="180x180">
   <meta property="og:image" content="emp.png">
   <meta name="twitter:image" content="emp.png">
-
-  <!-- حارس مبكر: منع فتح الصفحة مباشرةً فقط (بدون الاعتماد على كاش الحالات) -->
-  <script>
-    (function(){
-      try{
-        var base = (location.pathname.split('/').pop() || '');
-        var page = base.replace(/\.html$/,'');
-        var redirectTo = 'index.html';
-
-        // امنع الدخول المباشر إن لم يكن من داخل الموقع
-        var nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')) || [];
-        var type = nav[0] ? nav[0].type : (performance.navigation ? (performance.navigation.type === 1 ? 'reload' : (performance.navigation.type === 2 ? 'back_forward' : '')) : '');
-        var isReload = type === 'reload';
-        var isBF = type === 'back_forward';
-        var fromHome = false; try{ fromHome = sessionStorage.getItem('nav:fromHome') === '1'; }catch(_){ }
-        var refOk = false; try{ var rr=document.referrer; if(rr){ var uu=new URL(rr); refOk=(uu.origin===location.origin);} }catch(_){ }
-        var paramsAllow = false; try{ paramsAllow=(new URLSearchParams(location.search)).has('allow'); }catch(_){ }
-        var guardOff = false; try{ guardOff=localStorage.getItem('nav:guardOff')==='1'; }catch(_){ }
-
-        if (!fromHome && !isReload && !isBF && !refOk && !paramsAllow && !guardOff){
-          try{ sessionStorage.setItem('nav:redirectedFrom', base); }catch(_){ }
-          return window.location.replace(redirectTo);
-        }
-        if (fromHome){ try{ sessionStorage.removeItem('nav:fromHome'); }catch(_){} }
-      }catch(e){ window.location.replace('index.html'); }
-    })();
-  </script>
 
   <!-- تهيئة الثيم مبكرًا وتعيين color-scheme -->
   <script>
@@ -61,6 +34,7 @@
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 
   <!-- تحميل مسبق لصورة العروض المتكررة -->
+  <link rel="preload" as="image" href="https://i.ibb.co/m5HLhf1n/1756802404151-1.jpg">
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -154,80 +128,9 @@
     if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyStatesToPage); else try{ applyStatesToPage(); }catch(_){ }
   })();
   </script>
-  
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <!-- تهيئة Firebase أولاً -->
-  <script>
-    // حقن الهيدر X-Game لجميع طلبات هذه الصفحة (كانفا)
-    (function(){
-      var GAME = 'canva';
-      var ROUTER = 'https://z3em-manwal.laithqarqaz1.workers.dev/';
-      try{ if(!window.MANWAL_ROUTER_BASE) window.MANWAL_ROUTER_BASE = ROUTER; }catch(_){ }
-      var ofetch = window.fetch;
-      window.fetch = function(i, init){
-        init = init || {}; var h = new Headers(init.headers || {});
-        if (!h.has('X-Game')) h.set('X-Game', GAME);
-        // إعادة توجيه الطلبات لراوتر manwal إذا كان الأصل (origin) للعامل القديم
-        try{
-          var urlStr = (typeof i === 'string') ? i : (i && i.url ? i.url : '');
-          if (urlStr){
-            var u = new URL(urlStr, window.location.href);
-            if (u.origin === 'https://divine-butterfly-bc16.stwrqsy.workers.dev'){
-              // حافظ على باراميترات الاستعلام
-              i = ROUTER + (u.search || '');
-            }
-          }
-        }catch(_){ }
-        init.headers = h; return ofetch(i, init);
-      };
-    })();
-
-    // إعداد Turnstile على مستوى الصفحة (sitekey)
-    (function(){
-      var SITE_KEY = '0x4AAAAAABmiVmi7wosqeHQT';
-      if (!window.TURNSTILE_SITE_KEY) window.TURNSTILE_SITE_KEY = SITE_KEY;
-      if (!window.getTurnstileTokenInteractive) {
-        var _tsWidgetId = null, _tsReadyPromise = null, _tsToken = '';
-        function ensureTurnstileScript(){
-          if (window.turnstile) return Promise.resolve();
-          if (_tsReadyPromise) return _tsReadyPromise;
-          _tsReadyPromise = new Promise(function(resolve){
-            var s = document.createElement('script');
-            s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-            s.async = true; s.defer = true; s.onload = resolve; s.onerror = resolve; document.head.appendChild(s);
-          });
-          return _tsReadyPromise;
-        }
-        function themeIsDark(){
-          try{
-            var t = (document.documentElement.getAttribute('data-theme')||'').toLowerCase();
-            if (t==='dark') return true; if (t==='light') return false; return document.body.classList.contains('dark-mode');
-          }catch(_){ return false; }
-        }
-        window.getTurnstileTokenInteractive = async function(){
-          try { await ensureTurnstileScript(); } catch {}
-          var holder = document.getElementById('cf-turnstile-container');
-          if (!holder){
-            holder = document.createElement('div'); holder.id = 'cf-turnstile-container'; holder.style.cssText='margin-top:10px;display:block;';
-            (document.querySelector('#purchase-modal .pm-card')||document.body).appendChild(holder);
-          }
-          var opts = { sitekey: (window.TURNSTILE_SITE_KEY||SITE_KEY), theme: themeIsDark()? 'dark' : 'light', callback: function(t){ _tsToken = t||''; }, 'expired-callback': function(){ _tsToken=''; try{ window.turnstile && _tsWidgetId!=null && window.turnstile.reset(_tsWidgetId);}catch(_){} } };
-          _tsToken = '';
-          if (!_tsWidgetId && window.turnstile && window.turnstile.render) { _tsWidgetId = window.turnstile.render(holder, opts); }
-          else if (window.turnstile && window.turnstile.reset && _tsWidgetId!=null) { try{ window.turnstile.reset(_tsWidgetId);}catch(_){} }
-          var started = Date.now();
-          while (Date.now() - started < 15000){
-            try{ if (window.turnstile && _tsWidgetId!=null){ var r = window.turnstile.getResponse(_tsWidgetId); if (r){ _tsToken = r; break; } } }catch(_){ }
-            if (_tsToken) break; await new Promise(function(r){ setTimeout(r,200); });
-          }
-          if (!_tsToken) throw new Error('turnstile_token_missing');
-          const freshToken = _tsToken;
-          _tsToken = '';
-          return freshToken;
-        };
-      }
-    })();
-  </script>
-  <script src="‏‏script1canva.js"></script>
+  <script src="script1auto2.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
   <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js" async></script>
@@ -235,7 +138,7 @@
   <link href="header.css" rel="stylesheet"/>
   <script defer src="header.js"></script>
   <script defer src="atff.js"></script>
-  <script defer src="script.js"></script>
+  <script defer src="scriptauto.js"></script>
   <link rel="stylesheet" href="loader.css">
   <script src="loader.js" defer></script>
   <audio id="toast-success-sound" preload="none" src="success.mp3"></audio>
@@ -648,13 +551,15 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
             </div>
           </div>
           <div class="pm-input">
-            <input id="player-id" type="email" autocomplete="email" aria-label="البريد الإلكتروني" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ادخل البريد الإلكتروني هنا" />
-
+            <input id="player-id" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ادخل الايدي هنا" />
+            
           </div>
           <div class="pm-actions">
             <button type="button" id="pm-cancel" class="btn btn-outline">إلغاء</button>
             <button type="button" id="pm-buy" class="btn btn-primary">شراء</button>
           </div>
+          <div class="pm-note">الخدمة تلقائية وتعمل على مدار ال24 ساعة</div>
+
           
         </div>
       </div>
@@ -662,7 +567,7 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
       
 
       
-      <!-- شريط البحث (مطابق لـ canvainbut) -->
+      <!-- شريط البحث (مطابق لـ freefireauto2inbut) -->
       <div class="search-container">
         <input type="text" id="ffSearchInput" placeholder="ابحث عن الباقات..." aria-label="بحث" />
       </div>
@@ -704,7 +609,7 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
       img.src = imgSrc; img.alt = imgAlt;
       img.loading = 'lazy'; img.decoding = 'async'; img.setAttribute('fetchpriority','low');
       div.appendChild(img);
-      const h2 = document.createElement("h2"); h2.textContent = jewels ? `${jewels} شهر` : offer; div.appendChild(h2);
+      const h2 = document.createElement("h2"); h2.textContent = jewels ? `${jewels} جوهرة` : offer; div.appendChild(h2);
       // إضافة السعر أسفل الاسم
       const priceDiv = document.createElement("div");
       priceDiv.className = "offer-price";
@@ -721,8 +626,11 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
   const offersBox = document.createElement("div"); offersBox.className = "offers-box";
   const grid = document.createElement("section"); grid.className = "categories"; offersBox.appendChild(grid);
   const topupOffers = [
-    { jewels: 1, imgSrc: "https://i.ibb.co/Zzc6JLS5/IMG-20250915-WA0001.jpg", imgAlt: "1 شهر" },
-    { jewels: 12, imgSrc: "https://i.ibb.co/Zzc6JLS5/IMG-20250915-WA0001.jpg", imgAlt: "12 شهر" },
+    { jewels: 110, imgSrc: "IMGS/jewels.jpg", imgAlt: "110 جوهرة" },
+    { jewels: 210, imgSrc: "IMGS/jewels.jpg", imgAlt: "213 جوهرة" },
+    { jewels: 583, imgSrc: "IMGS/jewels.jpg", imgAlt: "583 جوهرة" },
+    { jewels: 1188, imgSrc: "IMGS/jewels.jpg", imgAlt: "1188 جوهرة" },
+    { jewels: 2420, imgSrc: "IMGS/jewels.jpg", imgAlt: "2420 جوهرة" },
 
   ];
   // حفظ آخر حالة للعروض
@@ -772,7 +680,6 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
     }
   }
   const membershipOffers = [
-
   ];
 
   // عند تحميل الصفحة، انتظر تحميل الأسعار ثم اعرض البطاقات
@@ -840,7 +747,7 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
       input.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(apply,150); });
     }
   });
-// فلترة البحث بنفس أسلوب canvainbut + إظهار رسالة لا نتائج كالرئيسية
+// فلترة البحث بنفس أسلوب freefireauto2inbut + إظهار رسالة لا نتائج كالرئيسية
 function filterCardsBySearch(ev){
   const raw = (ev.target.value || '').toString();
   const norm = s => s.toLowerCase()
@@ -902,7 +809,7 @@ function _readOfferPriceForElement(el){
     document.querySelectorAll('.offer-box.selected').forEach(x => x.classList.remove('selected'));
     el.classList.add('selected');
     window._pm_currentCard = el;
-    const title = el.dataset.jewels ? `${el.dataset.jewels} شهر` : (el.dataset.offer || '—');
+    const title = el.dataset.jewels ? `${el.dataset.jewels} جوهرة` : (el.dataset.offer || '—');
     const { priceText } = _readOfferPriceForElement(el);
     document.getElementById('pm-title').textContent = title;
     document.getElementById('pm-price').textContent = priceText;
@@ -964,8 +871,8 @@ window.addEventListener('DOMContentLoaded', () => {
   buyBtn && buyBtn.addEventListener('click', async () => {
     // انقل الايدي
     const mpid = document.getElementById('modal-player-id');
-    const pid = document.getElementById('player-id');
-    if (pid && mpid) pid.value = mpid.value.trim();
+    const pidEl = document.getElementById('player-id');
+    if (pidEl && mpid) pidEl.value = (mpid.value || '').trim();
     if (!_pm_currentCard){ showToast('الرجاء اختيار عرض', 'warning'); return; }
     // أرسل الطلب
     try { if (typeof sendOrder === 'function') await sendOrder(); }
@@ -1016,8 +923,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener("DOMContentLoaded", async () => {
     try {
-      // جلب من topup > canva والحقل state نص JSON
-      const stateDoc = await firebase.firestore().collection("topup").doc("canva").get();
+      // جلب من topup > freefireauto2 والحقل state نص JSON
+      const stateDoc = await firebase.firestore().collection("topup").doc("freefireauto2").get();
       if (stateDoc.exists) {
         let stateData = stateDoc.data();
         if (stateData && typeof stateData.state === 'string') {
@@ -1070,7 +977,7 @@ window.addEventListener('DOMContentLoaded', () => {
           }
         });
       } else {
-        console.warn("⚠️ لم يتم العثور على وثيقة الحالة في Firestore (topup/canva)");
+        console.warn("⚠️ لم يتم العثور على وثيقة الحالة في Firestore (topup/freefireauto2)");
       }
     } catch (e) { console.error("❌ فشل في جلب حالة العروض:", e); }
   });

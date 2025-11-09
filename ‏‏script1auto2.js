@@ -63,6 +63,7 @@ async function getTurnstileTokenInteractive() {
   } else if (window.turnstile && window.turnstile.reset && _tsWidgetId != null) {
     try { window.turnstile.reset(_tsWidgetId); } catch {}
   }
+  // انتظر حتى يتوفر التوكن
   const started = Date.now();
   while (Date.now() - started < 15000) {
     try {
@@ -193,76 +194,51 @@ async function rotateSessionKeyAfterOrder(uid, ttlSeconds = 0) {
   }
 }
 
-/* ================== تسريع تحميل الأسعار (SWR + Cache) ================== */
-function persistOffers(data) {
+/* ================== الأسعار كما هي ================== */
+async function loadPrices(useruid = null) {
   try {
-    const prices = (data && typeof data === 'object' && data.prices) ? data.prices : data;
-    if (!prices || typeof prices !== 'object') return;
-    const meta = (data && typeof data === 'object' && data.meta) ? data.meta : null;
-    const level = (data && typeof data === 'object' && 'level' in data) ? data.level : null;
-    const wrapped = Object.assign({}, prices, { prices, meta, level, ts: Date.now(), source: 'facebook' });
-    localStorage.setItem('offersPrices', JSON.stringify(wrapped));
-  } catch (e) { console.warn('persistOffers failed:', e); }
-}
-
-function primeOffersFromCache(maxAgeMs = 15 * 60 * 1000) {
-  try {
-    const raw = localStorage.getItem('offersPrices');
-    if (!raw) return false;
-    const obj = JSON.parse(raw);
-    const ts = obj && obj.ts ? Number(obj.ts) : 0;
-    const fresh = ts && (Date.now() - ts) <= maxAgeMs;
-    localStorage.setItem('offersPrices', raw);
-    return fresh;
-  } catch { return false; }
-}
-
-async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = true } = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort('timeout'), timeoutMs);
-  try {
+    const url = new URL("https://z3em-freefireauto2.laithqarqaz1.workers.dev/");
     // لا نجلب أسعار عامة بدون معرف مستخدم
     if (!useruid) return;
-    const url = new URL('https://instaf.stwrqsy.workers.dev/');
-    url.searchParams.set('mode', 'all');
-    url.searchParams.set('useruid', useruid);
-    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store' });
+    url.searchParams.set("mode", "all");
+    url.searchParams.set("useruid", useruid);
+
+    const res = await fetch(url.toString(), { method: "GET" });
     const data = await res.json();
-    if (!data || data.success === false) throw new Error(data?.error || 'فشل جلب الأسعار');
-    persistOffers(data);
-  } catch (e) {
-    const hasCache = !!localStorage.getItem('offersPrices');
-    if (!(silentOnCached && hasCache)) {
-      showToast('❗ فشل في تحميل الأسعار، ستتم المحاولة لاحقًا', 'error');
-      console.error('Prices load error:', e);
+
+    if (!data || data.success === false) {
+      throw new Error(data?.error || "فشل جلب الأسعار");
     }
-  } finally { clearTimeout(timer); }
+
+    localStorage.setItem("offersPrices", JSON.stringify(data));
+  } catch (e) {
+    showToast("❗ فشل في تحميل الأسعار، ستتم المحاولة لاحقًا", "error");
+    console.error("Prices load error:", e);
+  }
 }
 
-// عرض سريع من الكاش + تحديث في الخلفية
-(function fastPricesBoot(){
-  primeOffersFromCache();
+// مراقبة حالة تسجيل الدخول ثم جلب الأسعار بمستوى المستخدم إن وُجد
+// جلب مبكر باستخدام uid المخزن محلياً إذا وُجد، ثم متابعة عبر onAuthStateChanged
+try {
+  const cachedUid = getLocalUid();
+  if (cachedUid && !pricesFetchOnce) { pricesFetchOnce = true; loadPrices(cachedUid).catch(()=>{}); }
+} catch {}
+
+firebase.auth().onAuthStateChanged(async (user) => {
   try {
-    const cachedUid = getLocalUid();
-    if (cachedUid && !pricesFetchOnce) {
+    if (user && !pricesFetchOnce) {
       pricesFetchOnce = true;
-      loadPrices(cachedUid, { timeoutMs: 6000, silentOnCached: true }).catch(()=>{});
-    }
-  } catch {}
-  firebase.auth().onAuthStateChanged(async (user) => {
-    try {
-      if (user && !pricesFetchOnce) {
-        pricesFetchOnce = true;
-        await loadPrices(user.uid, { timeoutMs: 6000, silentOnCached: true });
-        const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
-        if (userDoc.exists) {
-          const userData = userDoc.data();
-          const firebaseUsername = userData.username || '';
-        }
+      await loadPrices(user.uid);
+      const userDoc = await firebase.firestore().collection("users").doc(user.uid).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        const firebaseUsername = userData.username || "";
       }
-    } catch (error) { console.warn('Auth state post-loadPrices error:', error); }
-  });
-})();
+    }
+  } catch (error) {
+    console.warn("Auth state post-loadPrices error:", error);
+  }
+});
 
 /* ================== إرسال الطلب (مع كشف فشل رمز الجلسة) ================== */
 async function sendOrder() {
@@ -292,8 +268,12 @@ async function sendOrder() {
 
   // التحقق من Turnstile قبل الإرسال
   let turnstileToken = '';
-  try { turnstileToken = await getTurnstileTokenInteractive(); }
-  catch(_) { showToast('فشل التحقق الأمني، حاول مجدداً', 'error'); return; }
+  try {
+    turnstileToken = await getTurnstileTokenInteractive();
+  } catch(_) {
+    showToast('فشل التحقق الأمني، حاول مجدداً', 'error');
+    return;
+  }
 
   const user = firebase.auth().currentUser;
   if (!user) {
@@ -330,7 +310,7 @@ async function sendOrder() {
   // Quote
   let total, breakdown;
   try {
-    const priceRes = await fetch("https://instaf.stwrqsy.workers.dev/", {
+    const priceRes = await fetch("https://z3em-freefireauto2.laithqarqaz1.workers.dev/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
@@ -360,7 +340,7 @@ async function sendOrder() {
       submitBtn.style.pointerEvents = 'none';
     }
 
-    const response = await fetch("https://instaf.stwrqsy.workers.dev/", {
+    const response = await fetch("https://z3em-freefireauto2.laithqarqaz1.workers.dev/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -393,7 +373,7 @@ async function sendOrder() {
         return;
       }
       // إن لم يكن خطأ جلسة، عالج كالعادة
-      showToast("فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
+      showToast("❌ فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
       return;
     }
 
@@ -410,11 +390,11 @@ async function sendOrder() {
         showSessionModal("فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى");
         return;
       }
-      showToast("فشل الشراء: " + (result.error || "خطأ غير معروف"), "error");
+      showToast("❌ فشل الشراء: " + (result.error || "خطأ غير معروف"), "error");
     }
   } catch (err) {
     console.error("Worker Error:", err);
-    showToast("حدث خطأ أثناء الشراء", "error");
+    showToast("❌ حدث خطأ أثناء الشراء", "error");
   } finally {
     // إخفاء اللودر وإرجاع حالة الزر مهما حصل
     hidePreloader();
@@ -597,8 +577,6 @@ const detectTheme = () => {
 document.addEventListener('DOMContentLoaded', () => {
   // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
 });
-
-
 
 
 

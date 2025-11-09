@@ -367,44 +367,11 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
         const li = document.createElement('li');
         li.id = 'currencyLi';
         li.style.position = 'relative';
-        li.style.display = 'flex';
-        li.style.alignItems = 'center';
-        li.style.gap = '10px';
-
-        // icon + label to match other entries
-        const icon = document.createElement('i');
-        icon.className = 'fa-solid fa-sack-dollar';
-        li.appendChild(icon);
-        const labelA = document.createElement('a');
-        labelA.href = '#';
-        labelA.textContent = 'العملة';
-        li.appendChild(labelA);
-
-        // current selection block (left side, stacked like the mock)
-        const current = document.createElement('div');
-        current.id = 'currencyCurrent';
-        current.style.marginInlineStart = 'auto';
-        current.style.display = 'flex';
-        current.style.alignItems = 'center';
-        current.style.gap = '8px';
-        current.style.minWidth = '0';
-        const chevron = document.createElement('i');
-        chevron.className = 'fa-solid fa-chevron-down';
-        chevron.style.opacity = '0.8';
-        chevron.style.fontSize = '14px';
-        const stack = document.createElement('div');
-        stack.style.display = 'flex';
-        stack.style.flexDirection = 'column';
-        stack.style.lineHeight = '1.1';
-        // لا نعرض نص اسم العملة بجانب الزر
-        stack.style.display = 'none';
-        current.appendChild(chevron);
-        current.appendChild(stack);
-        li.appendChild(current);
+        li.innerHTML = '<i class="fa-solid fa-sack-dollar"></i><a href="#">العملة</a>';
+        const labelA = li.querySelector('a');
+        if (labelA) labelA.style.pointerEvents = 'none';
 
         function listCodes(){ try { return Object.keys((window.__CURRENCIES__||CURRENCIES)); } catch { return Object.keys(CURRENCIES); } }
-        function refreshBadge(){ try { while (stack.firstChild) stack.removeChild(stack.firstChild); } catch {} }
-        refreshBadge();
 
         // Invisible select overlay to open native picker on click anywhere in li
         const select = document.createElement('select');
@@ -436,18 +403,24 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
             if (MAP[wanted]) select.value = wanted; else if (codes.length) select.value = codes[0];
           } catch {}
         }
+        function syncSelectedOption(){
+          try {
+            const wanted = getSelected();
+            if (wanted && select.value !== wanted) select.value = wanted;
+          } catch {}
+        }
         rebuildOptions();
         select.addEventListener('change', (e)=>{
           const val = e.target && e.target.value;
           setSelected(val);
-          refreshBadge();
+          syncSelectedOption();
         });
         li.appendChild(select);
 
         ul.appendChild(li);
-        // keep badge synced if currency changed elsewhere
-        window.addEventListener('currency:change', refreshBadge);
-        window.addEventListener('currency:rates:change', () => { rebuildOptions(); refreshBadge(); });
+        // keep select synced if currency changed elsewhere
+        window.addEventListener('currency:change', () => { syncSelectedOption(); });
+        window.addEventListener('currency:rates:change', () => { rebuildOptions(); });
       } catch {}
     }
     window.addEventListener('DOMContentLoaded', attachSelector);
