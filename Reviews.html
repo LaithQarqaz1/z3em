@@ -678,14 +678,19 @@ let reviewsData = [];
 
 // عند تحميل الصفحة، تحقق إن كان المستخدم مسجلاً
 auth.onAuthStateChanged(user => {
-  if (user && user.emailVerified) {
+  if (user) {
+    submitBtn.disabled = false;
     db.collection('users').doc(user.uid).get().then(doc => {
       if (doc.exists) {
-        const data = doc.data();
-        currentUserName.textContent = `مرحباً ${data.username}`;
+        const data = doc.data() || {};
+        const name = data.username || user.displayName || 'مستخدم';
+        currentUserName.textContent = `مرحباً ${name}`;
+      } else {
+        currentUserName.textContent = 'مرحباً بك من جديد.';
       }
+    }).catch(() => {
+      currentUserName.textContent = 'مرحباً بك من جديد.';
     });
-    submitBtn.disabled = false;
   } else {
     currentUserName.textContent = 'يجب تسجيل الدخول لإضافة تعليق.';
     submitBtn.disabled = true;

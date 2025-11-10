@@ -1292,6 +1292,201 @@
     else if (form === "register") registerForm.classList.remove("hidden");
   }
 
+  /* ===== تسجيل الدخول بواسطة Google ===== */
+  const googleProvider = new GoogleAuthProvider();
+  try { googleProvider.setCustomParameters({ prompt: 'select_account' }); } catch (_) {}
+
+  const GOOGLE_USERNAME_MODAL = 'completeProfileModal';
+  const GOOGLE_PHONE_MODAL = 'googlePhoneModal';
+  const googleUsernameInput = document.getElementById('googleUsernameInput');
+  const googleUsernameError = document.getElementById('googleUsernameError');
+  const googlePhoneInput = document.getElementById('googlePhoneInput');
+  const phoneSaveError = document.getElementById('phoneSaveError');
+
+  const googleButtons = [
+    document.getElementById('googleLogin'),
+    document.getElementById('googleLoginRegister')
+  ].filter(Boolean);
+
+  const googleFlowState = {
+    entry: 'login',
+    user: null,
+    profile: { username: '', phone: '' }
+  };
+
+  let googleBusy = false;
+
+  googleButtons.forEach((btn) => {
+    btn.addEventListener('click', (event) => {
+      event.preventDefault();
+      handleGoogleSignIn(btn.id === 'googleLoginRegister' ? 'register' : 'login');
+    });
+  });
+
+  const savePhoneBtn = document.getElementById('savePhoneBtn');
+  if (savePhoneBtn) {
+    savePhoneBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      submitGooglePhone();
+    });
+  }
+
+  function resetGoogleFlow() {
+    googleFlowState.entry = 'login';
+    googleFlowState.user = null;
+    googleFlowState.profile = { username: '', phone: '' };
+  }
+
+  function normalizeGoogleUsername(displayName, email) {
+    const raw = (displayName || (email ? email.split('@')[0] : '') || '').trim();
+    if (!raw) return '';
+    return raw
+      .replace(/[^\p{L}\p{N}_\s-]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 24);
+  }
+
+  async function handleGoogleSignIn(entryPoint = 'login') {
+    if (googleBusy) return;
+    googleBusy = true;
+    loginError.textContent = '';
+    try { closeModal(GOOGLE_USERNAME_MODAL); } catch (_) {}
+    try { closeModal(GOOGLE_PHONE_MODAL); } catch (_) {}
+
+    try {
+      googleFlowState.entry = entryPoint;
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      googleFlowState.user = user;
+
+      const userRef = doc(db, 'users', user.uid);
+      const existingSnap = await getDoc(userRef);
+      const existingData = existingSnap.exists() ? existingSnap.data() || {} : {};
+
+      const basePatch = {
+        useruid: user.uid,
+        email: user.email || existingData.email || '',
+        displayName: user.displayName || existingData.displayName || '',
+        photoURL: user.photoURL || existingData.photoURL || '',
+        provider: 'google',
+        lastProvider: 'google',
+        lastLoginAt: serverTimestamp()
+      };
+      if (typeof existingData.balance === 'undefined') basePatch.balance = 0;
+      if (!existingData.level) basePatch.level = 'زبون';
+      if (!existingData.webuid) basePatch.webuid = generateWebUID();
+      if (!existingData.authkey) basePatch.authkey = generateAuthKey();
+
+      await setDoc(userRef, basePatch, { merge: true });
+      await createSecretsIfNeeded(user.uid);
+
+      googleFlowState.profile = {
+        username: existingData.username || '',
+        phone: existingData.phone || ''
+      };
+
+      if (!googleFlowState.profile.username) {
+        if (googleUsernameInput) {
+          googleUsernameInput.value = normalizeGoogleUsername(user.displayName, user.email);
+        }
+        if (googleUsernameError) googleUsernameError.textContent = '';
+        showModal(GOOGLE_USERNAME_MODAL);
+        setTimeout(() => { try { googleUsernameInput && googleUsernameInput.focus(); } catch (_) {} }, 50);
+        return;
+      }
+
+      if (!googleFlowState.profile.phone) {
+        if (phoneSaveError) phoneSaveError.textContent = '';
+        showModal(GOOGLE_PHONE_MODAL);
+        setTimeout(() => { try { googlePhoneInput && googlePhoneInput.focus(); } catch (_) {} }, 60);
+        return;
+      }
+
+      await finalizeGoogleLogin();
+    } catch (err) {
+      if (err && (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request')) {
+        loginError.textContent = "تم إغلاق نافذة Google قبل إكمال تسجيل الدخول.";
+      } else {
+        loginError.textContent = translateFirebaseError(err?.code);
+      }
+    } finally {
+      googleBusy = false;
+    }
+  }
+
+  async function finalizeGoogleLogin() {
+    if (!googleFlowState.user) return;
+    try { closeModal(GOOGLE_USERNAME_MODAL); } catch (_) {}
+    try { closeModal(GOOGLE_PHONE_MODAL); } catch (_) {}
+    try {
+      const sessionKey = await rotateSessionKey(googleFlowState.user.uid);
+      const idToken = await getIdToken(googleFlowState.user);
+      const params = new URLSearchParams({
+        uid: googleFlowState.user.uid,
+        email: googleFlowState.user.email || '',
+        token: idToken,
+        sessionKey: sessionKey
+      });
+      resetGoogleFlow();
+      window.location.href = "index.html?" + params.toString();
+    } catch (error) {
+      loginError.textContent = translateFirebaseError(error?.code);
+    }
+  }
+
+  async function submitGoogleUsername() {
+    if (!googleFlowState.user || !googleUsernameInput) return;
+    const value = (googleUsernameInput.value || '').trim();
+    if (value.length < 3) {
+      if (googleUsernameError) googleUsernameError.textContent = "يرجى إدخال اسم مستخدم لا يقل عن 3 أحرف.";
+      return;
+    }
+    if (googleUsernameError) googleUsernameError.textContent = '';
+    try {
+      await setDoc(doc(db, 'users', googleFlowState.user.uid), { username: value }, { merge: true });
+      googleFlowState.profile.username = value;
+      closeModal(GOOGLE_USERNAME_MODAL);
+      if (!googleFlowState.profile.phone) {
+        if (phoneSaveError) phoneSaveError.textContent = '';
+        showModal(GOOGLE_PHONE_MODAL);
+      } else {
+        await finalizeGoogleLogin();
+      }
+    } catch (error) {
+      if (googleUsernameError) {
+        googleUsernameError.textContent = translateFirebaseError(error?.code) || "تعذر حفظ اسم المستخدم.";
+      }
+    }
+  }
+
+  async function submitGooglePhone() {
+    if (!googleFlowState.user || !googlePhoneInput) return;
+    let phoneValue = '';
+    try {
+      phoneValue = (window.googlePhoneIti && typeof window.googlePhoneIti.getNumber === 'function')
+        ? window.googlePhoneIti.getNumber()
+        : googlePhoneInput.value;
+    } catch (_) {
+      phoneValue = googlePhoneInput.value;
+    }
+    phoneValue = (phoneValue || '').trim();
+    if (!phoneValue || phoneValue.replace(/\D/g, '').length < 6) {
+      if (phoneSaveError) phoneSaveError.textContent = "يرجى إدخال رقم هاتف صالح.";
+      return;
+    }
+    if (phoneSaveError) phoneSaveError.textContent = '';
+    try {
+      await setDoc(doc(db, 'users', googleFlowState.user.uid), { phone: phoneValue }, { merge: true });
+      googleFlowState.profile.phone = phoneValue;
+      await finalizeGoogleLogin();
+    } catch (error) {
+      if (phoneSaveError) {
+        phoneSaveError.textContent = translateFirebaseError(error?.code) || "تعذر حفظ رقم الهاتف.";
+      }
+    }
+  }
+
   /***** إنشاء مفاتيح المستخدم بدون قراءات *****/
   // أسرار دائمة: إنشاء فقط
   async function createSecretsIfNeeded(uid) {
@@ -1478,6 +1673,8 @@
   });
 
   // تأكد من ربط الدوال بالسياق العام بعد تعريفها
+  window.submitGoogleUsername = submitGoogleUsername;
+  window.submitGooglePhone = submitGooglePhone;
   window.register = register;
   window.showModal = showModal;
   window.closeModal = closeModal;
@@ -1491,6 +1688,15 @@
     const phoneInput = document.querySelector("#phoneInput");
     if (phoneInput) {
       window.iti = window.intlTelInput(phoneInput, {
+        initialCountry: "jo",
+        separateDialCode: true,
+        preferredCountries: ["jo", "sa", "eg"],
+        utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js",
+      });
+    }
+    const googlePhoneInput = document.querySelector("#googlePhoneInput");
+    if (googlePhoneInput) {
+      window.googlePhoneIti = window.intlTelInput(googlePhoneInput, {
         initialCountry: "jo",
         separateDialCode: true,
         preferredCountries: ["jo", "sa", "eg"],

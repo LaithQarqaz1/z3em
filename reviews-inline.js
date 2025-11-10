@@ -146,14 +146,20 @@
       let reviewsData = [];
 
       auth.onAuthStateChanged(user => {
-        if (user && user.emailVerified) {
-          db.collection('users').doc(user.uid).get().then(doc => {
-            if (doc.exists) {
-              const data = doc.data();
-              currentUserName.textContent = `مرحباً ${data.username}`;
-            }
-          });
+        if (user) {
           submitBtn.disabled = false;
+          const userDoc = db.collection('users').doc(user.uid);
+          userDoc.get().then(doc => {
+            if (doc.exists) {
+              const data = doc.data() || {};
+              const name = data.username || user.displayName || 'مستخدم';
+              currentUserName.textContent = `مرحباً ${name}`;
+            } else {
+              currentUserName.textContent = 'مرحباً بك من جديد.';
+            }
+          }).catch(() => {
+            currentUserName.textContent = 'مرحباً بك من جديد.';
+          });
         } else {
           currentUserName.textContent = 'يجب تسجيل الدخول لإضافة تعليق.';
           submitBtn.disabled = true;

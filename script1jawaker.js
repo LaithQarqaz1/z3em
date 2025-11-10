@@ -228,7 +228,7 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
   try {
     // لا نجلب أسعار عامة بدون معرف مستخدم
     if (!useruid) return;
-    const url = new URL('https://jawaker.qousaistore66.workers.dev/');
+    const url = new URL('https://z3em-jawaker.laithqarqaz1.workers.dev/');
     url.searchParams.set('mode', 'all');
     url.searchParams.set('useruid', useruid);
     const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store' });
@@ -337,7 +337,7 @@ async function sendOrder() {
   // Quote
   let total, breakdown;
   try {
-    const priceRes = await fetch("https://jawaker.qousaistore66.workers.dev/", {
+    const priceRes = await fetch("https://z3em-jawaker.laithqarqaz1.workers.dev/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
@@ -367,7 +367,7 @@ async function sendOrder() {
       submitBtn.style.pointerEvents = 'none';
     }
 
-    const response = await fetch("https://jawaker.qousaistore66.workers.dev/", {
+    const response = await fetch("https://z3em-jawaker.laithqarqaz1.workers.dev/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

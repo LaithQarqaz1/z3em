@@ -1024,25 +1024,136 @@ window.addEventListener('DOMContentLoaded', () => {
 
   
   </script>
- <script>
-// Gate: require login, and page state must be open in Firestore 'states'
+   <script>
+// Gate: require login, and reuse cached states when branching instead of re-reading each time
 (function(){
-  function getPageId(){ try{ return (location.pathname.split('/').pop()||'').replace('.html',''); }catch(_){ return '' } }
+  var STATES_CACHE_KEY = 'statesCache';
+  var SESSION_CACHE_KEY = 'nav:stateMap';
+
+  function getPageId(){
+    try{
+      return (location.pathname.split('/').pop()||'').replace('.html','');
+    }catch(_){
+      return '';
+    }
+  }
+
+  function parseStatesPayload(payload){
+    if (!payload) return null;
+    if (typeof payload === 'string'){
+      try{
+        payload = JSON.parse(payload);
+      }catch(_){
+        return null;
+      }
+    }
+    if (!payload || typeof payload !== 'object') return null;
+    if (payload.map && typeof payload.map === 'object') return payload.map;
+    if (typeof payload.stateJson === 'string'){
+      try{
+        var parsed = JSON.parse(payload.stateJson);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }catch(_){ }
+    }
+    var values = [];
+    try{ values = Object.values(payload); }catch(_){ values = []; }
+    if (values.length && values.every(function(v){ return v === 'on' || v === 'off'; })) return payload;
+    return null;
+  }
+
+  function readCachedMap(){
+    try{
+      var sessionRaw = sessionStorage.getItem(SESSION_CACHE_KEY);
+      var sessionMap = parseStatesPayload(sessionRaw);
+      if (sessionMap) return sessionMap;
+    }catch(_){ }
+    try{
+      var localRaw = localStorage.getItem(STATES_CACHE_KEY);
+      var localMap = parseStatesPayload(localRaw);
+      if (localMap) return localMap;
+    }catch(_){ }
+    return null;
+  }
+
+  function persistMap(map){
+    if (!map || typeof map !== 'object') return;
+    try{ sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(map)); }catch(_){ }
+    try{
+      var payload = { savedAt: Date.now(), ts: Date.now(), map: map };
+      localStorage.setItem(STATES_CACHE_KEY, JSON.stringify(payload));
+    }catch(_){ }
+  }
+
+  async function fetchStatesBundle(){
+    if (typeof firebase === 'undefined' || !firebase.firestore) return null;
+    try{
+      var ref = firebase.firestore().collection('config').doc('states');
+      var snap = await ref.get({ source: 'server' }).catch(function(){ return ref.get(); });
+      if (!snap || !snap.exists) return null;
+      var data = snap.data() || {};
+      var map = {};
+      if (typeof data.stateJson === 'string'){
+        try{ map = JSON.parse(data.stateJson) || {}; }catch(_){ map = {}; }
+      } else if (data.map && typeof data.map === 'object'){
+        map = data.map;
+      } else {
+        map = data;
+      }
+      persistMap(map);
+      return map;
+    }catch(_){
+      return null;
+    }
+  }
+
+  async function fetchLegacyState(pageId){
+    if (!pageId || typeof firebase === 'undefined' || !firebase.firestore) return null;
+    try{
+      var doc = await firebase.firestore().collection('states').doc(pageId).get();
+      if (doc && doc.exists){
+        var data = doc.data() || {};
+        return data.state || data.status || 'on';
+      }
+    }catch(_){ }
+    return null;
+  }
+
+  async function resolvePageState(pageId){
+    if (!pageId) return 'on';
+    var cached = readCachedMap();
+    if (cached && Object.prototype.hasOwnProperty.call(cached, pageId)) return cached[pageId];
+    if (typeof loadStatesMap === 'function'){
+      try{
+        var res = await loadStatesMap();
+        var mapFromFn = res && res.map ? res.map : res;
+        if (mapFromFn && typeof mapFromFn === 'object'){
+          persistMap(mapFromFn);
+          if (Object.prototype.hasOwnProperty.call(mapFromFn, pageId)) return mapFromFn[pageId];
+        }
+      }catch(_){ }
+    }
+    var bundle = await fetchStatesBundle();
+    if (bundle && Object.prototype.hasOwnProperty.call(bundle, pageId)) return bundle[pageId];
+    var fallback = await fetchLegacyState(pageId);
+    return fallback || 'on';
+  }
+
   firebase.auth().onAuthStateChanged(async function(user){
-    if(!user){ try{ location.href = 'login.html'; }catch(_){} return; }
+    if(!user){
+      try{ location.href = 'login.html'; }catch(_){ }
+      return;
+    }
     try{
       var pageId = getPageId();
-      if(!pageId) return; // if unknown, allow
-      var doc = await firebase.firestore().collection('states').doc(pageId).get();
-      var st = doc && doc.exists ? (doc.data() && (doc.data().state || doc.data().status || 'on')) : 'on';
-      if(String(st).toLowerCase() !== 'on'){
-        // redirect back to games list if this card is closed
-        try{ location.href = 'games.html'; }catch(_){}
+      if(!pageId) return;
+      var state = await resolvePageState(pageId);
+      if(String(state || 'on').toLowerCase() !== 'on'){
+        try{ location.href = 'games.html'; }catch(_){ }
       }
-    }catch(e){ /* if check fails, allow to avoid blocking */ }
+    }catch(_){ /* fail-open */ }
   });
 })();
-</script>
+  </script>
   
 </body>
 </html>

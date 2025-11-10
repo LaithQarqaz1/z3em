@@ -51,6 +51,6 @@ Allow: /1-main/login.html
 Allow: /1-main/talabat.html
 Allow: /1-main/settings.html
 
-# ملفات خرائط الموقع
-Sitemap: https://qusai.shop/sitemap.xml
-Sitemap: https://qusai.shop/1-main/sitemap.xml
+# ملفات خرائط الموقع (النطاق الرسمي z3em.shop)
+Sitemap: https://z3em.shop/sitemap.xml
+Host: z3em.shop
