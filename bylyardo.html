@@ -633,7 +633,7 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
       img.src = imgSrc; img.alt = imgAlt;
       img.loading = 'lazy'; img.decoding = 'async'; img.setAttribute('fetchpriority','low');
       div.appendChild(img);
-      const h2 = document.createElement("h2"); h2.textContent = jewels ? `${jewels} جوهرة` : offer; div.appendChild(h2);
+      const h2 = document.createElement("h2"); h2.textContent = jewels ? `${jewels} كاش` : offer; div.appendChild(h2);
       // إضافة السعر أسفل الاسم
       const priceDiv = document.createElement("div");
       priceDiv.className = "offer-price";
@@ -650,11 +650,11 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
   const offersBox = document.createElement("div"); offersBox.className = "offers-box";
   const grid = document.createElement("section"); grid.className = "categories"; offersBox.appendChild(grid);
   const topupOffers = [
-    { jewels: 50, imgSrc: "IMGS/cash.jpg", imgAlt: "110 جوهرة" },
-    { jewels: 110, imgSrc: "IMGS/cash.jpg", imgAlt: "213 جوهرة" },
-    { jewels: 250, imgSrc: "IMGS/cash.jpg", imgAlt: "583 جوهرة" },
-    { jewels: 800, imgSrc: "IMGS/cash.jpg", imgAlt: "1188 جوهرة" },
-    { jewels: 2000, imgSrc: "IMGS/cash.jpg", imgAlt: "2420 جوهرة" },
+    { jewels: 50, imgSrc: "IMGS/cash.jpg", imgAlt: "110 كاش" },
+    { jewels: 110, imgSrc: "IMGS/cash.jpg", imgAlt: "213 كاش" },
+    { jewels: 250, imgSrc: "IMGS/cash.jpg", imgAlt: "583 كاش" },
+    { jewels: 800, imgSrc: "IMGS/cash.jpg", imgAlt: "1188 كاش" },
+    { jewels: 2000, imgSrc: "IMGS/cash.jpg", imgAlt: "2420 كاش" },
 
   ];
   // حفظ آخر حالة للعروض
@@ -834,7 +834,7 @@ function _readOfferPriceForElement(el){
     document.querySelectorAll('.offer-box.selected').forEach(x => x.classList.remove('selected'));
     el.classList.add('selected');
     window._pm_currentCard = el;
-    const title = el.dataset.jewels ? `${el.dataset.jewels} جوهرة` : (el.dataset.offer || '—');
+    const title = el.dataset.jewels ? `${el.dataset.jewels} كاش` : (el.dataset.offer || '—');
     const { priceText } = _readOfferPriceForElement(el);
     document.getElementById('pm-title').textContent = title;
     document.getElementById('pm-price').textContent = priceText;

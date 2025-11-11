@@ -1097,10 +1097,11 @@
       <button class="btn btn-primary" onclick="confirmUnverifiedLogin()">
         <i class="fa-solid fa-check"></i> موافق، أكمل الدخول
       </button>
-      <button class="btn btn-secondary" onclick="sendVerificationNow()">
+      <button class="btn btn-secondary" id="resendVerificationBtn" onclick="sendVerificationNow()">
         <i class="fa-solid fa-paper-plane"></i> تأكيد البريد الآن
       </button>
     </div>
+    <p class="error-message" id="verificationMessage" style="margin-top: 12px; text-align: center;"></p>
   </div>
 </div>
 
@@ -1211,6 +1212,8 @@
   let lastLoginEmail = "";
   let lastLoginPassword = "";
   let activeModalId = null;
+  let verificationTimer = null;
+  let resetBusy = false;
 
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
@@ -1278,10 +1281,30 @@
   const loginForm     = document.getElementById("loginForm");
   const resetForm     = document.getElementById("resetForm");
   const registerForm  = document.getElementById("registerForm");
+  const resetEmailInput = document.getElementById("resetEmail");
+  const resetMessageEl  = document.getElementById("resetMessage");
+  const verificationMessage = document.getElementById("verificationMessage");
+  const resendVerificationBtn = document.getElementById("resendVerificationBtn");
+  const registerPasswordInput = document.getElementById("registerPassword");
+  const strengthIndicator = document.getElementById("strengthIndicator");
+  const strengthText = document.getElementById("strengthText");
+  const passwordCriteriaEls = {
+    minLength: document.getElementById("minLength"),
+    hasNumber: document.getElementById("hasNumber"),
+    hasUpper: document.getElementById("hasUpper"),
+    hasLower: document.getElementById("hasLower"),
+    hasSymbol: document.getElementById("hasSymbol")
+  };
 
-  document.getElementById("showReset").onclick = () => switchForm("reset");
+  const showResetBtn = document.getElementById("showReset");
+  if (showResetBtn) showResetBtn.onclick = () => switchForm("reset");
   document.addEventListener('DOMContentLoaded',()=>switchForm('login'));
-  document.getElementById("toggleRegister").onclick = () => switchForm("register");
+  const toggleRegisterBtn = document.getElementById("toggleRegister");
+  if (toggleRegisterBtn) toggleRegisterBtn.onclick = () => switchForm("register");
+  if (registerPasswordInput) {
+    registerPasswordInput.addEventListener('input', validatePassword);
+    validatePassword();
+  }
 
   window.switchForm = function (form) {
     loginForm.classList.add("hidden");
@@ -1586,6 +1609,85 @@
     }
   }
 
+  async function sendResetLink() {
+    if (!resetEmailInput || !resetMessageEl) return;
+    const email = resetEmailInput.value.trim();
+    resetMessageEl.style.color = "var(--danger, #ef4444)";
+    resetMessageEl.textContent = "";
+
+    if (!email) {
+      resetMessageEl.textContent = "يرجى إدخال بريدك الإلكتروني.";
+      return;
+    }
+    if (resetBusy) return;
+    resetBusy = true;
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      resetMessageEl.style.color = "var(--success, #22c55e)";
+      resetMessageEl.textContent = "تم إرسال رابط الاستعادة إلى بريدك الإلكتروني.";
+      showModal("resetSuccessModal");
+    } catch (error) {
+      resetMessageEl.textContent = translateFirebaseError(error?.code);
+    } finally {
+      resetBusy = false;
+    }
+  }
+
+  async function sendVerificationNow() {
+    if (verificationMessage) {
+      verificationMessage.style.color = "var(--danger, #ef4444)";
+      verificationMessage.textContent = "";
+    }
+
+    let user = auth.currentUser;
+    if (!user && lastLoginEmail && lastLoginPassword) {
+      try {
+        const cred = await signInWithEmailAndPassword(auth, lastLoginEmail, lastLoginPassword);
+        user = cred.user;
+      } catch (error) {
+        if (verificationMessage) {
+          verificationMessage.textContent = translateFirebaseError(error?.code);
+        }
+        return;
+      }
+    }
+
+    if (!user) {
+      if (verificationMessage) {
+        verificationMessage.textContent = "يرجى تسجيل الدخول أولًا لإعادة إرسال رابط التأكيد.";
+      }
+      return;
+    }
+
+    try {
+      if (resendVerificationBtn) {
+        resendVerificationBtn.disabled = true;
+        resendVerificationBtn.classList.add("disabled");
+      }
+      await sendEmailVerification(user);
+      if (verificationMessage) {
+        verificationMessage.style.color = "var(--success, #22c55e)";
+        verificationMessage.textContent = "تم إرسال رسالة التأكيد، تحقق من بريدك الوارد أو الرسائل غير المرغوبة.";
+      }
+    } catch (error) {
+      if (verificationMessage) {
+        verificationMessage.textContent = translateFirebaseError(error?.code);
+      }
+    } finally {
+      clearTimeout(verificationTimer);
+      verificationTimer = setTimeout(() => {
+        if (resendVerificationBtn) {
+          resendVerificationBtn.disabled = false;
+          resendVerificationBtn.classList.remove("disabled");
+        }
+        if (verificationMessage && verificationMessage.style.color === "var(--success, #22c55e)") {
+          verificationMessage.style.color = "";
+        }
+      }, 1500);
+    }
+  }
+
   // دالة التسجيل
   async function register() {
     const username = document.getElementById("usernameInput").value.trim();
@@ -1632,6 +1734,92 @@
     }
   }
 
+  function setCriterionState(element, satisfied) {
+    if (!element) return;
+    element.classList.toggle("criterion-met", satisfied);
+    const icon = element.querySelector(".icon");
+    if (icon) {
+      icon.classList.toggle("fa-check", satisfied);
+      icon.classList.toggle("fa-xmark", !satisfied);
+      icon.style.color = satisfied ? "var(--success, #22c55e)" : "var(--danger, #ef4444)";
+    }
+    element.style.color = satisfied ? "#16a34a" : "";
+  }
+
+  function validatePassword() {
+    if (!registerPasswordInput) return;
+    const value = registerPasswordInput.value || "";
+    const hasMin = value.length >= 6;
+    const hasNumber = /\d/.test(value);
+    const hasUpper = /[A-Z]/.test(value);
+    const hasLower = /[a-z]/.test(value);
+    const hasSymbol = /[^A-Za-z0-9]/.test(value);
+    const optionalCount = [hasNumber, hasUpper, hasLower, hasSymbol].filter(Boolean).length;
+
+    setCriterionState(passwordCriteriaEls.minLength, hasMin);
+    setCriterionState(passwordCriteriaEls.hasNumber, hasNumber);
+    setCriterionState(passwordCriteriaEls.hasUpper, hasUpper);
+    setCriterionState(passwordCriteriaEls.hasLower, hasLower);
+    setCriterionState(passwordCriteriaEls.hasSymbol, hasSymbol);
+
+    if (!strengthIndicator || !strengthText) return;
+    if (!value) {
+      strengthIndicator.style.width = "0%";
+      strengthIndicator.style.backgroundColor = "#e5e7eb";
+      strengthText.textContent = "";
+      return;
+    }
+
+    const score = (hasMin ? 1 : 0) + optionalCount; // 0 - 5
+    const percent = Math.min(100, Math.max(20, Math.round((score / 5) * 100)));
+
+    let barColor = "#ef4444";
+    let label = "ضعيفة";
+    if (percent >= 80) { barColor = "#22c55e"; label = "قوية"; }
+    else if (percent >= 60) { barColor = "#f59e0b"; label = "متوسطة"; }
+    else if (percent >= 40) { barColor = "#f97316"; label = "ضعيفة"; }
+
+    strengthIndicator.style.width = percent + "%";
+    strengthIndicator.style.backgroundColor = barColor;
+
+    if (!hasMin) {
+      strengthText.style.color = "var(--danger, #ef4444)";
+      strengthText.textContent = "كلمة المرور يجب ألا تقل عن 6 أحرف.";
+    } else if (optionalCount < 3) {
+      const remaining = 3 - optionalCount;
+      strengthText.style.color = "#f59e0b";
+      strengthText.textContent = `أضف ${remaining} متطلبات اختيارية (أرقام/حروف/رموز) لزيادة الأمان.`;
+    } else {
+      strengthText.style.color = barColor;
+      strengthText.textContent = `قوة كلمة المرور: ${label}`;
+    }
+  }
+
+  const firebaseErrorMessages = {
+    "auth/invalid-email": "صيغة البريد الإلكتروني غير صحيحة.",
+    "auth/missing-email": "يرجى إدخال البريد الإلكتروني.",
+    "auth/user-not-found": "لا يوجد حساب مرتبط بهذا البريد.",
+    "auth/wrong-password": "كلمة المرور غير صحيحة.",
+    "auth/invalid-credential": "بيانات تسجيل الدخول غير صحيحة، تأكد من البريد وكلمة المرور.",
+    "auth/invalid-login-credentials": "بيانات تسجيل الدخول غير صحيحة، تأكد من البريد وكلمة المرور.",
+    "auth/too-many-requests": "تم حظر المحاولات مؤقتًا بسبب العديد من الطلبات. حاول لاحقًا.",
+    "auth/email-already-in-use": "هذا البريد مستخدم بالفعل.",
+    "auth/weak-password": "كلمة المرور ضعيفة، يرجى استخدام كلمة أقوى.",
+    "auth/network-request-failed": "فشل الاتصال بالخادم، تحقق من الشبكة.",
+    "auth/operation-not-allowed": "تم تعطيل هذا النوع من التسجيل في الوقت الحالي.",
+    "auth/requires-recent-login": "يرجى تسجيل الدخول من جديد لإكمال العملية."
+  };
+
+  function translateFirebaseError(code) {
+    if (!code) return "حدث خطأ غير متوقع، حاول مرة أخرى.";
+    if (firebaseErrorMessages[code]) return firebaseErrorMessages[code];
+    if (code.includes("too-many-requests")) return firebaseErrorMessages["auth/too-many-requests"];
+    if (code.startsWith("auth/")) {
+      return "تعذر إتمام الطلب (" + code.replace("auth/", "").replace(/-/g, " ") + ").";
+    }
+    return "حدث خطأ غير متوقع، حاول مرة أخرى.";
+  }
+
   function updateBodyModalState() {
     try {
       const hasOpenModal = document.querySelector('.modal:not(.hidden)');
@@ -1675,6 +1863,9 @@
   // تأكد من ربط الدوال بالسياق العام بعد تعريفها
   window.submitGoogleUsername = submitGoogleUsername;
   window.submitGooglePhone = submitGooglePhone;
+  window.sendResetLink = sendResetLink;
+  window.sendVerificationNow = sendVerificationNow;
+  window.validatePassword = validatePassword;
   window.register = register;
   window.showModal = showModal;
   window.closeModal = closeModal;
@@ -1690,7 +1881,7 @@
       window.iti = window.intlTelInput(phoneInput, {
         initialCountry: "jo",
         separateDialCode: true,
-        preferredCountries: ["jo", "sa", "eg"],
+        preferredCountries: ["sy", "jo", "sa", "eg"],
         utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js",
       });
     }
@@ -1699,7 +1890,7 @@
       window.googlePhoneIti = window.intlTelInput(googlePhoneInput, {
         initialCountry: "jo",
         separateDialCode: true,
-        preferredCountries: ["jo", "sa", "eg"],
+        preferredCountries: ["sy", "jo", "sa", "eg"],
         utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js",
       });
     }

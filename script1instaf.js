@@ -14,6 +14,19 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 let pricesFetchOnce = false;
 
+const BOOSTING_API_BASE = "https://z3em-manwal.laithqarqaz1.workers.dev/?game=smm";
+const BOOSTING_CACHE_TTL = 60 * 1000;
+let boostingServicesCache = { list: [], ts: 0 };
+let boostingLoading = false;
+const smmOrderState = {
+  services: [],
+  categories: [],
+  selectedCategoryKey: "",
+  selectedServiceId: "",
+  searchQuery: ""
+};
+let smmOrderSetupDone = false;
+
 // ===== Turnstile إعداد =====
 const TURNSTILE_SITE_KEY = "0x4AAAAAABmiVmi7wosqeHQT";
 let _tsWidgetId = null;
@@ -96,6 +109,10 @@ function getLocalUid() {
     const s = JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
     return s?.uid || "";
   } catch { return ""; }
+}
+
+function isSmmCard(el) {
+  return !!(el && el.dataset && typeof el.dataset.provider === "string" && el.dataset.provider.toLowerCase() === "smm");
 }
 
 // نافذة عامة لرسائل انتهاء/فشل الجلسة
@@ -260,15 +277,513 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
           const firebaseUsername = userData.username || '';
         }
       }
+      if (user) {
+        fetchBoostingServices({ force: true }).catch(() => {});
+      } else {
+        setBoostingState({ message: "سجّل الدخول لعرض هذا القسم" });
+      }
     } catch (error) { console.warn('Auth state post-loadPrices error:', error); }
   });
 })();
+
+function getBoostingElements() {
+  return {
+    grid: document.getElementById("smmServicesGrid"),
+    empty: document.getElementById("smmServicesEmpty"),
+    refreshBtn: document.getElementById("refreshSmmBtn")
+  };
+}
+
+function getSmmOrderElements() {
+  return {
+    root: document.getElementById("smmServicesGrid"),
+    search: document.getElementById("smmSearchInput"),
+    categorySelect: document.getElementById("smmCategorySelect"),
+    serviceSelect: document.getElementById("smmServiceSelect"),
+    serviceEmpty: document.getElementById("smmServiceEmpty"),
+    description: document.getElementById("smmServiceDescription"),
+    linkInput: document.getElementById("smmLinkInput"),
+    qtyInput: document.getElementById("smmQuantityInput"),
+    qtyHint: document.getElementById("smmQuantityHint"),
+    totalValue: document.getElementById("smmTotalValue"),
+    submitBtn: document.getElementById("smmSubmitBtn")
+  };
+}
+
+function ensureSmmOrderSetup() {
+  if (smmOrderSetupDone) return;
+  const els = getSmmOrderElements();
+  if (!els.root) return;
+  smmOrderSetupDone = true;
+  if (els.search) {
+    els.search.addEventListener("input", (event) => {
+      smmOrderState.searchQuery = event.target.value || "";
+      renderSmmServices();
+    });
+  }
+  if (els.categorySelect) {
+    els.categorySelect.addEventListener("change", (event) => {
+      selectSmmCategory(event.target.value || "");
+    });
+  }
+  if (els.serviceSelect) {
+    els.serviceSelect.addEventListener("change", (event) => {
+      selectSmmService(event.target.value || "");
+    });
+  }
+  if (els.qtyInput) {
+    els.qtyInput.addEventListener("input", () => {
+      clampSmmQuantity();
+      updateSmmTotal();
+    });
+  }
+  if (els.submitBtn) {
+    els.submitBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      handleSmmSubmit();
+    });
+  }
+}
+
+function normalizeArabicText(str) {
+  return (str || "")
+    .toString()
+    .toLowerCase()
+    .replace(/[ًٌٍَُِّْـ]/g, "")
+    .replace(/[إأآا]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function canonicalizeCategory(label) {
+  const base = normalizeArabicText(label);
+  return base || "misc";
+}
+
+function pickCategoryIcon(label) {
+  const norm = normalizeArabicText(label);
+  if (norm.includes("favorite") || norm.includes("مفضله")) return "⭐";
+  if (norm.includes("roblox")) return "🧱";
+  if (norm.includes("brawl") || norm.includes("براول")) return "🛡️";
+  if (norm.includes("clash") || norm.includes("كلاش")) return "⚔️";
+  if (norm.includes("gpt") || norm.includes("شات")) return "🤖";
+  if (norm.includes("tiktok") || norm.includes("تيك")) return "🎵";
+  if (norm.includes("instagram") || norm.includes("انستا") || norm.includes("انستقرام")) return "📸";
+  return "📦";
+}
+
+function escapeHtml(str) {
+  return (str || "")
+    .toString()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatSmmRate(rate, raw) {
+  const num = Number(rate);
+  if (Number.isFinite(num)) return `${num.toFixed(3)} $ / 1000`;
+  if (raw != null && raw !== "") return `${raw} / 1000`;
+  return "السعر متغير";
+}
+
+function formatSmmRange(min, max) {
+  const minTxt = min ? `حد أدنى ${min}` : "بدون حد أدنى";
+  const maxTxt = max ? `حد أقصى ${max}` : "بدون حد أقصى";
+  return `${minTxt} • ${maxTxt}`;
+}
+
+function normalizeServiceItem(service) {
+  if (!service) return null;
+  const serviceId = service.id ?? service.service ?? service.service_id ?? service.ServiceID ?? "";
+  const id = serviceId != null ? String(serviceId) : "";
+  if (!id) return null;
+  const categoryLabel = (service.category || "خدمات متنوعة").toString().trim() || "خدمات متنوعة";
+  const rawRate = service.rate ?? service.Rate ?? service.price ?? null;
+  const numericRate = Number(rawRate);
+  return {
+    ...service,
+    id,
+    categoryLabel,
+    categoryKey: canonicalizeCategory(categoryLabel),
+    normalizedName: normalizeArabicText(service.name || ""),
+    normalizedDescription: normalizeArabicText(service.description || service.desc || ""),
+    rate: Number.isFinite(numericRate) ? numericRate : null,
+    rawRateText: rawRate
+  };
+}
+
+function buildSmmCategories(list) {
+  const map = new Map();
+  list.forEach((service) => {
+    const key = service.categoryKey || canonicalizeCategory(service.categoryLabel);
+    if (!map.has(key)) {
+      map.set(key, {
+        key,
+        label: service.categoryLabel,
+        icon: pickCategoryIcon(service.categoryLabel)
+      });
+    }
+  });
+  return Array.from(map.values());
+}
+
+function hydrateSmmOrder(rawList) {
+  const normalized = rawList.map(normalizeServiceItem).filter(Boolean);
+  smmOrderState.services = normalized;
+  smmOrderState.categories = buildSmmCategories(normalized);
+  const hasCategory = smmOrderState.categories.some((cat) => cat.key === smmOrderState.selectedCategoryKey);
+  if (!hasCategory) {
+    smmOrderState.selectedCategoryKey = smmOrderState.categories[0]?.key || "";
+    smmOrderState.selectedServiceId = "";
+  }
+  renderSmmCategories();
+  renderSmmServices();
+}
+
+function renderSmmCategories() {
+  const { categorySelect } = getSmmOrderElements();
+  if (!categorySelect) return;
+  categorySelect.innerHTML = "";
+  if (!smmOrderState.categories.length) {
+    const opt = document.createElement("option");
+    opt.textContent = "لا توجد فئات متاحة";
+    opt.disabled = true;
+    opt.selected = true;
+    categorySelect.appendChild(opt);
+    categorySelect.disabled = true;
+    return;
+  }
+  categorySelect.disabled = false;
+  if (!smmOrderState.selectedCategoryKey) {
+    smmOrderState.selectedCategoryKey = smmOrderState.categories[0]?.key || "";
+  }
+  smmOrderState.categories.forEach((cat) => {
+    const opt = document.createElement("option");
+    opt.value = cat.key;
+    opt.textContent = cat.label;
+    if (cat.key === smmOrderState.selectedCategoryKey) opt.selected = true;
+    categorySelect.appendChild(opt);
+  });
+}
+
+function getVisibleServices() {
+  const query = normalizeArabicText(smmOrderState.searchQuery);
+  const categoryKey = smmOrderState.selectedCategoryKey;
+  if (!categoryKey) return [];
+  return smmOrderState.services.filter((service) => {
+    if (service.categoryKey !== categoryKey) return false;
+    if (!query) return true;
+    const haystack = `${service.normalizedName || ""} ${service.normalizedDescription || ""} ${service.categoryKey || ""} ${service.id}`;
+    return haystack.includes(query) || String(service.id).includes(query);
+  });
+}
+
+function renderSmmServices() {
+  const { serviceSelect, serviceEmpty } = getSmmOrderElements();
+  if (!serviceSelect) return;
+  serviceSelect.innerHTML = "";
+  const visible = getVisibleServices();
+  if (!visible.length) {
+    const placeholder = document.createElement("option");
+    placeholder.textContent = smmOrderState.selectedCategoryKey ? "لا توجد خدمات مطابقة" : "اختر الفئة أولاً";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    serviceSelect.appendChild(placeholder);
+    serviceSelect.disabled = true;
+    if (serviceEmpty) {
+      serviceEmpty.textContent = placeholder.textContent;
+      serviceEmpty.style.display = "block";
+    }
+    smmOrderState.selectedServiceId = "";
+    updateSmmDetails(null);
+    return;
+  }
+  serviceSelect.disabled = false;
+  if (serviceEmpty) serviceEmpty.style.display = "none";
+  const hasSelected = visible.some((service) => String(service.id) === String(smmOrderState.selectedServiceId));
+  if (!hasSelected) smmOrderState.selectedServiceId = visible[0]?.id || "";
+  visible.forEach((service) => {
+    const opt = document.createElement("option");
+    opt.value = service.id;
+    const rateTxt = formatSmmRate(service.rate, service.rawRateText);
+    opt.textContent = `${service.name || `خدمة #${service.id}`} — ${rateTxt}`;
+    if (String(service.id) === String(smmOrderState.selectedServiceId)) opt.selected = true;
+    serviceSelect.appendChild(opt);
+  });
+  updateSmmDetails(getSelectedSmmService());
+}
+
+function selectSmmCategory(key) {
+  smmOrderState.selectedCategoryKey = key;
+  smmOrderState.selectedServiceId = "";
+  renderSmmCategories();
+  renderSmmServices();
+}
+
+function selectSmmService(id) {
+  smmOrderState.selectedServiceId = id;
+  renderSmmServices();
+}
+
+function getSelectedSmmService() {
+  const id = smmOrderState.selectedServiceId;
+  if (!id) return null;
+  return smmOrderState.services.find((service) => String(service.id) === String(id)) || null;
+}
+
+function updateSmmDetails(service) {
+  updateSmmDescription(service);
+  syncSmmQuantityLimits(service);
+  updateSmmTotal();
+}
+
+function updateSmmDescription(service) {
+  const { description } = getSmmOrderElements();
+  if (!description) return;
+  const raw = service?.description || service?.desc || "";
+  if (!service) {
+    description.textContent = "اختر خدمة لعرض تفاصيلها والتعليمات.";
+    description.classList.add("empty");
+    return;
+  }
+  if (!raw || !raw.trim()) {
+    description.textContent = "لا يوجد وصف متاح لهذه الخدمة.";
+    description.classList.add("empty");
+    return;
+  }
+  description.innerHTML = escapeHtml(raw).replace(/\n/g, "<br>");
+  description.classList.remove("empty");
+}
+
+function syncSmmQuantityLimits(service) {
+  const { qtyInput, qtyHint } = getSmmOrderElements();
+  if (!qtyInput) return;
+  if (!service) {
+    qtyInput.value = "";
+    qtyInput.removeAttribute("min");
+    qtyInput.removeAttribute("max");
+    if (qtyHint) qtyHint.textContent = "الحد الأدنى - الحد الأقصى سيتم عرضه بعد اختيار الخدمة.";
+    return;
+  }
+  const min = Number(service.min || 0);
+  const max = Number(service.max || 0);
+  if (Number.isFinite(min) && min > 0) qtyInput.min = String(min);
+  else qtyInput.removeAttribute("min");
+  if (Number.isFinite(max) && max > 0) qtyInput.max = String(max);
+  else qtyInput.removeAttribute("max");
+  if (!qtyInput.value || (Number.isFinite(min) && Number(qtyInput.value) < min) || (Number.isFinite(max) && max > 0 && Number(qtyInput.value) > max)) {
+    qtyInput.value = Number.isFinite(min) && min > 0 ? min : "";
+  }
+  if (qtyHint) {
+    if (min || max) qtyHint.textContent = `الحد الأدنى ${min || "غير محدد"} - الحد الأقصى ${max || "غير محدد"}`;
+    else qtyHint.textContent = "لا توجد حدود كمية متاحة لهذه الخدمة.";
+  }
+}
+
+function clampSmmQuantity() {
+  const { qtyInput } = getSmmOrderElements();
+  if (!qtyInput) return;
+  const service = getSelectedSmmService();
+  if (!service) return;
+  const min = Number(service.min || 0);
+  const max = Number(service.max || 0);
+  let value = Number(qtyInput.value);
+  if (!Number.isFinite(value)) return;
+  if (Number.isFinite(min) && min > 0 && value < min) value = min;
+  if (Number.isFinite(max) && max > 0 && value > max) value = max;
+  qtyInput.value = value;
+}
+
+function updateSmmTotal() {
+  const { qtyInput, totalValue } = getSmmOrderElements();
+  if (!totalValue) return;
+  const service = getSelectedSmmService();
+  if (!service) {
+    totalValue.textContent = "—";
+    return;
+  }
+  const qty = Number(qtyInput && qtyInput.value);
+  if (!Number.isFinite(qty)) {
+    totalValue.textContent = "—";
+    return;
+  }
+  const baseRate = Number.isFinite(Number(service.rate))
+    ? Number(service.rate)
+    : Number(service.rawRateText);
+  if (!Number.isFinite(baseRate)) {
+    totalValue.textContent = "—";
+    return;
+  }
+  const total = (baseRate * qty) / 1000;
+  totalValue.textContent = `${total.toFixed(3)} $`;
+}
+
+async function handleSmmSubmit() {
+  const { linkInput, qtyInput, submitBtn } = getSmmOrderElements();
+  const service = getSelectedSmmService();
+  if (!service) {
+    showToast("❗ اختر الخدمة المطلوبة", "warning");
+    return;
+  }
+  const link = (linkInput?.value || "").trim();
+  if (!link) {
+    showToast("❗ يرجى إدخال الرابط المطلوب", "warning");
+    return;
+  }
+  const qty = Number(qtyInput?.value);
+  if (!Number.isFinite(qty) || qty <= 0) {
+    showToast("❗ يرجى إدخال كمية صحيحة", "warning");
+    return;
+  }
+  const min = Number(service.min || 0);
+  const max = Number(service.max || 0);
+  if (Number.isFinite(min) && min > 0 && qty < min) {
+    showToast(`الحد الأدنى للطلب هو ${min}`, "warning");
+    return;
+  }
+  if (Number.isFinite(max) && max > 0 && qty > max) {
+    showToast(`الحد الأقصى للطلب هو ${max}`, "warning");
+    return;
+  }
+  await sendSmmOrder({ service, quantity: qty, link, triggerButton: submitBtn });
+}
+
+function setBoostingState({ loading = false, message = null, error = false } = {}) {
+  ensureSmmOrderSetup();
+  const { empty, refreshBtn } = getBoostingElements();
+  const { serviceEmpty, serviceSelect } = getSmmOrderElements();
+  if (refreshBtn) refreshBtn.disabled = !!loading;
+  if (!empty) return;
+  if (loading) {
+    empty.textContent = "جاري تحميل الخدمات من المزود...";
+    empty.style.display = "block";
+    empty.style.color = "#9ca3af";
+    if (serviceEmpty) {
+      serviceEmpty.textContent = "جاري تحميل الخدمات...";
+      serviceEmpty.style.display = "block";
+    }
+    if (serviceSelect) {
+      serviceSelect.innerHTML = "";
+      const opt = document.createElement("option");
+      opt.textContent = "جاري التحميل...";
+      opt.disabled = true;
+      opt.selected = true;
+      serviceSelect.appendChild(opt);
+      serviceSelect.disabled = true;
+    }
+    return;
+  }
+  if (message) {
+    empty.textContent = message;
+    empty.style.display = "block";
+    empty.style.color = error ? "#f87171" : "#9ca3af";
+    if (serviceEmpty) {
+      serviceEmpty.textContent = message;
+      serviceEmpty.style.display = "block";
+    }
+  } else {
+    empty.style.display = "none";
+  }
+}
+
+function renderBoostingServices(list = []) {
+  ensureSmmOrderSetup();
+  const { empty } = getBoostingElements();
+  if (!list.length) {
+    smmOrderState.services = [];
+    smmOrderState.categories = [];
+    smmOrderState.selectedCategoryKey = "";
+    smmOrderState.selectedServiceId = "";
+    renderSmmCategories();
+    renderSmmServices();
+    if (empty) {
+      empty.textContent = "لا توجد خدمات متاحة حالياً.";
+      empty.style.display = "block";
+      empty.style.color = "#9ca3af";
+    }
+    return;
+  }
+
+  if (empty) empty.style.display = "none";
+  ensureSmmOrderSetup();
+  hydrateSmmOrder(list);
+}
+
+async function fetchBoostingServices({ force = false } = {}) {
+  const { grid } = getBoostingElements();
+  if (!grid) return;
+  if (boostingLoading) return;
+
+  const now = Date.now();
+  if (!force && boostingServicesCache.list.length && (now - boostingServicesCache.ts) < BOOSTING_CACHE_TTL) {
+    renderBoostingServices(boostingServicesCache.list);
+    return;
+  }
+
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    setBoostingState({ message: "سجّل الدخول لعرض هذا القسم" });
+    return;
+  }
+  const sessionKey = getLocalSessionKey();
+  if (!sessionKey) {
+    setBoostingState({ message: "انتهت صلاحية الجلسة، أعد تسجيل الدخول", error: true });
+    return;
+  }
+
+  boostingLoading = true;
+  setBoostingState({ loading: true });
+  try {
+    const idToken = await user.getIdToken(true);
+    const url = new URL(BOOSTING_API_BASE);
+    url.searchParams.set("mode", "services");
+    const res = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        "X-SessionKey": sessionKey
+      },
+      cache: "no-store"
+    });
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      throw new Error(data?.error || "فشل تحميل الخدمات");
+    }
+    const list = Array.isArray(data.services) ? data.services : [];
+    boostingServicesCache = { list, ts: Date.now() };
+    renderBoostingServices(list);
+    if (!list.length) {
+      setBoostingState({ message: "لا توجد خدمات متاحة حالياً" });
+    }
+  } catch (err) {
+    console.error("Boosting services error:", err);
+    setBoostingState({ message: err?.message || "تعذر تحميل الخدمات", error: true });
+    showToast("❗ تعذر تحميل قسم المزود الاحتياطي", "error");
+  } finally {
+    boostingLoading = false;
+    setBoostingState({ loading: false });
+  }
+}
 
 /* ================== إرسال الطلب (مع كشف فشل رمز الجلسة) ================== */
 async function sendOrder() {
   // التقط قيمة الآيدي من حقل المودال أو الحقل الأساسي إن وُجد
   const pidInput = document.getElementById("player-id") || document.getElementById("modal-player-id");
   const pid = pidInput ? (pidInput.value || "").trim() : "";
+  const activeCard = window._pm_currentCard || document.querySelector('.offer-box.selected');
+  if (isSmmCard(activeCard)) {
+    if (!pid) {
+      showToast("❗ يرجى إدخال الرابط المطلوب", "error");
+      return;
+    }
+    await sendSmmOrder({ card: activeCard, link: pid });
+    return;
+  }
 
   // التقط العرض المحدد من الكلاسات، مع احتياط باستخدام _pm_currentCard إن لم توجد كلاس selected
   let selectedOffers = Array.from(document.querySelectorAll('.offer-box.selected')).map(el => ({
@@ -423,6 +938,125 @@ async function sendOrder() {
       submitBtn.textContent = submitBtn.dataset._oldText || 'شراء';
       submitBtn.style.opacity = '';
       submitBtn.style.pointerEvents = '';
+    }
+  }
+}
+
+async function sendSmmOrder({ card, link, service, quantity, triggerButton } = {}) {
+  if (!link || link.length < 3) {
+    showToast("❗ يرجى إدخال الرابط المطلوب", "error");
+    return;
+  }
+  const meta = service
+    ? {
+        id: service.id,
+        min: service.min,
+        max: service.max
+      }
+    : (card
+        ? {
+            id: card?.dataset?.serviceId,
+            min: card?.dataset?.min,
+            max: card?.dataset?.max
+          }
+        : null);
+  if (!meta || !meta.id) {
+    showToast("❗ يرجى اختيار الخدمة المطلوبة", "warning");
+    return;
+  }
+  const qtyEl = document.getElementById("qty-input");
+  let qty = Number.isFinite(Number(quantity)) ? Number(quantity) : Number(qtyEl && qtyEl.value);
+  const min = Number(meta.min || "0");
+  const max = Number(meta.max || "0");
+  if (!Number.isFinite(qty) || qty <= 0) {
+    showToast("❗ يرجى إدخال كمية صحيحة", "warning");
+    return;
+  }
+  if (min && qty < min) {
+    showToast(`الحد الأدنى للطلب هو ${min}`, "warning");
+    return;
+  }
+  if (max && qty > max) {
+    showToast(`الحد الأقصى للطلب هو ${max}`, "warning");
+    return;
+  }
+
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    showToast("❌ يجب تسجيل الدخول أولاً", "error");
+    showSessionExpiredModal();
+    return;
+  }
+  const sessionKey = getLocalSessionKey();
+  if (!sessionKey) {
+    showSessionExpiredModal();
+    return;
+  }
+
+  let turnstileToken = "";
+  try {
+    turnstileToken = await getTurnstileTokenInteractive();
+  } catch (_) {
+    showToast('فشل التحقق الأمني، حاول مجدداً', 'error');
+    return;
+  }
+
+  let idToken;
+  try {
+    idToken = await user.getIdToken(true);
+  } catch (_) {
+    showToast("❌ فشل في التحقق من تسجيل الدخول", "error");
+    return;
+  }
+
+  const submitBtn = triggerButton || document.querySelector('.send-button');
+  const currentUrl = window.location.href;
+  try {
+    showPreloader();
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.dataset._oldText = submitBtn.textContent;
+      submitBtn.textContent = 'جاري المعالجة...';
+      submitBtn.style.opacity = '0.7';
+      submitBtn.style.pointerEvents = 'none';
+    }
+    const url = new URL(BOOSTING_API_BASE);
+    url.searchParams.set("mode", "order");
+    const response = await fetch(url.toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+        "X-SessionKey": sessionKey
+      },
+      body: JSON.stringify({
+        action: "order",
+        serviceId: meta.id,
+        quantity: qty,
+        link,
+        turnstileToken,
+        currentUrl
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.success === false) {
+      throw new Error(result?.error || "فشل إرسال الطلب");
+    }
+    const charge = Number(result?.estimatedCharge);
+    const suffix = Number.isFinite(charge) ? ` | ${charge.toFixed(3)} $` : "";
+    showToast(`✅ تم تسجيل الطلب #${result.orderId}${suffix}`, "success");
+    try { await rotateSessionKeyAfterOrder(user.uid, result?.ttl || 0); } catch (e) { console.warn("Session rotate failed:", e); }
+  } catch (err) {
+    console.error("Boost order error:", err);
+    showToast(err?.message || "حدث خطأ أثناء الطلب", "error");
+  } finally {
+    hidePreloader();
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = submitBtn.dataset._oldText || 'إرسال';
+      submitBtn.style.opacity = '1';
+      submitBtn.style.pointerEvents = '';
+      delete submitBtn.dataset._oldText;
     }
   }
 }
@@ -595,7 +1229,13 @@ const detectTheme = () => {
 
 // ✅ عند تحميل الصفحة سننتظر onAuthStateChanged لتحديد useruid ثم ننادي loadPrices()
 document.addEventListener('DOMContentLoaded', () => {
-  // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
+  const refreshBtn = document.getElementById("refreshSmmBtn");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => fetchBoostingServices({ force: true }));
+  }
+  if (document.getElementById("smmServicesGrid")) {
+    setBoostingState({ message: "سجّل الدخول لعرض هذا القسم" });
+  }
 });
 
 

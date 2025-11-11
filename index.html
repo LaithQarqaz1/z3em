@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -1363,9 +1363,9 @@ button#logoutBtn:hover{background:#990000}
       <img draggable="false" src="IMGS/العاب.jpg" alt="ألعاب" loading="eager" decoding="async" fetchpriority="high" />
       <h2>الألعاب</h2>
     </a>
-    <a href="social.html" class="card" data-title="مواقع التواصل الاجتماعي">
+    <a href="social.html" class="card" data-title="رشق الاجتماعي">
       <img draggable="false" src="IMGS/تواصل.jpg" alt="التواصل الاجتماعي" loading="eager" decoding="async" fetchpriority="high" />
-      <h2>مواقع التواصل</h2>
+      <h2>رشق</h2>
     </a>
     <a href="software.html" class="card" data-title="اشتراكات ">
       <img draggable="false" src="IMGS/اشتراكات.jpg" alt="برامج" loading="eager" decoding="async" fetchpriority="high" />
@@ -2830,6 +2830,747 @@ button#logoutBtn:hover{background:#990000}
         };
       })();
 
+      var socialBoostInline = (function(){
+        var API_BASE = "https://z3em-manwal.laithqarqaz1.workers.dev/?game=smm";
+        var CACHE_TTL = 60 * 1000;
+        var cache = [];
+        var lastFetched = 0;
+        var inflight = null;
+        var stylesInjected = false;
+        var authReadyPromise = null;
+
+        function ensureStyles(){
+          if (stylesInjected) return;
+          stylesInjected = true;
+          try{
+            var css = [
+              '.smm-inline-form{display:flex;flex-direction:column;gap:18px;background:linear-gradient(180deg,#081131,#0d193f);border:1px solid rgba(112,136,255,.45);border-radius:22px;padding:20px;box-shadow:0 25px 45px rgba(5,7,20,.55);}',
+              '.smm-inline-form label{display:block;font-weight:800;margin-bottom:8px;color:#e5e9ff;}',
+              'html[data-theme="dark"] .smm-inline-form label, body.dark-mode .smm-inline-form label{color:#f0f3ff;}',
+              '.categories[data-smm-inline="1"]{display:block!important;grid-template-columns:none!important;width:100%;max-width:min(960px,100%);margin:0 auto;padding:0;}',
+              '.categories[data-smm-inline="1"] .smm-inline-form{max-width:920px;margin:0 auto;}',
+              '.smm-inline-group{display:flex;flex-direction:column;}',
+              '.smm-inline-search{position:relative;}',
+              '.smm-inline-search input{width:100%;border:1px solid rgba(120,145,255,.5);border-radius:16px;padding:14px 48px 14px 18px;font-size:1rem;background:#0b133c;color:#f4f6ff;outline:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);}',
+              '.smm-inline-search i{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#99b7ff;}',
+              '.smm-inline-form input[type="url"], .smm-inline-form input[type="number"]{width:100%;border:1px solid rgba(120,145,255,.45);border-radius:16px;padding:13px 20px;font-size:1rem;background:#0e1741;color:#f3f6ff;outline:none;box-shadow:0 12px 26px rgba(6,8,24,.55);}',
+              '.smm-inline-select{width:100%;border-radius:16px;border:1px solid rgba(125,150,255,.6);padding:16px 60px 16px 22px;font-size:1.05rem;font-weight:700;color:#e8ecff;background:linear-gradient(180deg,#101a48,#0a1231);box-shadow:0 20px 40px rgba(4,6,18,.6);appearance:none;-moz-appearance:none;-webkit-appearance:none;text-align:right;direction:rtl;background-image:url(\"data:image/svg+xml,%3Csvg width%3D%2714%27 height%3D%279%27 viewBox%3D%270 0 14 9%27 fill%3D%27none%27 xmlns%3D%27http://www.w3.org/2000/svg%27%3E%3Cpath d%3D%27M2 2L7 7L12 2%27 stroke%3D%27%23BBD3FF%27 stroke-width%3D%271.8%27 stroke-linecap%3D%27round%27 stroke-linejoin%3D%27round%27/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:left 26px center;background-size:14px;color-scheme:light;}',
+              '.smm-inline-select:focus{border-color:#7d96ff;box-shadow:0 24px 44px rgba(61,96,255,.45);}',
+              '.smm-inline-select option, .smm-inline-select optgroup{background:#0e1741;color:#f3f6ff;}',
+              '.smm-inline-label-row{display:flex;align-items:center;justify-content:space-between;gap:14px;}',
+              '.smm-inline-label-row label{margin-bottom:0;flex:1;}',
+              '.smm-service-pill{min-width:66px;text-align:center;font-weight:800;font-size:.95rem;color:#1c2f8d;background:linear-gradient(180deg,#f4f6ff,#dfe5ff);border:1px solid rgba(76,124,255,.45);border-radius:999px;padding:7px 20px;box-shadow:0 14px 32px rgba(62,92,255,.32);transition:opacity .2s ease;}',
+              '.smm-service-pill.is-empty{opacity:.45;}',
+              '.smm-inline-form select:disabled{opacity:.5;cursor:not-allowed;}',
+              '.smm-inline-description-body{width:100%;border:1px solid rgba(125,150,255,.55);border-radius:16px;padding:16px 22px;font-size:1.02rem;font-weight:600;color:#f5f7ff;background:linear-gradient(180deg,#101a48,#0a1231);line-height:1.7;min-height:96px;box-shadow:0 20px 40px rgba(4,6,18,.6);white-space:pre-line;word-break:break-word;transition:border-color .2s ease,box-shadow .2s ease;}',
+              '.smm-inline-description-body.empty{color:#8aa0f2;}',
+              '.smm-inline-hint{font-size:.88rem;color:#c0cbff;margin-top:6px;}',
+              '.smm-inline-total{font-size:1.4rem;font-weight:800;color:#f5f7ff;}',
+              '.smm-inline-row{display:flex;flex-wrap:wrap;gap:16px;}',
+              '.smm-inline-row .smm-inline-group{flex:1;min-width:240px;}',
+              '.smm-inline-submit{border:0;border-radius:18px;padding:14px 18px;font-weight:800;font-size:1.05rem;background:linear-gradient(135deg,#4c6ef5,#7c3aed);color:#fff;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease;}',
+              '.smm-inline-submit:hover{transform:translateY(-1px);box-shadow:0 15px 35px rgba(79,70,229,.25);}',
+              '.smm-inline-message{text-align:center;margin:18px 0 0;font-weight:600;}',
+              'html[data-theme=\"dark\"] .smm-inline-form{background:linear-gradient(180deg,#050b1e,#0a132f);border-color:rgba(118,139,255,.45);}',
+              'html[data-theme=\"dark\"] .smm-inline-form input{background:#0e1741;color:#f3f6ff;border-color:rgba(118,139,255,.45);box-shadow:0 12px 26px rgba(0,0,0,.45);}',
+              'html[data-theme=\"dark\"] .smm-inline-select, body.dark-mode .smm-inline-select{background:linear-gradient(180deg,#050b1e,#080f29);color:#e8ecff;border-color:rgba(125,150,255,.65);box-shadow:0 20px 36px rgba(0,0,0,.55);color-scheme:dark;}',
+              'html[data-theme=\"dark\"] .smm-inline-select option, body.dark-mode .smm-inline-select option, html[data-theme=\"dark\"] .smm-inline-select optgroup, body.dark-mode .smm-inline-select optgroup{background:#050b1e;color:#e8ecff;}',
+              'html[data-theme=\"dark\"] .smm-service-pill{background:rgba(27,52,137,.8);color:#e2e8ff;border-color:rgba(76,124,255,.45);box-shadow:0 15px 32px rgba(20,30,82,.5);}',
+              'html[data-theme=\"dark\"] .smm-inline-description-body, body.dark-mode .smm-inline-description-body{background:linear-gradient(180deg,#050b1e,#080f29);color:#f5f7ff;border-color:rgba(125,150,255,.65);box-shadow:0 20px 36px rgba(0,0,0,.55);}',
+              'html[data-theme=\"dark\"] .smm-inline-description-body.empty, body.dark-mode .smm-inline-description-body.empty{color:#9eadf3;}',
+              'html[data-theme=\"dark\"] .smm-inline-total{color:#f5f7ff;}',
+            ].join('');
+            var style = document.createElement('style');
+            style.textContent = css;
+            document.head.appendChild(style);
+          }catch(_){}
+        }
+
+        function createError(code, message){
+          var err = new Error(message || code || "error");
+          err.code = code || "unknown_error";
+          return err;
+        }
+
+        function ensureFirebaseAuth(){
+          if (typeof firebase === 'undefined') return null;
+          try{
+            if ((!firebase.apps || !firebase.apps.length) && window.__FIREBASE_CONFIG__){
+              firebase.initializeApp(window.__FIREBASE_CONFIG__);
+            }
+          }catch(_){}
+          try { return firebase.auth(); } catch(_){ return null; }
+        }
+
+        function getLocalSessionKey(){
+          try{
+            var parsed = JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
+            return parsed && parsed.sessionKey ? parsed.sessionKey : "";
+          }catch(_){
+            return "";
+          }
+        }
+
+        function waitForUser(){
+          var auth = ensureFirebaseAuth();
+          if (!auth) return Promise.resolve(null);
+          var current = auth.currentUser;
+          if (current) return Promise.resolve(current);
+          if (authReadyPromise) return authReadyPromise;
+          authReadyPromise = new Promise(function(resolve){
+            var unsubscribe = null;
+            try{
+              unsubscribe = auth.onAuthStateChanged(function(user){
+                try{ if (unsubscribe) unsubscribe(); }catch(_){}
+                authReadyPromise = null;
+                resolve(user || null);
+              }, function(){
+                try{ if (unsubscribe) unsubscribe(); }catch(_){}
+                authReadyPromise = null;
+                resolve(null);
+              });
+            }catch(_){
+              authReadyPromise = null;
+              resolve(null);
+            }
+          });
+          return authReadyPromise;
+        }
+
+        function fetchServices(force){
+          var now = Date.now();
+          if (!force && cache && cache.length && (now - lastFetched) < CACHE_TTL) return Promise.resolve(cache);
+          if (inflight) return inflight;
+
+          inflight = waitForUser().then(function(user){
+            if (!user) throw createError("login_required", "سجّل الدخول للاطلاع على خدمات الرشق");
+            var sessionKey = getLocalSessionKey();
+            if (!sessionKey) throw createError("session_missing", "يرجى إعادة تسجيل الدخول لتجديد الجلسة");
+            var url = new URL(API_BASE);
+            url.searchParams.set("mode", "services");
+            return user.getIdToken(true).then(function(token){
+              return fetch(url.toString(), {
+                method: "GET",
+                headers: {
+                  "Authorization": "Bearer " + token,
+                  "X-SessionKey": sessionKey
+                },
+                cache: "no-store"
+              });
+            });
+          }).then(async function(res){
+            var data = await res.json().catch(function(){ return {}; });
+            if (!res.ok || data.success === false){
+              throw createError(data.code || "fetch_failed", data.error || "تعذر تحميل قائمة الخدمات");
+            }
+            var list = Array.isArray(data.services) ? data.services : [];
+            cache = list;
+            lastFetched = Date.now();
+            return list;
+          }).catch(function(err){
+            if (!(err instanceof Error)) err = createError("fetch_failed", "تعذر تحميل القائمة");
+            throw err;
+          }).finally(function(){ inflight = null; });
+          return inflight;
+        }
+
+        function ensureMessage(section){
+          if (!section) return null;
+          var msg = section.__smmMessage;
+          if (msg && msg.parentNode) return msg;
+          msg = document.createElement('p');
+          msg.className = 'smm-inline-message';
+          msg.setAttribute('data-smm-message', '1');
+          msg.dir = 'rtl';
+          msg.style.display = 'none';
+          if (section.parentNode) section.parentNode.insertBefore(msg, section.nextSibling);
+          else section.appendChild(msg);
+          section.__smmMessage = msg;
+          return msg;
+        }
+
+        function setMessage(section, text, tone){
+          var node = ensureMessage(section);
+          if (!node) return;
+          if (!text){
+            node.style.display = 'none';
+            return;
+          }
+          node.textContent = text;
+          node.style.display = '';
+          if (tone === 'error') node.style.color = '#f87171';
+          else if (tone === 'warning') node.style.color = '#fbbf24';
+          else node.style.color = '#94a3b8';
+        }
+
+        function normalizeText(value){
+          return (value == null ? '' : String(value))
+            .toLowerCase()
+            .replace(/[ًٌٍَُِّْـ]/g,'')
+            .replace(/[إأآا]/g,'ا')
+            .replace(/ى/g,'ي')
+            .replace(/ة/g,'ه')
+            .replace(/\s+/g,' ')
+            .trim();
+        }
+
+        var uiState = {
+          services: [],
+          categories: [],
+          selectedCategory: '',
+          selectedServiceId: '',
+          searchQuery: ''
+        };
+
+        var uiRefs = null;
+        var qtyUserEdited = false;
+
+        function normalizeDescriptionValue(value){
+          if (value == null) return '';
+          if (typeof value === 'string') return value.trim();
+          if (typeof value === 'number' && isFinite(value)) return String(value);
+          return '';
+        }
+
+        function extractDescription(service){
+          if (!service || typeof service !== 'object') return '';
+          var primaryKeys = [
+            'description','desc','details','detail','info','note','notes','extra',
+            'Description','Desc','Details','Detail','Info','Note','Notes','Extra',
+            'description_ar','descriptionAr','Description_ar','DescriptionAr'
+          ];
+          for (var i = 0; i < primaryKeys.length; i++){
+            var key = primaryKeys[i];
+            if (Object.prototype.hasOwnProperty.call(service, key)){
+              var val = normalizeDescriptionValue(service[key]);
+              if (val) return val;
+            }
+          }
+          var regex = /(desc|note|info|detail|شرح|وصف|تعليم)/i;
+          for (var prop in service){
+            if (!Object.prototype.hasOwnProperty.call(service, prop)) continue;
+            if (!regex.test(prop)) continue;
+            var text = normalizeDescriptionValue(service[prop]);
+            if (text) return text;
+          }
+          return '';
+        }
+
+        function normalizeService(service){
+          if (!service) return null;
+          var id = service.id != null ? String(service.id) : '';
+          if (!id) return null;
+          var name = service.name || ('خدمة #' + id);
+          var category = service.category || name;
+          var description = extractDescription(service);
+          return {
+            id: id,
+            name: name,
+            category: category,
+            categoryKey: normalizeText(category) || 'misc',
+            description: description,
+            normalizedName: normalizeText(name),
+            normalizedDescription: normalizeText(description),
+            min: service.min || 0,
+            max: service.max || 0,
+            rate: service.rate != null ? Number(service.rate) : null,
+            unit: Number(service.unit) || 1000,
+            raw: service
+          };
+        }
+
+        function escapeHtml(str){
+          return (str == null ? '' : String(str))
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;')
+            .replace(/'/g,'&#39;');
+        }
+
+        function buildCategories(list){
+          var map = {};
+          var out = [];
+          list.forEach(function(item){
+            if (!item) return;
+            if (!map[item.categoryKey]){
+              map[item.categoryKey] = true;
+              out.push({ key: item.categoryKey, label: item.category });
+            }
+          });
+          return out;
+        }
+
+        function getFilteredServices(){
+          var cat = uiState.selectedCategory;
+          var query = normalizeText(uiState.searchQuery || '');
+          return uiState.services.filter(function(service){
+            if (cat && service.categoryKey !== cat) return false;
+            if (!query) return true;
+            var haystack = (service.normalizedName || '') + ' ' + (service.normalizedDescription || '') + ' ' + (service.id || '') + ' ' + (service.categoryKey || '');
+            return haystack.indexOf(query) !== -1;
+          });
+        }
+
+        function renderCategories(){
+          if (!uiRefs || !uiRefs.category) return;
+          var select = uiRefs.category;
+          select.innerHTML = '';
+          if (!uiState.categories.length){
+            var placeholder = document.createElement('option');
+            placeholder.textContent = 'لا توجد فئات متاحة حالياً';
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            select.appendChild(placeholder);
+            select.disabled = true;
+            return;
+          }
+          select.disabled = false;
+          if (!uiState.selectedCategory){
+            uiState.selectedCategory = uiState.categories[0].key;
+          }
+          uiState.categories.forEach(function(cat){
+            var opt = document.createElement('option');
+            opt.value = cat.key;
+            opt.textContent = cat.label;
+            if (cat.key === uiState.selectedCategory) opt.selected = true;
+            select.appendChild(opt);
+          });
+        }
+
+        function renderServices(){
+          if (!uiRefs || !uiRefs.service) return;
+          var select = uiRefs.service;
+          select.innerHTML = '';
+          var filtered = getFilteredServices();
+          if (!filtered.length){
+            var placeholder = document.createElement('option');
+            placeholder.textContent = uiState.selectedCategory ? 'لا توجد خدمات مطابقة' : 'اختر الفئة أولاً';
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            select.appendChild(placeholder);
+            select.disabled = true;
+            if (uiRefs.serviceEmpty){
+              uiRefs.serviceEmpty.textContent = placeholder.textContent;
+              uiRefs.serviceEmpty.style.display = 'block';
+            }
+            uiState.selectedServiceId = '';
+            qtyUserEdited = false;
+            updateDetails();
+            return;
+          }
+          select.disabled = false;
+          if (uiRefs.serviceEmpty) uiRefs.serviceEmpty.style.display = 'none';
+          var hasSelected = filtered.some(function(item){ return item.id === uiState.selectedServiceId; });
+          if (!hasSelected){
+            uiState.selectedServiceId = filtered[0].id;
+            qtyUserEdited = false;
+          }
+          filtered.forEach(function(service){
+            var opt = document.createElement('option');
+            opt.value = service.id;
+            opt.textContent = '#' + service.id + ' • ' + (service.name || ('خدمة #' + service.id));
+            if (service.id === uiState.selectedServiceId) opt.selected = true;
+            select.appendChild(opt);
+          });
+          updateDetails();
+        }
+
+        function ensureForm(section){
+          if (uiRefs && uiRefs.section === section) return uiRefs;
+          if (!section) return null;
+          section.innerHTML = '';
+          var form = document.createElement('div');
+          form.className = 'smm-inline-form';
+          form.innerHTML = [
+            '<div class="smm-inline-group">',
+              '<label>بحث</label>',
+              '<div class="smm-inline-search">',
+                '<input type="text" data-smm-search placeholder="ابحث عن الخدمة أو التصنيف...">',
+                '<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>',
+              '</div>',
+            '</div>',
+            '<div class="smm-inline-group">',
+              '<label for="smmInlineCategory">الفئة</label>',
+              '<select id="smmInlineCategory" data-smm-category class="smm-inline-select"></select>',
+            '</div>',
+            '<div class="smm-inline-group">',
+              '<label for="smmInlineService" data-smm-service-label>الخدمة</label>',
+              '<select id="smmInlineService" data-smm-service class="smm-inline-select"></select>',
+              '<p class="smm-inline-hint" data-smm-service-empty>اختر فئة لعرض الخدمات.</p>',
+            '</div>',
+            '<div class="smm-inline-group">',
+              '<label>الوصف</label>',
+              '<div class="smm-inline-description-body empty" data-smm-description>اختر خدمة لعرض تفاصيلها والتعليمات.</div>',
+            '</div>',
+            '<div class="smm-inline-group">',
+              '<label for="smmInlineLink">الرابط</label>',
+              '<input id="smmInlineLink" type="url" data-smm-link placeholder="أدخل الرابط المطلوب" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
+            '</div>',
+            '<div class="smm-inline-row">',
+              '<div class="smm-inline-group">',
+                '<label for="smmInlineQty">الكمية</label>',
+                '<input id="smmInlineQty" type="number" step="1" data-smm-qty placeholder="أدخل الكمية المطلوبة">',
+                '<div class="smm-inline-hint" data-smm-qty-hint>الحد الأدنى - الحد الأقصى سيتم عرضه بعد اختيار الخدمة.</div>',
+              '</div>',
+              '<div class="smm-inline-group">',
+                '<label>السعر</label>',
+                '<div class="smm-inline-total" data-smm-total>—</div>',
+              '</div>',
+            '</div>',
+            '<button type="button" class="smm-inline-submit" data-smm-submit>تنفيذ الطلب</button>'
+          ].join('');
+          section.appendChild(form);
+          uiRefs = {
+            section: section,
+            form: form,
+            search: form.querySelector('[data-smm-search]'),
+            category: form.querySelector('[data-smm-category]'),
+            service: form.querySelector('[data-smm-service]'),
+            serviceEmpty: form.querySelector('[data-smm-service-empty]'),
+            serviceLabel: form.querySelector('[data-smm-service-label]'),
+            description: form.querySelector('[data-smm-description]'),
+            link: form.querySelector('[data-smm-link]'),
+            qty: form.querySelector('[data-smm-qty]'),
+            qtyHint: form.querySelector('[data-smm-qty-hint]'),
+            total: form.querySelector('[data-smm-total]'),
+            submit: form.querySelector('[data-smm-submit]')
+          };
+          if (uiRefs.search){
+            uiRefs.search.addEventListener('input', function(e){
+              uiState.searchQuery = e.target.value || '';
+              renderServices();
+            });
+          }
+          if (uiRefs.category){
+            uiRefs.category.addEventListener('change', function(e){
+              uiState.selectedCategory = e.target.value || '';
+              uiState.selectedServiceId = '';
+              renderServices();
+            });
+          }
+          if (uiRefs.service){
+            uiRefs.service.addEventListener('change', function(e){
+              uiState.selectedServiceId = e.target.value || '';
+              qtyUserEdited = false;
+              updateDetails();
+            });
+          }
+          if (uiRefs.qty){
+            uiRefs.qty.addEventListener('input', function(){
+              qtyUserEdited = true;
+              updateTotal();
+            });
+          }
+          if (uiRefs.submit){
+            uiRefs.submit.addEventListener('click', handleSubmit);
+          }
+          return uiRefs;
+        }
+
+        function setInlineLoading(isLoading, text){
+          if (!uiRefs || !uiRefs.submit) return;
+          uiRefs.submit.disabled = !!isLoading;
+          uiRefs.submit.textContent = isLoading ? (text || 'جاري التنفيذ...') : 'تنفيذ الطلب';
+        }
+
+        var TURNSTILE_SITE_KEY = '0x4AAAAAABmiVmi7wosqeHQT';
+        var turnstileReadyPromise = null;
+        var turnstileWidgetId = null;
+
+        function ensureTurnstileScript(){
+          if (window.turnstile) return Promise.resolve();
+          if (turnstileReadyPromise) return turnstileReadyPromise;
+          turnstileReadyPromise = new Promise(function(resolve){
+            var s = document.createElement('script');
+            s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+            s.async = true;
+            s.defer = true;
+            s.onload = function(){ resolve(); };
+            s.onerror = function(){ resolve(); };
+            document.head.appendChild(s);
+          });
+          return turnstileReadyPromise;
+        }
+
+        function themeIsDark(){
+          try{
+            var attr = (document.documentElement.getAttribute('data-theme') || '').toLowerCase();
+            if (attr === 'dark') return true;
+            if (attr === 'light') return false;
+            return document.body.classList.contains('dark-mode');
+          }catch(_){
+            return false;
+          }
+        }
+
+        function getTurnstileContainer(){
+          if (!uiRefs || !uiRefs.form) return null;
+          var holder = uiRefs.form.querySelector('[data-smm-turnstile]');
+          if (!holder){
+            holder = document.createElement('div');
+            holder.setAttribute('data-smm-turnstile','1');
+            holder.style.marginTop = '12px';
+            uiRefs.form.appendChild(holder);
+          }
+          holder.innerHTML = '';
+          return holder;
+        }
+
+        async function getTurnstileToken(){
+          await ensureTurnstileScript();
+          var holder = getTurnstileContainer();
+          if (!holder) throw createError('turnstile_missing', 'تعذر تجهيز التحقق الأمني');
+          if (window.turnstile && turnstileWidgetId != null){
+            try { window.turnstile.remove(turnstileWidgetId); } catch(_){}
+            turnstileWidgetId = null;
+          }
+          return new Promise(function(resolve, reject){
+            try{
+              var opts = {
+                sitekey: TURNSTILE_SITE_KEY,
+                theme: themeIsDark() ? 'dark' : 'light',
+                callback: function(token){
+                  if (token) resolve(token);
+                  else reject(createError('turnstile_token_missing','فشل التحقق الأمني، حاول مجدداً'));
+                },
+                'expired-callback': function(){
+                  reject(createError('turnstile_expired','انتهت صلاحية التحقق الأمني، حاول مجدداً'));
+                },
+                'error-callback': function(){
+                  reject(createError('turnstile_error','تعذر تنفيذ التحقق الأمني'));
+                }
+              };
+              turnstileWidgetId = window.turnstile.render(holder, opts);
+            }catch(err){
+              reject(err);
+            }
+          });
+        }
+
+        function placeInlineOrder(service, link, qty){
+          var currentUser = null;
+          var sessionKey = null;
+          return waitForUser().then(function(user){
+            if (!user) throw createError('login_required','سجّل الدخول لتنفيذ الطلب.');
+            currentUser = user;
+            sessionKey = getLocalSessionKey();
+            if (!sessionKey) throw createError('session_missing','انتهت صلاحية الجلسة، يرجى إعادة تسجيل الدخول.');
+            return Promise.all([currentUser.getIdToken(true), getTurnstileToken()]);
+          }).then(function(results){
+            var idToken = results[0];
+            var turnstileToken = results[1];
+            var url = new URL(API_BASE);
+            url.searchParams.set('mode','order');
+            var payload = {
+              action: 'order',
+              serviceId: service.id,
+              quantity: qty,
+              link: link,
+              turnstileToken: turnstileToken,
+              currentUrl: window.location.href
+            };
+            return fetch(url.toString(), {
+              method: 'POST',
+              headers: {
+                'Content-Type':'application/json',
+                'Authorization':'Bearer ' + idToken,
+                'X-SessionKey': sessionKey
+              },
+              body: JSON.stringify(payload)
+            });
+          }).then(async function(res){
+            var data = await res.json().catch(function(){ return {}; });
+            if (!res.ok || data.success === false){
+              throw createError(data.code || 'order_failed', data.error || 'تعذر تنفيذ الطلب');
+            }
+            return data;
+          });
+        }
+
+        function getSelectedService(){
+          if (!uiState.selectedServiceId) return null;
+          return uiState.services.find(function(s){ return s.id === uiState.selectedServiceId; }) || null;
+        }
+
+        function updateDetails(){
+          var service = getSelectedService();
+          if (uiRefs && uiRefs.description){
+            if (!service){
+              uiRefs.description.textContent = 'اختر خدمة لعرض تفاصيلها والتعليمات.';
+              uiRefs.description.classList.add('empty');
+            } else if (service.description){
+              uiRefs.description.innerHTML = escapeHtml(service.description).replace(/\n/g, '<br>');
+              uiRefs.description.classList.remove('empty');
+            } else {
+              uiRefs.description.textContent = 'لا يوجد وصف متاح لهذه الخدمة.';
+              uiRefs.description.classList.add('empty');
+            }
+          }
+          if (uiRefs && uiRefs.serviceLabel){
+            uiRefs.serviceLabel.textContent = 'الخدمة';
+          }
+          syncQuantityLimits(service);
+          updateTotal();
+        }
+
+        function syncQuantityLimits(service){
+          if (!uiRefs || !uiRefs.qty) return;
+          if (!service){
+            uiRefs.qty.value = '';
+            if (uiRefs.qtyHint) uiRefs.qtyHint.textContent = 'الحد الأدنى - الحد الأقصى سيتم عرضه بعد اختيار الخدمة.';
+            qtyUserEdited = false;
+            return;
+          }
+          var min = Number(service.min) || 0;
+          var max = Number(service.max) || 0;
+          if (uiRefs.qtyHint){
+            uiRefs.qtyHint.textContent = (min ? ('الحد الأدنى ' + min) : 'بدون حد أدنى') + ' - ' + (max ? ('الحد الأقصى ' + max) : 'بدون حد أقصى');
+          }
+          if (!qtyUserEdited){
+            uiRefs.qty.value = min ? String(min) : '';
+          }
+        }
+
+        function clampQuantity(){
+          if (!uiRefs || !uiRefs.qty) return;
+          var service = getSelectedService();
+          if (!service) return;
+          var min = Number(service.min) || 0;
+          var max = Number(service.max) || 0;
+          var value = Number(uiRefs.qty.value);
+          if (!Number.isFinite(value)) return;
+          if (min && value < min) value = min;
+          if (max && max > 0 && value > max) value = max;
+          uiRefs.qty.value = value;
+        }
+
+        function updateTotal(){
+          if (!uiRefs || !uiRefs.total) return;
+          var service = getSelectedService();
+          if (!service){
+            uiRefs.total.textContent = '—';
+            return;
+          }
+          var qty = Number(uiRefs.qty && uiRefs.qty.value);
+          if (!Number.isFinite(qty) || qty <= 0){
+            uiRefs.total.textContent = '—';
+            return;
+          }
+          var unit = Number(service.unit) || 1000;
+          var ratePerUnit = null;
+          if (service.rate != null && Number.isFinite(Number(service.rate))){
+            ratePerUnit = Number(service.rate);
+          }
+          if (ratePerUnit == null || !Number.isFinite(ratePerUnit)){
+            uiRefs.total.textContent = '—';
+            return;
+          }
+          var total = ratePerUnit * qty;
+          uiRefs.total.textContent = total.toFixed(3) + ' $';
+        }
+
+        function submitInlineOrder(service, link, qty){
+          if (!uiRefs || !uiRefs.section) return;
+          setInlineLoading(true);
+          setMessage(uiRefs.section, 'جاري تنفيذ الطلب...', 'info');
+          placeInlineOrder(service, link, qty).then(function(result){
+            setMessage(uiRefs.section, '', '');
+            var suffix = result && result.orderId ? (' #' + result.orderId) : '';
+            showToast('تم تسجيل الطلب' + suffix, true);
+            try{
+              if (uiRefs.link) uiRefs.link.value = '';
+            }catch(_){}
+          }).catch(function(err){
+            var msg = err && err.message ? err.message : 'تعذر تنفيذ الطلب';
+            setMessage(uiRefs.section, msg, 'error');
+            showToast(msg, false);
+          }).finally(function(){
+            setInlineLoading(false);
+          });
+        }
+
+        function handleSubmit(){
+          var service = getSelectedService();
+          if (!service){
+            showToast('اختر الخدمة أولاً', false);
+            return;
+          }
+          var link = (uiRefs.link && uiRefs.link.value || '').trim();
+          if (!link){
+            showToast('يرجى إدخال الرابط المطلوب', false);
+            return;
+          }
+          var qty = Number(uiRefs.qty && uiRefs.qty.value);
+          if (!Number.isFinite(qty) || qty <= 0){
+            showToast('يرجى إدخال كمية صحيحة', false);
+            return;
+          }
+          var min = Number(service.min) || 0;
+          var max = Number(service.max) || 0;
+          if (min && qty < min){
+            showToast('الحد الأدنى للطلب هو ' + min, false);
+            return;
+          }
+          if (max && max > 0 && qty > max){
+            showToast('الحد الأقصى للطلب هو ' + max, false);
+            return;
+          }
+          submitInlineOrder(service, link, qty);
+        }
+
+        function clearStaticCards(section){
+          if (!section || section.dataset.smmPrepared === '1') return;
+          section.dataset.smmPrepared = '1';
+          Array.prototype.slice.call(section.querySelectorAll('.card')).forEach(function(node){
+            if (!node || node.dataset.smmCard === '1') return;
+            try { node.remove(); } catch(_){ if (node.parentNode) node.parentNode.removeChild(node); }
+          });
+        }
+
+        function render(section, options){
+          options = options || {};
+          ensureStyles();
+          if (!section) return Promise.resolve();
+          clearStaticCards(section);
+          setMessage(section, 'جاري تحميل خدمات...', 'info');
+          var form = ensureForm(section);
+          if (!form){
+            setMessage(section, 'تعذر تحضير نموذج الخدمات.', 'error');
+            return Promise.resolve();
+          }
+          return fetchServices(options.force === true).then(function(list){
+            var normalized = list.map(normalizeService).filter(Boolean);
+            uiState.services = normalized;
+            uiState.categories = buildCategories(normalized);
+            var hasCat = uiState.categories.some(function(cat){ return cat.key === uiState.selectedCategory; });
+            if (!hasCat) uiState.selectedCategory = uiState.categories[0] ? uiState.categories[0].key : '';
+            uiState.selectedServiceId = '';
+            if (!uiState.categories.length){
+              setMessage(section, 'لا توجد خدمات متاحة حالياً.', 'warning');
+              renderCategories();
+              renderServices();
+              return;
+            }
+            renderCategories();
+            renderServices();
+            setMessage(section, '', '');
+          }).catch(function(err){
+            var code = err && err.code;
+            if (code === 'login_required') setMessage(section, err.message || 'سجّل الدخول للاطلاع على الخدمات.', 'warning');
+            else if (code === 'session_missing') setMessage(section, err.message || 'يرجى إعادة تسجيل الدخول لتحديث الجلسة.', 'warning');
+            else setMessage(section, err && err.message ? err.message : 'تعذر تحميل خدمات الرشق.', 'error');
+          }).finally(function(){
+            try { applyCardsVisibility(); } catch(_){}
+          });
+        }
+
+        return {
+          render: render,
+          refresh: function(section){ return render(section, { force: true }); }
+        };
+      })();
+
       var routes = {
         'games': {
           url: 'games.html',
@@ -2844,7 +3585,26 @@ button#logoutBtn:hover{background:#990000}
             }
           }
         },
-        'social':        { url: 'social.html',        title: 'مواقع التواصل' },
+        'social': {
+          url: 'social.html',
+          title: 'رشق',
+          onShow: function(){
+            var attempts = 0;
+            (function waitAndRender(){
+              try{
+                var section = inlineBox ? inlineBox.querySelector('.categories') : null;
+                if (!section && attempts < 5){
+                  attempts++;
+                  setTimeout(waitAndRender, 120);
+                  return;
+                }
+                socialBoostInline.render(section);
+              } catch(err){
+                console.warn("social render failed:", err);
+              }
+            })();
+          }
+        },
         'software':      { url: 'software.html',      title: 'اشتراكات ' },
         'freefireinbut': { url: 'freefireinbut.html', title: 'فري فاير' },
         'settings':      { title: 'إعدادات الحساب', build: settingsRoute.build, onShow: settingsRoute.onShow },
@@ -2990,19 +3750,45 @@ button#logoutBtn:hover{background:#990000}
           '<div class="search-container">\n' +
             '<input type="text" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" />\n' +
           '</div>\n' +
-          '<section class="categories">\n' +
-            '<a href="instainbut.html" class="card" data-title="رشق انستا">\n' +
-              '<img draggable="false" src="IMGS/insta.jpg" alt="رشق انستا"/>\n' +
-              '<h2>رشق انستا</h2>\n' +
-            '</a>\n' +
-            '<a href="facebook.html" class="card" data-title="رشق فيس">\n' +
-              '<img draggable="false" src="IMGS/facebook.jpg" alt="رشق فيس"/>\n' +
-              '<h2>رشق فيس</h2>\n' +
-            '</a>\n' +
-            '<a href="tiktok.html" class="card" data-title="رشق تيك توك">\n' +
-              '<img draggable="false" src="IMGS/tiktok.jpg" alt="رشق تيك توك"/>\n' +
-              '<h2>رشق تيك توك</h2>\n' +
-            '</a>\n' +
+          '<section class="categories" data-smm-inline="1">\n' +
+            '<div class="smm-inline-form">\n' +
+              '<div class="smm-inline-group">\n' +
+                '<label>بحث</label>\n' +
+                '<div class="smm-inline-search">\n' +
+                  '<input type="text" placeholder="ابحث عن الخدمة أو التصنيف...">\n' +
+                  '<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>\n' +
+                '</div>\n' +
+              '</div>\n' +
+              '<div class="smm-inline-group">\n' +
+                '<label>الفئة</label>\n' +
+                '<select disabled><option>جاري التحميل...</option></select>\n' +
+              '</div>\n' +
+              '<div class="smm-inline-group">\n' +
+                '<label>الخدمة</label>\n' +
+                '<select disabled><option>جاري التحميل...</option></select>\n' +
+                '<p class="smm-inline-hint">سيتم عرض الخدمات بعد تسجيل الدخول.</p>\n' +
+              '</div>\n' +
+              '<div class="smm-inline-group">\n' +
+                '<label>الوصف</label>\n' +
+                '<div class="smm-inline-description-body empty">اختر خدمة لعرض تفاصيلها.</div>\n' +
+              '</div>\n' +
+              '<div class="smm-inline-group">\n' +
+                '<label>الرابط</label>\n' +
+                '<input type="url" placeholder="أدخل الرابط المطلوب" disabled>\n' +
+              '</div>\n' +
+              '<div class="smm-inline-row">\n' +
+                '<div class="smm-inline-group">\n' +
+                  '<label>الكمية</label>\n' +
+                  '<input type="number" disabled>\n' +
+                  '<div class="smm-inline-hint">سيتم تحديد الحدود بعد اختيار الخدمة.</div>\n' +
+                '</div>\n' +
+                '<div class="smm-inline-group">\n' +
+                  '<label>السعر</label>\n' +
+                  '<div class="smm-inline-total">—</div>\n' +
+                '</div>\n' +
+              '</div>\n' +
+              '<button type="button" class="smm-inline-submit" disabled>تنفيذ الطلب</button>\n' +
+            '</div>\n' +
           '</section>',
         software:
           '<div class="search-container">\n' +
@@ -3302,3 +4088,6 @@ button#logoutBtn:hover{background:#990000}
 
 </body>
 </html>
+
+
+
