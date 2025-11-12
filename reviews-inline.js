@@ -61,9 +61,80 @@
         5: document.getElementById('count-5')
       };
 
-      const REVIEWS_SECRET = 'QusaiStore$Reviews#2025!';
-      const REVIEWS_SALT = 'qs-store-salt-2025';
+      const REVIEWS_SECRET = 'ZaeemStore$Reviews#2025!';
+      const REVIEWS_SALT = 'z3-store-salt-2025';
       const REVIEWS_DOC = db.collection('comments').doc('all');
+      const MANWAL_DEFAULT_BASE = 'https://z3em-manwal.laithqarqaz1.workers.dev/';
+      const BAD_WORDS = [
+        'shit','fuck','bitch','asshole','bastard','damn','porn','nude','dick','slut','pussy','whore',
+        'قحبة','شرموطة','قذر','كس','زب','زبي','لعين','كلب','حيوان','منيوك','شرموط','خرا','كسم',
+        'عاهرة','لوطي','وسخ','حقير','خنزير','زنده','طيز','نجس'
+      ];
+
+      function getManualRouterBase(){
+        try{
+          const custom = localStorage.getItem('MANWAL_ROUTER_BASE');
+          if (custom) return custom;
+        }catch(_){}
+        return MANWAL_DEFAULT_BASE;
+      }
+
+      function buildReviewsUrl(action){
+        let base = MANWAL_DEFAULT_BASE;
+        try{
+          const b = getManualRouterBase();
+          if (b) base = b;
+        }catch(_){}
+        let url;
+        try{ url = new URL(base); }
+        catch(_){ url = new URL(MANWAL_DEFAULT_BASE); }
+        url.searchParams.set('game','reviews');
+        if (action) url.searchParams.set('action', action);
+        return url;
+      }
+
+      async function sendReviewRequest(action, payload, idToken){
+        const url = buildReviewsUrl(action);
+        const headers = {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-Game': 'reviews'
+        };
+        if (idToken) headers.Authorization = `Bearer ${idToken}`;
+        const res = await fetch(url.toString(), {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ ...(payload||{}), action })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data?.success === false || data?.ok === false){
+          throw new Error(data?.error || 'فشل الاتصال بالخادم.');
+        }
+        return data;
+      }
+
+      function normalizeForProfanity(text){
+        try{
+          return (text||'').toString().toLowerCase()
+            .replace(/[\u0640\u200c\u200d]/g,'')
+            .normalize('NFKD')
+            .replace(/[\u0300-\u036f]/g,'')
+            .replace(/[\u0610-\u061a\u064b-\u065f\u06d6-\u06ed]/g,'')
+            .replace(/[^a-z0-9\u0600-\u06FF]+/g,' ')
+            .replace(/\s+/g,' ')
+            .trim();
+        }catch(_){
+          return (text||'').toString().toLowerCase();
+        }
+      }
+
+      function containsBadWords(text){
+        if (!text) return false;
+        const normalized = normalizeForProfanity(text);
+        if (!normalized) return false;
+        const compact = normalized.replace(/\s+/g,'');
+        return BAD_WORDS.some(word => normalized.includes(word) || compact.includes(word));
+      }
 
       function bufToBase64(buf){
         try{
@@ -166,67 +237,59 @@
         }
       });
 
-      submitBtn.addEventListener('click', () => {
+      submitBtn.addEventListener('click', async () => {
         const user = auth.currentUser;
         if (!user) {
           alert('يجب تسجيل الدخول لإرسال تعليق.');
           return;
         }
-
-        db.collection('users').doc(user.uid).get().then(doc => {
-          const userName = doc.exists ? doc.data().username : 'مستخدم';
-          const now = Date.now();
-          const reviewId = db.collection('comments').doc().id;
-
-          codePreview.textContent = `كود التقييم: ${reviewId.substring(0, 8)}`;
-          codePreview.style.display = 'block';
-
-          submitBtn.disabled = true;
-          submitBtn.textContent = 'جارٍ الإرسال...';
-
-          db.runTransaction(async (tx) => {
-            const snap = await tx.get(REVIEWS_DOC);
-            let body = {};
-            if (snap.exists) {
-              const raw = snap.data()||{};
-              body = await decodeDocDataToBody(raw);
-            }
-            body.reviews = Array.isArray(body.reviews) ? body.reviews : [];
-            const newItem = {
-              id: reviewId,
-              rating: Number(selectedRating)||0,
-              comment: reviewText.value.trim(),
-              userName: userName,
-              createdAtMillis: now,
-              createdAtISO: new Date(now).toISOString(),
-              likes: 0,
-              dislikes: 0,
-              votes: {},
-              replies: []
-            };
-            body.reviews.push(newItem);
-            const enc = await encryptBody(body);
-            tx.set(REVIEWS_DOC, { payload: enc }, { merge: true });
-          })
-          .then(() => {
-            reviewText.value = '';
-            selectedRating = 0;
-            updateStars(0);
-            checkFormValid();
-            loadReviews();
-            submitBtn.textContent = 'تم الإرسال';
-            setTimeout(() => {
-              submitBtn.textContent = 'إرسال التقييم';
-              codePreview.style.display = 'none';
-            }, 1500);
-          })
-          .catch(err => {
-            alert('حدث خطأ أثناء الإرسال: ' + err.message);
-            submitBtn.disabled = false;
+        if (!(selectedRating > 0)) {
+          alert('يرجى اختيار عدد النجوم.');
+          return;
+        }
+        const textValue = reviewText.value.trim();
+        if (!textValue.length) {
+          alert('يرجى كتابة تعليقك قبل الإرسال.');
+          return;
+        }
+        if (containsBadWords(textValue)) {
+          alert('تعذر إرسال التقييم بسبب وجود كلمات غير لائقة.');
+          reviewText.focus();
+          return;
+        }
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'جارٍ الإرسال...';
+        try {
+          const idToken = await user.getIdToken().catch(() => user.getIdToken(true));
+          const response = await sendReviewRequest('create', {
+            rating: Number(selectedRating) || 0,
+            comment: textValue,
+            clientTimestamp: Date.now(),
+            source: location.href
+          }, idToken);
+          const reviewId = String(response?.reviewId || response?.review?.id || '').trim();
+          if (reviewId) {
+            codePreview.textContent = `كود التقييم: ${reviewId.substring(0, 8)}`;
+            codePreview.style.display = 'block';
+          } else {
+            codePreview.style.display = 'none';
+          }
+          reviewText.value = '';
+          selectedRating = 0;
+          updateStars(0);
+          checkFormValid();
+          loadReviews();
+          submitBtn.textContent = 'تم الإرسال';
+          setTimeout(() => {
             submitBtn.textContent = 'إرسال التقييم';
             codePreview.style.display = 'none';
-          });
-        });
+          }, 1500);
+        } catch (err) {
+          alert('حدث خطأ أثناء الإرسال: ' + (err?.message || 'تعذر الاتصال بالخادم.'));
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'إرسال التقييم';
+          codePreview.style.display = 'none';
+        }
       });
 
       function updateStars(rating) {
@@ -247,7 +310,17 @@
       }
 
       function checkFormValid() {
-        submitBtn.disabled = !(selectedRating > 0 && reviewText.value.trim().length > 0);
+        const value = reviewText.value.trim();
+        const hasBad = containsBadWords(value);
+        try {
+          if (reviewText.setCustomValidity) {
+            reviewText.setCustomValidity(hasBad ? 'يرجى تجنب استخدام الألفاظ غير اللائقة.' : '');
+            if (hasBad && typeof reviewText.reportValidity === 'function') {
+              reviewText.reportValidity();
+            }
+          }
+        } catch(_){}
+        submitBtn.disabled = !(selectedRating > 0 && value.length > 0) || hasBad;
       }
 
       function filterReviews(rating) {
@@ -311,6 +384,7 @@
         '    <button class="vote-btn dislike'+dislikeActive+'" type="button" aria-label="لم يعجبني"><span class="vote-count dislike-count">'+Number(data.dislikes||0)+'</span><i class="fa-regular fa-thumbs-down"></i></button>',
         toggleRepliesHTML,
         '    <button class="vote-btn reply" type="button" aria-label="رد"><i class="fa-regular fa-comment"></i><span class="reply-label">رد</span></button>',
+        '    <button class="vote-btn report" type="button" aria-label="الإبلاغ"><i class="fa-regular fa-flag"></i><span class="report-label">إبلاغ</span></button>',
         '    <div class="reply-box">',
         '      <textarea class="reply-input" placeholder="أكتب ردّك..."></textarea>',
         '      <div>',
@@ -670,6 +744,26 @@
         }catch(e){ console.error(e); alert('تعذر إرسال الرد حالياً.'); }
       }
 
+      async function reportReview(reviewId){
+        if (!reviewId) return;
+        const user = auth.currentUser;
+        if (!user) {
+          alert('يجب تسجيل الدخول قبل الإبلاغ.');
+          return;
+        }
+        const confirmReport = window.confirm('هل تريد الإبلاغ عن هذا التعليق؟');
+        if (!confirmReport) return;
+        let reason = window.prompt('اذكر سبب الإبلاغ (اختياري):', '') || '';
+        if (reason.length > 240) reason = reason.slice(0, 240);
+        try{
+          const token = await user.getIdToken().catch(() => user.getIdToken(true));
+          await sendReviewRequest('report', { reviewId, reason }, token);
+          alert('شكرًا لك، تم إرسال البلاغ للمراجعة.');
+        }catch(err){
+          alert('تعذر إرسال البلاغ: ' + (err?.message || 'خطأ غير معروف.'));
+        }
+      }
+
       function attachListEvents(){
         if (reviewsList.__reviewsBound) return;
         reviewsList.__reviewsBound = true;
@@ -678,6 +772,7 @@
           const dislikeBtn = e.target.closest('.vote-btn.dislike');
           const toggleRepliesBtn = e.target.closest('.vote-btn.toggle-replies');
           const replyToggle = e.target.closest('.vote-btn.reply');
+          const reportBtn = e.target.closest('.vote-btn.report');
           const sendReplyBtn = e.target.closest('.send-reply');
           const cancelReplyBtn = e.target.closest('.cancel-reply');
           const replyActionContainer = e.target.closest('.reply-actions');
@@ -695,6 +790,11 @@
           const rootActions = rootItem ? rootItem.querySelector('.review-actions[data-id]') : null;
           const id = rootActions ? rootActions.getAttribute('data-id') : null;
           if (!id) return;
+
+          if (reportBtn){
+            await reportReview(id);
+            return;
+          }
 
           if (toggleRepliesBtn){
             const replyArticle = e.target.closest('.reply-item');
@@ -799,4 +899,5 @@
     })(authInstance, dbInstance);
   };
 })();
+
 

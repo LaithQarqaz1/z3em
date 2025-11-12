@@ -1,4 +1,4 @@
-﻿/* Qusai Shop - Service Worker
+﻿/* Zaeem Store - Service Worker
  * Strategy:
  * - Images: cache-first (read from phone after first load), with LRU trim.
  * - Static assets (css/js/fonts): stale-while-revalidate.
@@ -198,4 +198,5 @@ async function staleWhileRevalidateStatic(req) {
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
+
 
