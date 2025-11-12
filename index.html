@@ -2299,9 +2299,17 @@ button#logoutBtn:hover{background:#990000}
 
         function showToast(text, ok){
           try{
+            var isError = ok === false;
+            var fallback = isError ? 'حدث خطأ غير معروف' : 'تم تنفيذ العملية';
+            var message = text;
+            if (message == null || (typeof message === 'string' && message.trim() === '')){
+              message = fallback;
+            } else if (typeof message !== 'string'){
+              message = String(message);
+            }
             var toast = document.createElement('div');
             toast.className = 'toast';
-            toast.textContent = (ok === false ? '❌ ' : '✅ ') + text;
+            toast.textContent = (isError ? '❌ ' : '✅ ') + message;
             document.body.appendChild(toast);
             setTimeout(function(){
               try { toast.remove(); } catch(_){ if (toast.parentNode) toast.parentNode.removeChild(toast); }
@@ -3482,7 +3490,8 @@ button#logoutBtn:hover{background:#990000}
               if (uiRefs.link) uiRefs.link.value = '';
             }catch(_){}
           }).catch(function(err){
-            var msg = err && err.message ? err.message : 'تعذر تنفيذ الطلب';
+            var raw = err && (err.message || err.error || err.hint);
+            var msg = (typeof raw === 'string' && raw.trim()) ? raw : 'تعذر تنفيذ الطلب';
             setMessage(uiRefs.section, msg, 'error');
             showToast(msg, false);
           }).finally(function(){
@@ -4088,6 +4097,5 @@ button#logoutBtn:hover{background:#990000}
 
 </body>
 </html>
-
 
 
