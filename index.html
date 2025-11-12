@@ -226,6 +226,16 @@
   @keyframes luxSweep{ 0%{transform:translateX(-20%) rotate(12deg)} 100%{transform:translateX(120%) rotate(12deg)} }
   @media (prefers-reduced-motion: reduce){ a.card.auto::after{animation:none} }
   a.card.auto:hover{ transform:translateY(-4px) scale(1.01); box-shadow:0 16px 36px rgba(0,0,0,.18), 0 0 28px rgba(250,204,21,.16) }
+  @media (max-width: 600px){
+    a.card.auto::before{
+      width: 120px;
+      height: 26px;
+      top: 10px;
+      right: -38px;
+      font-size: .72rem;
+      border-radius: 8px;
+    }
+  }
 
   /* Inline page chrome */
   #inlinePage{margin-top:10px}
@@ -4090,5 +4100,4 @@ button#logoutBtn:hover{background:#990000}
 
 </body>
 </html>
-
 
