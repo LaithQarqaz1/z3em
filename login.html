@@ -180,6 +180,12 @@
     font-size:1rem; cursor:pointer; transition:transform .06s ease, box-shadow .2s ease;
     box-shadow: 0 6px 14px rgba(79,70,229,.08);
   }
+  .btn:disabled,
+  .btn.is-loading{
+    opacity:.65;
+    cursor:not-allowed;
+    pointer-events:none;
+  }
   .btn:active{transform:translateY(1px)}
   .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-2)); color:#fff}
   .btn-secondary{
@@ -1315,6 +1321,73 @@
     else if (form === "register") registerForm.classList.remove("hidden");
   }
 
+  /* ===== أدوات فحص الاتصال وإدارة الأزرار ===== */
+  const NETWORK_CHECK_URL = "https://www.gstatic.com/generate_204";
+  const NETWORK_TIMEOUT_MS = 4500;
+
+  const sleep = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  async function pingNetwork(timeoutMs = NETWORK_TIMEOUT_MS) {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      return { ok: false, code: "network/offline" };
+    }
+    const fetchOptions = { mode: "no-cors", cache: "no-store" };
+    let controller;
+    let timer;
+    if (typeof AbortController !== "undefined") {
+      controller = new AbortController();
+      fetchOptions.signal = controller.signal;
+      timer = setTimeout(() => controller.abort(), timeoutMs);
+    }
+    try {
+      await fetch(NETWORK_CHECK_URL, fetchOptions);
+      return { ok: true };
+    } catch (error) {
+      if (error && error.name === "AbortError") {
+        return { ok: false, code: "network/timeout" };
+      }
+      return { ok: false, code: "network/ping-blocked" };
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  async function ensureNetworkHealthy(targetEl, timeoutMs) {
+    const status = await pingNetwork(timeoutMs);
+    if (status.ok) return true;
+    if (targetEl) {
+      targetEl.style.color = "var(--danger, #ef4444)";
+      targetEl.textContent = translateFirebaseError(status.code);
+    }
+    return false;
+  }
+
+  function setButtonBusy(btn, busy = false) {
+    if (!btn) return;
+    btn.disabled = !!busy;
+    btn.classList.toggle("is-loading", !!busy);
+    if (busy) btn.setAttribute("aria-busy", "true");
+    else btn.removeAttribute("aria-busy");
+  }
+
+  async function withNetworkRetry(task, retries = 1) {
+    let attempt = 0;
+    let lastError;
+    while (attempt <= retries) {
+      try {
+        return await task();
+      } catch (error) {
+        lastError = error;
+        if (!error || error.code !== "auth/network-request-failed" || attempt === retries) {
+          break;
+        }
+        await sleep(1100 * (attempt + 1));
+      }
+      attempt++;
+    }
+    throw lastError;
+  }
+
   /* ===== تسجيل الدخول بواسطة Google ===== */
   const googleProvider = new GoogleAuthProvider();
   try { googleProvider.setCustomParameters({ prompt: 'select_account' }); } catch (_) {}
@@ -1340,9 +1413,13 @@
   let googleBusy = false;
 
   googleButtons.forEach((btn) => {
+    if (!btn) return;
     btn.addEventListener('click', (event) => {
       event.preventDefault();
-      handleGoogleSignIn(btn.id === 'googleLoginRegister' ? 'register' : 'login');
+      handleGoogleSignIn(
+        btn.id === 'googleLoginRegister' ? 'register' : 'login',
+        btn
+      );
     });
   });
 
@@ -1370,14 +1447,17 @@
       .slice(0, 24);
   }
 
-  async function handleGoogleSignIn(entryPoint = 'login') {
+  async function handleGoogleSignIn(entryPoint = 'login', triggerBtn = null) {
     if (googleBusy) return;
     googleBusy = true;
     loginError.textContent = '';
+    if (triggerBtn) setButtonBusy(triggerBtn, true);
     try { closeModal(GOOGLE_USERNAME_MODAL); } catch (_) {}
     try { closeModal(GOOGLE_PHONE_MODAL); } catch (_) {}
 
     try {
+      const networkReady = await ensureNetworkHealthy(loginError);
+      if (!networkReady) return;
       googleFlowState.entry = entryPoint;
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
@@ -1435,6 +1515,7 @@
       }
     } finally {
       googleBusy = false;
+      if (triggerBtn) setButtonBusy(triggerBtn, false);
     }
   }
 
@@ -1538,40 +1619,55 @@
   }
 
   /***** الدخول بالبريد/كلمة مرور *****/
-  submitLogin.addEventListener('click', async () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-    loginError.textContent = "";
+  if (submitLogin) {
+    submitLogin.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      loginError.textContent = "";
 
-    lastLoginEmail = email;
-    lastLoginPassword = password;
-
-    try {
-      const userCred = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCred.user;
-
-      if (!user.emailVerified) {
-        // فقط إظهار نافذة التحذير بدون حذف أو توجيه أو signOut
-        document.getElementById('unverifiedEmailModal').classList.remove('hidden');
+      if (!email || !password) {
+        loginError.textContent = "يرجى إدخال البريد الإلكتروني وكلمة المرور.";
         return;
       }
 
-      const sessionKey = await rotateSessionKey(user.uid);
-      const idToken = await getIdToken(user);
+      lastLoginEmail = email;
+      lastLoginPassword = password;
+      setButtonBusy(submitLogin, true);
 
-      const params = new URLSearchParams({
-        uid: user.uid,
-        email: user.email,
-        token: idToken,
-        sessionKey: sessionKey
-      });
+      try {
+        const networkReady = await ensureNetworkHealthy(loginError);
+        if (!networkReady) return;
 
-      window.location.href = "index.html?" + params.toString();
-    } catch (err) {
-      console.log("خطأ Firebase:", err.code, err.message);
-      loginError.textContent = translateFirebaseError(err.code);
-    }
-  });
+        const userCred = await withNetworkRetry(
+          () => signInWithEmailAndPassword(auth, email, password),
+          1
+        );
+        const user = userCred.user;
+
+        if (!user.emailVerified) {
+          document.getElementById('unverifiedEmailModal').classList.remove('hidden');
+          return;
+        }
+
+        const sessionKey = await rotateSessionKey(user.uid);
+        const idToken = await getIdToken(user);
+
+        const params = new URLSearchParams({
+          uid: user.uid,
+          email: user.email,
+          token: idToken,
+          sessionKey: sessionKey
+        });
+
+        window.location.href = "index.html?" + params.toString();
+      } catch (err) {
+        console.log("خطأ Firebase:", err.code, err.message);
+        loginError.textContent = translateFirebaseError(err.code);
+      } finally {
+        setButtonBusy(submitLogin, false);
+      }
+    });
+  }
 
   // تعديل دالة تأكيد الدخول مع بريد غير موثق
   window.confirmUnverifiedLogin = async function() {
@@ -1579,7 +1675,12 @@
     // إذا لم يكن هناك مستخدم حالي، أعد محاولة تسجيل الدخول بنفس البيانات
     if (!user && lastLoginEmail && lastLoginPassword) {
       try {
-        const userCred = await signInWithEmailAndPassword(auth, lastLoginEmail, lastLoginPassword);
+        const networkReady = await ensureNetworkHealthy(loginError);
+        if (!networkReady) return;
+        const userCred = await withNetworkRetry(
+          () => signInWithEmailAndPassword(auth, lastLoginEmail, lastLoginPassword),
+          1
+        );
         user = userCred.user;
       } catch (err) {
         loginError.textContent = translateFirebaseError(err.code);
@@ -1623,7 +1724,9 @@
     resetBusy = true;
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      const networkReady = await ensureNetworkHealthy(resetMessageEl);
+      if (!networkReady) return;
+      await withNetworkRetry(() => sendPasswordResetEmail(auth, email), 1);
       resetMessageEl.style.color = "var(--success, #22c55e)";
       resetMessageEl.textContent = "تم إرسال رابط الاستعادة إلى بريدك الإلكتروني.";
       showModal("resetSuccessModal");
@@ -1643,7 +1746,12 @@
     let user = auth.currentUser;
     if (!user && lastLoginEmail && lastLoginPassword) {
       try {
-        const cred = await signInWithEmailAndPassword(auth, lastLoginEmail, lastLoginPassword);
+        const networkReady = await ensureNetworkHealthy(verificationMessage);
+        if (!networkReady) return;
+        const cred = await withNetworkRetry(
+          () => signInWithEmailAndPassword(auth, lastLoginEmail, lastLoginPassword),
+          1
+        );
         user = cred.user;
       } catch (error) {
         if (verificationMessage) {
@@ -1665,7 +1773,9 @@
         resendVerificationBtn.disabled = true;
         resendVerificationBtn.classList.add("disabled");
       }
-      await sendEmailVerification(user);
+      const networkReady = await ensureNetworkHealthy(verificationMessage);
+      if (!networkReady) return;
+      await withNetworkRetry(() => sendEmailVerification(user), 1);
       if (verificationMessage) {
         verificationMessage.style.color = "var(--success, #22c55e)";
         verificationMessage.textContent = "تم إرسال رسالة التأكيد، تحقق من بريدك الوارد أو الرسائل غير المرغوبة.";
@@ -1708,7 +1818,13 @@
     const authkey = generateAuthKey();
 
     try {
-      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      const networkReady = await ensureNetworkHealthy(msg);
+      if (!networkReady) return;
+
+      const userCred = await withNetworkRetry(
+        () => createUserWithEmailAndPassword(auth, email, password),
+        1
+      );
       const uid = userCred.user.uid;
 
       await setDoc(doc(db, "users", uid), {
@@ -1722,7 +1838,7 @@
       }, { merge: true });
 
       await createSecretsIfNeeded(uid);
-      await sendEmailVerification(userCred.user);
+      await withNetworkRetry(() => sendEmailVerification(userCred.user), 1);
       msg.style.color = "var(--success, #22c55e)";
       msg.textContent = "تم إرسال رسالة تأكيد إلى بريدك الإلكتروني.";
       showModal("emailVerificationModal");
@@ -1807,15 +1923,22 @@
     "auth/weak-password": "كلمة المرور ضعيفة، يرجى استخدام كلمة أقوى.",
     "auth/network-request-failed": "فشل الاتصال بالخادم، تحقق من الشبكة.",
     "auth/operation-not-allowed": "تم تعطيل هذا النوع من التسجيل في الوقت الحالي.",
-    "auth/requires-recent-login": "يرجى تسجيل الدخول من جديد لإكمال العملية."
+    "auth/requires-recent-login": "يرجى تسجيل الدخول من جديد لإكمال العملية.",
+    "network/offline": "لا يوجد اتصال بالإنترنت حاليًا. فعّل البيانات أو اتصل بشبكة Wi-Fi أخرى ثم أعد المحاولة.",
+    "network/timeout": "الاتصال بطيء أو غير مستقر، تعذر الوصول إلى الخادم. أعد المحاولة بعد لحظات أو غيّر الشبكة.",
+    "network/ping-blocked": "يبدو أن جدار الحماية أو خدمة VPN تمنع الاتصال بخوادم زعيم. عطّل الحجب مؤقتًا ثم أعد المحاولة."
   };
 
   function translateFirebaseError(code) {
-    if (!code) return "حدث خطأ غير متوقع، حاول مرة أخرى.";
-    if (firebaseErrorMessages[code]) return firebaseErrorMessages[code];
-    if (code.includes("too-many-requests")) return firebaseErrorMessages["auth/too-many-requests"];
-    if (code.startsWith("auth/")) {
-      return "تعذر إتمام الطلب (" + code.replace("auth/", "").replace(/-/g, " ") + ").";
+    const normalized = typeof code === "string" ? code : "";
+    if (!normalized) return "حدث خطأ غير متوقع، حاول مرة أخرى.";
+    if (firebaseErrorMessages[normalized]) return firebaseErrorMessages[normalized];
+    if (normalized.includes("too-many-requests")) return firebaseErrorMessages["auth/too-many-requests"];
+    if (normalized.startsWith("auth/")) {
+      return "تعذر إتمام الطلب (" + normalized.replace("auth/", "").replace(/-/g, " ") + ").";
+    }
+    if (normalized.startsWith("network/")) {
+      return firebaseErrorMessages["network/timeout"];
     }
     return "حدث خطأ غير متوقع، حاول مرة أخرى.";
   }
@@ -1879,7 +2002,7 @@
     const phoneInput = document.querySelector("#phoneInput");
     if (phoneInput) {
       window.iti = window.intlTelInput(phoneInput, {
-        initialCountry: "jo",
+        initialCountry: "sy",
         separateDialCode: true,
         preferredCountries: ["sy", "jo", "sa", "eg"],
         utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js",
@@ -1888,7 +2011,7 @@
     const googlePhoneInput = document.querySelector("#googlePhoneInput");
     if (googlePhoneInput) {
       window.googlePhoneIti = window.intlTelInput(googlePhoneInput, {
-        initialCountry: "jo",
+        initialCountry: "sy",
         separateDialCode: true,
         preferredCountries: ["sy", "jo", "sa", "eg"],
         utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js",
