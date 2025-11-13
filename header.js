@@ -938,6 +938,13 @@ walletLi.innerHTML = '<i class="fas fa-wallet"></i><a href="#">محفظتي</a>'
 walletLi.onclick = () => navigateHomeHash('#/wallet','wallet');
 walletLi.style.display = 'none';
 ul.appendChild(walletLi);
+// تحويل الرصيد
+const transferLi = document.createElement('li');
+transferLi.id = 'transferBtn';
+transferLi.innerHTML = '<i class="fa-solid fa-right-left"></i><a href="#">تحويل رصيد</a>';
+transferLi.onclick = () => navigateHomeHash('#/transfer','transfer');
+transferLi.style.display = 'none';
+ul.appendChild(transferLi);
 // التقييمات
 const reviewsLi = document.createElement('li');
 reviewsLi.innerHTML = '<i class="fa-solid fa-star"></i><a href="#">التقييمات</a>';
@@ -1027,6 +1034,7 @@ try {
     const loginBtn = document.getElementById('loginSidebarBtn');
     const depositBtn = document.getElementById('depositBtn');
     const walletBtn = document.getElementById('walletBtn');
+    const transferBtn = document.getElementById('transferBtn');
     const settingsBtn = document.getElementById('settingsBtn');
     const logoutBtn = document.getElementById('logoutBtn');
 
@@ -1036,6 +1044,7 @@ try {
       if (loginBtn) loginBtn.style.display = 'none';
       if (depositBtn) depositBtn.style.display = 'flex';
       if (walletBtn) walletBtn.style.display = 'flex';
+      if (transferBtn) transferBtn.style.display = 'flex';
       if (settingsBtn) settingsBtn.style.display = 'flex';
       if (logoutBtn) logoutBtn.style.display = 'flex';
       const cached = readCachedBalance(user.uid); if (cached != null) { try { window.__BAL_BASE__ = cached; } catch {}; setHeaderBalance((typeof window.formatCurrencyFromJOD === 'function') ? window.formatCurrencyFromJOD(cached) : (Number(cached).toFixed(2) + ' $')); broadcastBalance(cached); }
@@ -1055,6 +1064,7 @@ try {
       if (loginBtn) loginBtn.style.display = 'flex';
       if (depositBtn) depositBtn.style.display = 'none';
       if (walletBtn) walletBtn.style.display = 'none';
+      if (transferBtn) transferBtn.style.display = 'none';
       if (settingsBtn) settingsBtn.style.display = 'none';
       if (logoutBtn) logoutBtn.style.display = 'none';
       broadcastBalance(null);
@@ -1153,8 +1163,8 @@ function wirePageBalanceBox(){
 (function(){
   try{
     var links = {
-      whatsapp: 'https://wa.me/201104453086',
-      telegram: 'https://t.me/201104453086',
+      whatsapp: 'https://wa.me/963981983751',
+      telegram: 'https://t.me/963969898534',
       facebook: 'https://www.facebook.com/share/1B1b48AcqV/',
       email: 'mailto:hazemediek@gmail.com',
       instagram: 'https://www.instagram.com/z3.i.m?igsh=MXRwZGl6dXh2YTd2Zg=='
@@ -1215,7 +1225,7 @@ function wirePageBalanceBox(){
   }catch(_){ }
 })();
 
-// Ensure developer credit under the Support section
+// Ensure developer credit under قم بتغيير رقم الواتساب الخاص بالدعم بthe Support section
 (function ensureSupportDevCredit(){
   try{
     var CREDIT = {
