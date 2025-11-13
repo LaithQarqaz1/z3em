@@ -3337,7 +3337,7 @@ button#logoutBtn:hover{background:#990000}
               updateProfileUI();
             }
             updateHelperText();
-            showStatus("success","تم تحويل " + formatBalance(result.amount || amount) + " إلى " + (result.receiverWebuid || target) + " فوراً.");
+            showStatus("success","تم تحويل " + formatBalance(result.amount || amount) + " إلى " + (result.receiverWebuid || target) + " .");
           }).catch(function(err){
             showStatus("error", err && err.message ? err.message : "تعذر تنفيذ التحويل.");
           }).finally(function(){
