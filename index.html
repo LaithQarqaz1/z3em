@@ -857,6 +857,8 @@
     }
     .transfer-actions button:disabled{opacity:.6;cursor:not-allowed;}
     .transfer-actions button:not(:disabled):hover{transform:translateY(-2px);}
+    .transfer-turnstile{display:none;margin-top:10px;}
+    .transfer-turnstile.active{display:block;}
     .transfer-footnote{
       margin-top:18px;
       font-size:.9rem;
@@ -2491,6 +2493,8 @@ button#logoutBtn:hover{background:#990000}
   <script>
     (function(){
       var settingsRoute = (function(){
+        var TURNSTILE_SITE_KEY = '0x4AAAAAABmiVmi7wosqeHQT';
+        var TURNSTILE_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
         var state = {
           root: null,
           refs: null,
@@ -2858,7 +2862,9 @@ button#logoutBtn:hover{background:#990000}
           profile: null,
           loading: false,
           eventsBound: false,
-          balanceListenerBound: false
+          balanceListenerBound: false,
+          turnstileWidgetId: null,
+          turnstileScriptPromise: null
         };
 
         function createError(code, message){
@@ -2931,6 +2937,16 @@ button#logoutBtn:hover{background:#990000}
           }catch(_){}
         }
 
+        function themeIsDark(){
+          try{
+            var attr = document.documentElement.getAttribute('data-theme');
+            if (attr) return attr !== 'light';
+            var stored = localStorage.getItem('theme');
+            if (stored) return stored !== 'light';
+          }catch(_){}
+          return true;
+        }
+
         function ensureRoot(){
           if (state.root) return state.root;
           var root = document.createElement("div");
@@ -2966,6 +2982,7 @@ button#logoutBtn:hover{background:#990000}
             "    </label>",
             '    <div id="transferHelper" class="transfer-helper"></div>',
             '    <div id="transferStatus" class="transfer-status" role="status" aria-live="polite"></div>',
+            '    <div id="transferTurnstile" class="transfer-turnstile" aria-hidden="true"></div>',
             '    <div class="transfer-actions">',
             '      <button id="transferSubmit" type="submit"><i class="fa-solid fa-paper-plane"></i> تأكيد التحويل</button>',
             "    </div>",
@@ -2978,6 +2995,7 @@ button#logoutBtn:hover{background:#990000}
             senderWebuid: root.querySelector('[data-transfer-my-webuid]'),
             helper: root.querySelector("#transferHelper"),
             status: root.querySelector("#transferStatus"),
+            turnstile: root.querySelector("#transferTurnstile"),
             form: root.querySelector("#transferForm"),
             target: root.querySelector("#transferTarget"),
             amount: root.querySelector("#transferAmount"),
@@ -2988,6 +3006,73 @@ button#logoutBtn:hover{background:#990000}
           bindBalanceListener();
           updateHelperText();
           return root;
+        }
+
+        function getTurnstileHolder(){
+          if (!state.refs || !state.refs.turnstile) return null;
+          var holder = state.refs.turnstile;
+          holder.innerHTML = '';
+          holder.classList.add('active');
+          holder.removeAttribute('aria-hidden');
+          return holder;
+        }
+
+        function ensureTurnstileScript(){
+          if (typeof window !== 'undefined' && window.turnstile) return Promise.resolve();
+          if (state.turnstileScriptPromise) return state.turnstileScriptPromise;
+          state.turnstileScriptPromise = new Promise(function(resolve, reject){
+            if (typeof window !== 'undefined' && window.turnstile){
+              resolve();
+              return;
+            }
+            try{
+              var script = document.createElement('script');
+              script.src = TURNSTILE_SRC;
+              script.async = true;
+              script.defer = true;
+              script.onload = function(){ resolve(); };
+              script.onerror = function(){ reject(new Error('turnstile_load_failed')); };
+              document.head.appendChild(script);
+            }catch(err){
+              reject(err);
+            }
+          }).catch(function(err){
+            state.turnstileScriptPromise = null;
+            throw err;
+          });
+          return state.turnstileScriptPromise;
+        }
+
+        function acquireTurnstileToken(){
+          return ensureTurnstileScript().then(function(){
+            if (typeof window.turnstile === 'undefined') throw createError('turnstile_unavailable','تعذر تحميل التحقق الأمني، حاول مجدداً.');
+            var holder = getTurnstileHolder();
+            if (!holder) throw createError('turnstile_missing','تعذر تجهيز التحقق الأمني.');
+            if (state.turnstileWidgetId != null){
+              try { window.turnstile.remove(state.turnstileWidgetId); } catch(_){}
+              state.turnstileWidgetId = null;
+            }
+            return new Promise(function(resolve, reject){
+              try{
+                state.turnstileWidgetId = window.turnstile.render(holder, {
+                  sitekey: TURNSTILE_SITE_KEY,
+                  theme: themeIsDark() ? 'dark' : 'light',
+                  callback: function(token){
+                    if (token) resolve(token);
+                    else reject(createError('turnstile_token_missing','فشل التحقق الأمني، حاول مجدداً.'));
+                  },
+                  'error-callback': function(){
+                    reject(createError('turnstile_error','تعذر تشغيل التحقق الأمني.'));
+                  },
+                  'expired-callback': function(){
+                    reject(createError('turnstile_expired','انتهت صلاحية التحقق الأمني، حاول مجدداً.'));
+                  }
+                });
+              }catch(err){
+                reject(err);
+              }
+            });
+          });
         }
 
         function bindBalanceListener(){
@@ -3151,12 +3236,16 @@ button#logoutBtn:hover{background:#990000}
             if (!user) { reject(createError("auth_required","سجّل الدخول أولاً.")); return; }
             var sessionKey = readSessionKey();
             if (!sessionKey) { reject(createError("session_missing","يرجى إعادة تسجيل الدخول لتجديد الجلسة.")); return; }
-            user.getIdToken(true).then(function(token){
+            Promise.all([user.getIdToken(true), acquireTurnstileToken()]).then(function(results){
+              var token = results[0];
+              var turnstileToken = results[1];
               var payload = {
                 action: "transfer",
                 targetWebuid: target,
                 amount: Number(amount),
-                note: note || ""
+                note: note || "",
+                turnstileToken: turnstileToken || "",
+                currentUrl: window.location.href
               };
               return fetch(buildApiUrl(), {
                 method: "POST",
