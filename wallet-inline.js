@@ -568,7 +568,7 @@
 
       async function fetchTransfers(uid){
         try{
-          const snap = await db.collection('users').doc(uid).collection('transactions').doc('transfers').get();
+          const snap = await db.collection('userTransactions').doc(uid).get();
           if (!snap.exists) return [];
           const data = snap.data() || {};
           const entries = Array.isArray(data.entries) ? data.entries : [];
