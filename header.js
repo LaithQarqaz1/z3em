@@ -799,14 +799,17 @@ function setHeaderBalance(text){
     if (currencyEl) currencyEl.textContent = '—';
     return;
   }
-  const match = trimmed.match(/^(.+?)\s*([^\s]+)$/);
-  if (match) {
-    valueEl.textContent = match[1];
-    if (currencyEl) currencyEl.textContent = match[2] || '—';
-  } else {
-    valueEl.textContent = trimmed;
-    if (currencyEl) currencyEl.textContent = '—';
+  const shouldSplit = /\s/.test(trimmed) || /[^\d.,+\-]/.test(trimmed.slice(-1));
+  if (shouldSplit) {
+    const match = trimmed.match(/^(.*\S)\s+(\S+)$/);
+    if (match) {
+      valueEl.textContent = match[1].trim();
+      if (currencyEl) currencyEl.textContent = match[2] || '—';
+      return;
+    }
   }
+  valueEl.textContent = trimmed;
+  if (currencyEl) currencyEl.textContent = '—';
 }
 function readCachedBalance(uid){ try { const s = localStorage.getItem(BAL_KEY(uid)); if (s == null) return null; const n = Number(s); return Number.isFinite(n) ? n : null; } catch { return null; } }
 function writeCachedBalance(uid, val){ try { localStorage.setItem(BAL_KEY(uid), String(val)); } catch {} }
@@ -833,7 +836,7 @@ function seedHeaderFromCache(){
         setHeaderBalance(text);
         broadcastBalance(cached);
       }
-    } else { setHeaderBalance('غير مسجل'); }
+    } else { setHeaderBalance('0.00 $'); }
   } catch {}
 }
 seedHeaderFromCache();
@@ -1046,7 +1049,7 @@ try {
         } else { try { window.__BAL_BASE__ = 0; } catch {}; setHeaderBalance((typeof window.formatCurrencyFromJOD === 'function') ? window.formatCurrencyFromJOD(0) : '0.00 $'); writeCachedBalance(user.uid, 0); broadcastBalance(0); }
       }, err => { console.error('Balance listener error:', err); setHeaderBalance('تعذر التحميل'); });
     } else {
-      setHeaderBalance('غير مسجل');
+      setHeaderBalance('0.00 $');
       try { localStorage.setItem(LAST_LOGGED_KEY, '0'); } catch {}
       try { localStorage.removeItem(LAST_UID_KEY); } catch {}
       if (loginBtn) loginBtn.style.display = 'flex';

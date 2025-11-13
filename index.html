@@ -203,7 +203,7 @@
       linear-gradient(135deg,#7a7cd0,#9c9ede) border-box;
     box-shadow:0 8px 22px rgba(0,0,0,.12), 0 1px 0 rgba(255,255,255,.04) inset;
     transition:transform .25s ease, box-shadow .35s ease, filter .25s ease;
-    animation:luxPulse 3.6s ease-in-out infinite;
+    animation:none;
   }
   html[data-theme="dark"] a.card.auto{
     background:
@@ -221,10 +221,34 @@
     content:""; position:absolute; inset:-20% -120% -20% -120%;
     background:linear-gradient(115deg, transparent 45%, rgba(255,255,255,.38) 50%, transparent 55%);
     transform:translateX(-20%) rotate(12deg);
-    animation:luxSweep 3.8s linear infinite; pointer-events:none; z-index:1;
+    pointer-events:none; z-index:1;
+    opacity:0;
+    animation:none;
+    transition:opacity .35s ease;
   }
   @keyframes luxSweep{ 0%{transform:translateX(-20%) rotate(12deg)} 100%{transform:translateX(120%) rotate(12deg)} }
-  @media (prefers-reduced-motion: reduce){ a.card.auto::after{animation:none} }
+  @media (hover:hover){
+    a.card.auto:hover,
+    a.card.auto:focus-visible{
+      animation:luxPulse 3.6s ease-in-out infinite;
+    }
+    a.card.auto:hover:not(.pending-state):not(.maintenance)::after,
+    a.card.auto:focus-visible:not(.pending-state):not(.maintenance)::after{
+      opacity:1;
+      animation:luxSweep 2.2s linear forwards;
+    }
+  }
+  @media (hover:none){
+    a.card.auto:active:not(.pending-state):not(.maintenance)::after{
+      opacity:1;
+      animation:luxSweep 2.2s linear forwards;
+    }
+  }
+  @media (prefers-reduced-motion: reduce){
+    a.card.auto::after{animation:none}
+    a.card.auto:hover,
+    a.card.auto:focus-visible{ animation:none; }
+  }
   a.card.auto:hover{ transform:translateY(-4px) scale(1.01); box-shadow:0 16px 36px rgba(0,0,0,.18), 0 0 28px rgba(250,204,21,.16) }
   @media (max-width: 600px){
     a.card.auto::before{
@@ -645,23 +669,44 @@
     }
     .settings-page h2{margin:0 0 10px;color:var(--primary);font-size:1.6rem;text-align:center}
     .settings-page .sub{text-align:center;color:var(--muted);margin-bottom:22px}
-    .settings-page .info-list{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+    .settings-page .info-list{
+      display:grid;
+      grid-template-columns:repeat(12,1fr);
+      gap:16px;
+      margin-bottom:24px;
+    }
     .settings-page .col-6{grid-column:span 6}
     .settings-page .col-12{grid-column:span 12}
     @media(max-width:720px){
-      .settings-page .col-6{grid-column:span 12}
+      .settings-page .col-6,
+      .settings-page .col-12{grid-column:span 12}
+      .settings-page .info-card{
+        display:grid;
+        grid-template-columns:auto minmax(0,1fr);
+        align-items:center;
+        gap:6px 12px;
+        padding:12px 14px;
+      }
+      .settings-page .label{
+        justify-content:flex-start;
+        text-align:right;
+      }
+      .settings-page .value{
+        width:100%;
+      }
     }
     .settings-page .info-card{
       background:var(--card);
       border:1px solid var(--border);
-      border-radius:14px;
-      padding:12px 14px;
+      border-radius:16px;
+      padding:14px 18px;
       display:grid;
-      grid-template-columns:120px 1fr;
+      grid-template-columns:auto minmax(0,1fr);
       align-items:center;
-      gap:10px 12px;
-      transition:.15s;
+      gap:8px 14px;
+      transition:.18s;
       color:var(--text);
+      direction:rtl;
     }
     html[data-theme="dark"] .settings-page .info-card{background:#1a2234;border-color:var(--border)}
     .settings-page .info-card:hover{
@@ -669,14 +714,20 @@
       box-shadow:0 10px 24px rgba(122,124,208,.15);
       border-color:var(--primary);
     }
-    .settings-page .label{color:var(--muted);font-weight:700;display:flex;gap:10px;align-items:center}
+    .settings-page .label{color:var(--muted);font-weight:700;display:flex;flex-wrap:wrap;gap:8px;align-items:center;line-height:1.4}
     .settings-page .label i{color:var(--primary)}
     .settings-page .value{
-      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:nowrap;
       min-width:0;
-      word-break:normal;
-      overflow-wrap:anywhere;
-      max-width:100%;
+      width:100%;
+      line-height:1.5;
+      direction:ltr;
+      text-align:left;
+      justify-content:flex-start;
+      white-space:nowrap;
     }
     .settings-page .badge{
       background:#e6f7ff;
@@ -698,9 +749,9 @@
       border-radius:8px;
       transition:.15s;
       position:relative;
-      white-space:normal;
-      max-width:100%;
-      overflow-wrap:anywhere;
+      white-space:nowrap;
+      max-width:none;
+      overflow:visible;
     }
     .settings-page .copyable:hover{background:#e6f7ff;color:var(--primary-2)}
     html[data-theme="dark"] .settings-page .copyable:hover{background:#2e316f;color:var(--text)}
@@ -718,6 +769,11 @@
       display:grid;
       place-items:center;
       font-size:.75rem;
+    }
+    @media(max-width:560px){
+      .settings-page .info-card{padding:14px 16px}
+      .settings-page .label{text-align:right}
+      .settings-page .value{justify-content:flex-start}
     }
     .settings-page #resetBtn{
       width:100%;
@@ -1194,6 +1250,7 @@ button#logoutBtn:hover{background:#990000}
       var index = 1; // نبدأ من أول شريحة حقيقية
       var timer = null;
       var isDown = false, startX = 0, deltaX = 0, isAnimating = false;
+      var pointerTracking = false;
 
       function go(i, animate){
         index = i;
@@ -1209,11 +1266,27 @@ button#logoutBtn:hover{background:#990000}
       function start(){ stop(); timer = setInterval(prev, 7000); }
       function stop(){ if(timer){ clearInterval(timer); timer=null; } }
 
+      function attachPointerListeners(){
+        if (pointerTracking) return;
+        pointerTracking = true;
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
+      }
+      function detachPointerListeners(){
+        if (!pointerTracking) return;
+        pointerTracking = false;
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
+      }
+
       function onDown(e){
         if(isAnimating) return; // لا تبدأ سحب أثناء الحركة
         isDown = true; deltaX = 0; slider.classList.add('dragging'); stop();
         if (e.pointerId !== undefined && slider.setPointerCapture) { try { slider.setPointerCapture(e.pointerId); } catch(_){} }
         startX = (e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX);
+        attachPointerListeners();
       }
       function onMove(e){
         if(!isDown) return;
@@ -1224,16 +1297,16 @@ button#logoutBtn:hover{background:#990000}
         track.style.transform = 'translateX(' + ((-index*w)+deltaX) + 'px)';
       }
       function onUp(){
-        if(!isDown) return; isDown=false; slider.classList.remove('dragging');
+        if(!isDown){ detachPointerListeners(); return; }
+        isDown=false; slider.classList.remove('dragging');
         var w = slider.clientWidth; var threshold = Math.min(80, w*0.15);
         if(Math.abs(deltaX) > threshold){ deltaX>0 ? prev() : next(); }
         else { go(index, true); }
         start();
+        detachPointerListeners();
       }
 
       slider.addEventListener('pointerdown', onDown);
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
       slider.addEventListener('pointercancel', onUp);
       slider.addEventListener('touchstart', onDown, {passive:true});
       slider.addEventListener('touchmove', onMove, {passive:true});
@@ -1373,9 +1446,9 @@ button#logoutBtn:hover{background:#990000}
       <img draggable="false" src="IMGS/العاب.jpg" alt="ألعاب" loading="eager" decoding="async" fetchpriority="high" />
       <h2>الألعاب</h2>
     </a>
-    <a href="social.html" class="card" data-title="رشق الاجتماعي">
+    <a href="social.html" class="card" data-title="التواصل الاجتماعي">
       <img draggable="false" src="IMGS/تواصل.jpg" alt="التواصل الاجتماعي" loading="eager" decoding="async" fetchpriority="high" />
-      <h2>رشق</h2>
+      <h2>تواصل اجتماعي</h2>
     </a>
     <a href="software.html" class="card" data-title="اشتراكات ">
       <img draggable="false" src="IMGS/اشتراكات.jpg" alt="برامج" loading="eager" decoding="async" fetchpriority="high" />
@@ -2211,8 +2284,8 @@ button#logoutBtn:hover{background:#990000}
             '      <div class="info-card col-6"><div class="label"><i class="fa-regular fa-envelope"></i> البريد</div><div class="value"><span id="email" class="copyable">--</span></div></div>',
             '      <div class="info-card col-6"><div class="label"><i class="fa-solid fa-mobile-screen"></i> الهاتف</div><div class="value"><span id="phone" class="copyable">--</span></div></div>',
             '      <div class="info-card col-6"><div class="label"><i class="fa-solid fa-wallet"></i> الرصيد</div><div class="value"><span id="balance" class="copyable">--</span></div></div>',
-            '      <div class="info-card col-6"><div class="label"><i class="fa-solid fa-coins"></i> إجمالي الإنفاق</div><div class="value"><span id="totalspent" class="copyable">--</span><span class="badge">$</span></div></div>',
-            '      <div class="info-card col-12"><div class="label"><i class="fa-regular fa-hashtag"></i> معرف المستخدم</div><div class="value"><span id="webuid" class="copyable">--</span></div></div>',
+            '      <div class="info-card col-6"><div class="label"><i class="fa-solid fa-coins"></i>الإنفاق</div><div class="value"><span id="totalspent" class="copyable">--</span><span class="badge">$</span></div></div>',
+            '      <div class="info-card col-12"><div class="label"><i class="fa-regular fa-hashtag"></i> الايدي</div><div class="value"><span id="webuid" class="copyable">--</span></div></div>',
             '    </div>',
             '    <button id="resetBtn" type="button"><i class="fa-solid fa-key"></i> إعادة تعيين كلمة المرور</button>',
             '    <div id="msg"></div>',
@@ -3606,7 +3679,7 @@ button#logoutBtn:hover{background:#990000}
         },
         'social': {
           url: 'social.html',
-          title: 'رشق',
+          title: 'تواصل اجتماعي',
           onShow: function(){
             var attempts = 0;
             (function waitAndRender(){
@@ -4100,4 +4173,3 @@ button#logoutBtn:hover{background:#990000}
 
 </body>
 </html>
-

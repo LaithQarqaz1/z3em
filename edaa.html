@@ -736,15 +736,15 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
 
     /* تفاصيل الطريقة */
     #methodInfo.info-list { margin:16px 0; padding:0; display:flex; flex-direction:column; gap:12px; }
-    #methodInfo .info-item { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 16px; border-radius:16px; border:1px solid #2b2d52; background:rgba(2,6,23,.45); box-shadow:0 1px 0 rgba(255,255,255,.03) inset; }
+    #methodInfo .info-item { display:flex; align-items:flex-start; justify-content:flex-start; gap:14px; padding:12px 16px; border-radius:16px; border:1px solid #2b2d52; background:rgba(2,6,23,.45); box-shadow:0 1px 0 rgba(255,255,255,.03) inset; }
     html[data-theme="dark"] #methodInfo .info-item { border-color:#2b2d52; background:rgba(2,6,23,.45); }
     html[data-theme="light"] #methodInfo .info-item { border-color:#e5e7eb; background:#ffffff; box-shadow:0 1px 0 rgba(255,255,255,.4) inset; }
-    #methodInfo .info-item strong { font-size:.85rem; font-weight:800; color:#cbd5e1; letter-spacing:.2px; }
+    #methodInfo .info-item strong { font-size:.85rem; font-weight:800; color:#cbd5e1; letter-spacing:.2px; flex:0 0 auto; }
     html[data-theme="light"] #methodInfo .info-item strong { color:#475569; }
-    #methodInfo .info-value { display:flex; align-items:center; gap:10px; font-size:.92rem; font-weight:700; direction:ltr; flex-wrap:wrap; justify-content:flex-start; }
+    #methodInfo .info-value { display:flex; align-items:flex-start; gap:10px; font-size:.92rem; font-weight:700; direction:ltr; flex-wrap:wrap; justify-content:flex-start; flex:1 1 auto; min-width:0; }
     html[dir="rtl"] #methodInfo .info-value { direction:ltr; }
-    #methodInfo .info-value span.value-text { font-variant-numeric:tabular-nums; letter-spacing:.3px; }
-    #methodInfo .copy-btn { display:inline-flex; align-items:center; gap:7px; padding:6px 14px; border-radius:999px; font-size:.75rem; font-weight:800; cursor:pointer; border:1px solid transparent; transition:transform .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease; }
+    #methodInfo .info-value span.value-text { font-variant-numeric:tabular-nums; letter-spacing:.3px; display:block; max-width:100%; overflow-wrap:anywhere; word-break:break-word; text-align:start; direction:ltr; }
+    #methodInfo .copy-btn { display:inline-flex; align-items:center; gap:7px; padding:6px 14px; border-radius:999px; font-size:.75rem; font-weight:800; cursor:pointer; border:1px solid transparent; transition:transform .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease; flex:0 0 auto; }
     html[data-theme="dark"] #methodInfo .copy-btn { background:rgba(15,23,42,.7); color:#e2e8f0; border-color:#1e3a8a; box-shadow:0 6px 14px rgba(15,23,42,.45); }
     html[data-theme="light"] #methodInfo .copy-btn { background:#e8edff; color:#1e3a8a; border-color:#c7d2fe; box-shadow:0 6px 12px rgba(79,70,229,.18); }
     #methodInfo .copy-btn:hover { transform:translateY(-2px) scale(1.02); }
@@ -781,6 +781,40 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       #methodModal .calc .field input { padding: 0 40px; height: 42px; font-size:.95rem; }
       .modal-x { width:40px; height:40px; inset-inline-end:8px; inset-block-start:8px; }
       .modal-title { font-size:1.2rem; margin-top:2px; }
+    }
+    /* ضمان بقاء أكواد التحويل الطويلة داخل نافذة التأكيد */
+    .zconfirm-modal {
+      max-width: min(480px, calc(100% - 20px));
+    }
+    .zconfirm-body .zrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .zconfirm-body .zlabel {
+      flex: 0 0 auto;
+    }
+    .zconfirm-body .zvalue {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      direction: ltr;
+      text-align: start;
+    }
+    .zconfirm-body .zvalue.zmono {
+      font-variant-numeric: tabular-nums;
+    }
+    .zconfirm-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .zconfirm-footer .zbtn {
+      flex: 1 1 140px;
+      min-width: 140px;
     }
     /* عنوان أعلى الصفحة — رجوع للتصميم البسيط ومركز */
     .toolbar .where{ background:none !important; -webkit-background-clip:initial; background-clip:initial; font-size:1.05rem; padding:0; border-radius:0; text-align:center; }

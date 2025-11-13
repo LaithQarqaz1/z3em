@@ -942,6 +942,7 @@ body.dark-mode #hamburger:hover span {
 body.dark-mode .header-balance {
   color: #f8fafc;
 }
+body.dark-mode .header-balance__value {
   color: rgba(226, 232, 240, 0.7);
 }
 body.dark-mode .header-balance__currency {

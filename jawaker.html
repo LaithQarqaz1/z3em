@@ -669,7 +669,7 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
     }
   }
   // ===== بطاقات العروض =====
-  function createOfferBox({ type, tokens, offer, imgSrc, imgAlt }, pricesObj) {
+  function createOfferBox({ type, tokens, offer, imgSrc, imgAlt }, pricesMap) {
       const div = document.createElement("div");
       div.className = "offer-box card";
       div.dataset.type = type;
@@ -686,12 +686,17 @@ div.appendChild(h2);
       // إضافة السعر أسفل الاسم
       const priceDiv = document.createElement("div");
       priceDiv.className = "offer-price";
-      let price = null;
-      if (pricesObj) {
-        const key = tokens ? `${tokens}_tokens` : offer;
-        price = pricesObj[key] !== undefined ? pricesObj[key] : null;
+      const map = (pricesMap && typeof pricesMap === 'object') ? pricesMap : {};
+      const key = tokens ? `${tokens}_tokens` : offer;
+      const rawPrice = map[key];
+      let displayPrice = "—";
+      if (rawPrice !== undefined && rawPrice !== null) {
+        const numeric = Number(rawPrice);
+        if (Number.isFinite(numeric)) {
+          displayPrice = `${numeric.toFixed(2)} $`;
+        }
       }
-      priceDiv.textContent = price !== null ? `${Number(price).toFixed(2)} $` : "—";
+      priceDiv.textContent = displayPrice;
       div.appendChild(priceDiv);
       return div;
   }
@@ -713,12 +718,34 @@ div.appendChild(h2);
     { tokens: 1000000, imgSrc: "IMGS/tokens.jpg", imgAlt: "20000 توكنز" }
 
   ];
+  function parsePricesPayload(payload){
+    let raw = payload;
+    try{
+      if (typeof raw === 'string'){
+        raw = raw.trim() ? JSON.parse(raw) : {};
+      }
+    }catch(_){
+      raw = {};
+    }
+    if (!raw || typeof raw !== 'object') return {};
+    const prices = raw.prices && typeof raw.prices === 'object' ? raw.prices : raw;
+    return (prices && typeof prices === 'object') ? prices : {};
+  }
+
+  function getCachedPrices(){
+    try{
+      return parsePricesPayload(localStorage.getItem("offersPrices"));
+    }catch(_){
+      return {};
+    }
+  }
   // حفظ آخر حالة للعروض
   let _lastOffersState = null;
   function renderOffers(pricesObj) {
+    const prices = (pricesObj && typeof pricesObj === 'object') ? pricesObj : getCachedPrices();
     grid.innerHTML = "";
-    topupOffers.forEach(offer => { grid.appendChild(createOfferBox({ type: "topup", tokens: offer.tokens, imgSrc: offer.imgSrc, imgAlt: offer.imgAlt }, pricesObj)); });
-    membershipOffers.forEach(offer => { grid.appendChild(createOfferBox({ type: "membership", offer: offer.offer, imgSrc: offer.imgSrc, imgAlt: offer.imgAlt }, pricesObj)); });
+    topupOffers.forEach(offer => { grid.appendChild(createOfferBox({ type: "topup", tokens: offer.tokens, imgSrc: offer.imgSrc, imgAlt: offer.imgAlt }, prices)); });
+    membershipOffers.forEach(offer => { grid.appendChild(createOfferBox({ type: "membership", offer: offer.offer, imgSrc: offer.imgSrc, imgAlt: offer.imgAlt }, prices)); });
     // بعد رسم البطاقات، أعد تطبيق حالة الإغلاق إذا كانت متوفرة
     if (_lastOffersState) {
       Object.entries(_lastOffersState.topup || {}).forEach(([tokens, status]) => {
@@ -762,38 +789,14 @@ div.appendChild(h2);
   const membershipOffers = [
   ];
 
-  // عند تحميل الصفحة، انتظر تحميل الأسعار ثم اعرض البطاقات
-  function waitAndRenderOffers() {
-    let tries = 0;
-    function tryRender() {
-      let pricesObj = null;
-      try {
-        const raw = JSON.parse(localStorage.getItem("offersPrices") || "{}") || {};
-        pricesObj = raw.prices || raw;
-      } catch {}
-      if (pricesObj && Object.keys(pricesObj).length > 0) {
-        renderOffers(pricesObj);
-        try { if (typeof updatePurchaseModalPriceIfOpen === 'function') updatePurchaseModalPriceIfOpen(); } catch(_){}
-      } else if (tries < 20) {
-        tries++;
-        setTimeout(tryRender, 200);
-      } else {
-        // لا ننشئ البطاقات (ولا الصور) قبل توفّر الأسعار
-        setTimeout(tryRender, 250);
-      }
-    }
-    tryRender();
-  }
-  waitAndRenderOffers();
+  // اعرض العروض فورًا مع الأسعار المخزّنة (إن وجدت) ثم حدّثها عند وصول بيانات أحدث
+  renderOffers(getCachedPrices());
+  try { if (typeof updatePurchaseModalPriceIfOpen === 'function') updatePurchaseModalPriceIfOpen(); } catch(_){}
 
   // إعادة تحميل البطاقات تلقائياً عند تحديث الأسعار في localStorage
   window.addEventListener('storage', function(e){
     if (e.key === 'offersPrices') {
-      let pricesObj = null;
-      try {
-        const raw = JSON.parse(e.newValue || "{}") || {};
-        pricesObj = raw.prices || raw;
-      } catch {}
+      const pricesObj = parsePricesPayload(e.newValue);
       renderOffers(pricesObj);
       try { if (typeof updatePurchaseModalPriceIfOpen === 'function') updatePurchaseModalPriceIfOpen(); } catch(_){}
     }
@@ -805,11 +808,7 @@ div.appendChild(h2);
     localStorage.setItem = function(key, val){
       origSetItem.apply(this, arguments);
       if(key === 'offersPrices'){
-        let pricesObj = null;
-        try {
-          const raw = JSON.parse(val || "{}") || {};
-          pricesObj = raw.prices || raw;
-        } catch {}
+        const pricesObj = parsePricesPayload(val);
         renderOffers(pricesObj);
         try { if (typeof updatePurchaseModalPriceIfOpen === 'function') updatePurchaseModalPriceIfOpen(); } catch(_){}
       }
@@ -858,12 +857,11 @@ function filterCardsBySearch(ev){
 // ===== نافذة الشراء =====
 window._pm_currentCard = null;
 function _readOfferPriceForElement(el){
-  const raw = JSON.parse(localStorage.getItem("offersPrices") || "{}");
-  const prices = raw.prices || raw || {};
+  const prices = getCachedPrices();
   const key = el.dataset.tokens ? `${el.dataset.tokens}_tokens` : el.dataset.offer;
   const p = prices[key];
   const num = p !== undefined ? Number(p) : NaN;
-  return { key, price: p, priceText: isNaN(num)? '—' : `${num.toFixed(3)} $` };
+  return { key, price: p, priceText: Number.isFinite(num)? `${num.toFixed(3)} $` : '—' };
 }
 
   // تحديث سعر المودال لحظياً إن كان مفتوحاً عند وصول الأسعار
