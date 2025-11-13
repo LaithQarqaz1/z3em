@@ -249,6 +249,8 @@
         var parts = [];
         var country = item.countryName || item.country || '';
         var method = item.methodName || item.method || '';
+        var transferPeer = item.transferPeer || item.transferPeerUid || '';
+        var transferNote = item.transferNote || '';
         if (country){
           parts.push('<span><i class="fas fa-location-dot"></i> ' + country + '</span>');
         }
@@ -265,6 +267,12 @@
           if (payout) parts.push('<span><i class="fas fa-wallet"></i> ' + payout + '</span>');
           var payoutName = item.payoutName || item.receiverName || '';
           if (payoutName) parts.push('<span><i class="fas fa-user"></i> ' + payoutName + '</span>');
+        }
+        if (transferPeer){
+          parts.push('<span><i class="fas fa-right-left"></i> ' + transferPeer + '</span>');
+        }
+        if (transferNote){
+          parts.push('<span><i class="fas fa-note-sticky"></i> ' + transferNote + '</span>');
         }
         return parts.join('');
       }
@@ -558,6 +566,64 @@
         });
       }
 
+      async function fetchTransfers(uid){
+        try{
+          const snap = await db.collection('users').doc(uid).collection('transactions').doc('transfers').get();
+          if (!snap.exists) return [];
+          const data = snap.data() || {};
+          const entries = Array.isArray(data.entries) ? data.entries : [];
+          return entries.map(function(entry){
+            if (!entry) return null;
+            var kind = (entry.kind || 'deposit').toLowerCase() === 'withdraw' ? 'withdraw' : 'deposit';
+            var created = entry.createdAt;
+            var createdDate = null;
+            if (created && typeof created.toDate === 'function') createdDate = created.toDate();
+            else if (created instanceof Date) createdDate = created;
+            else if (typeof created === 'string'){
+              var parsed = Date.parse(created);
+              if (!isNaN(parsed)) createdDate = new Date(parsed);
+            } else if (created && typeof created.seconds === 'number'){
+              createdDate = new Date(created.seconds * 1000);
+            }
+            var amount = parseNumeric(entry.amount);
+            var balanceBefore = parseNumeric(entry.balanceBefore);
+            var balanceAfter = parseNumeric(entry.balanceAfter);
+            var peer = entry.peerWebuid || entry.peerUid || '';
+            var item = {
+              code: entry.code || '',
+              status: entry.status || 'completed',
+              methodName: entry.methodName || (kind === 'withdraw' ? ('تحويل إلى ' + (peer || 'مستلم')) : ('تحويل من ' + (peer || 'مرسل'))),
+              countryName: entry.countryName || 'تحويل داخلي',
+              transferPeer: peer,
+              transferNote: entry.note || entry.transferNote || '',
+              createdAt: createdDate || new Date(),
+              timestamp: createdDate || new Date(),
+              __kind: kind
+            };
+            if (kind === 'withdraw'){
+              item.debited = amount;
+              item.debitedJOD = amount;
+              item.amountCurrency = amount;
+              item.currency = entry.currency || 'JOD';
+              item.balanceBefore = balanceBefore;
+              item.balanceAfter = balanceAfter;
+            } else {
+              item.added = amount;
+              item.addedAmount = amount;
+              item.addedCurrency = entry.currency || 'JOD';
+              item.amountJOD = amount;
+              item.currency = entry.currency || 'JOD';
+              item.balanceBefore = balanceBefore;
+              item.balanceAfter = balanceAfter;
+            }
+            return item;
+          }).filter(Boolean);
+        }catch(err){
+          console.warn('fetchTransfers failed', err);
+          return [];
+        }
+      }
+
       async function fetchAllTransactions(uid){
         const depositsPromise = (async function(){
           let depositList = await fetchFromDepositRequests(uid);
@@ -565,8 +631,9 @@
           return depositList;
         })();
         const withdrawPromise = fetchFromWithdrawRequests(uid);
-        const results = await Promise.all([depositsPromise, withdrawPromise]);
-        return sortByNewest(mergeByCode([].concat(results[0] || [], results[1] || [])));
+        const transfersPromise = fetchTransfers(uid);
+        const results = await Promise.all([depositsPromise, withdrawPromise, transfersPromise]);
+        return sortByNewest(mergeByCode([].concat(results[0] || [], results[1] || [], results[2] || [])));
       }
 
       function applyFilter(arr){
