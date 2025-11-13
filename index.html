@@ -623,6 +623,251 @@
     body.dark-mode .wallet-page .txn-footer i{color:#a5b4fc;}
     body.dark-mode .wallet-page .txn-proof a{color:#c4b5fd;}
     body.dark-mode .wallet-page .empty{background:#121c33;border-color:#1f2a44;color:#d1d9f5;}
+    .transfer-page{padding:0 16px 70px;}
+    .transfer-page .transfer-spacer{height:72px;}
+    @media(max-width:720px){.transfer-page .transfer-spacer{height:54px;}}
+    .transfer-page main{
+      max-width:760px;
+      margin:32px auto;
+      background:linear-gradient(135deg,#0a1024,#151f44 65%,#1d2b58);
+      border-radius:32px;
+      border:1px solid rgba(99,102,241,.28);
+      padding:36px;
+      box-shadow:0 38px 80px rgba(5,8,20,.65);
+      color:#f5f6ff;
+      position:relative;
+      overflow:hidden;
+    }
+    .transfer-page main::after{
+      content:'';
+      position:absolute;
+      inset:-80px auto auto 50%;
+      width:420px;
+      height:420px;
+      background:radial-gradient(circle,rgba(99,102,241,.18),transparent 60%);
+      transform:translateX(-50%);
+      pointer-events:none;
+      z-index:0;
+    }
+    .transfer-page main > *{position:relative;z-index:1;}
+    @media(max-width:720px){.transfer-page main{margin:22px 12px;padding:22px;}}
+    html[data-theme="light"] .transfer-page main,
+    body.light-mode .transfer-page main{
+      background:#ffffff;
+      border-color:rgba(148,163,184,.28);
+      color:#0f172a;
+      box-shadow:0 28px 65px rgba(15,23,42,.14);
+    }
+    html[data-theme="light"] .transfer-page main::after{background:radial-gradient(circle,rgba(99,102,241,.12),transparent 65%);}
+    .transfer-page h2{
+      margin:0 0 8px;
+      font-size:1.75rem;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:inherit;
+    }
+    .transfer-page .transfer-headline{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:20px;
+      flex-wrap:wrap;
+    }
+    .transfer-page .transfer-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 14px;
+      border-radius:999px;
+      font-weight:800;
+      font-size:.92rem;
+      background:rgba(34,197,94,.18);
+      color:#86efac;
+    }
+    html[data-theme="light"] .transfer-page .transfer-badge{background:rgba(34,197,94,.16);color:#15803d;}
+    .transfer-page .transfer-hint{
+      margin:0;
+      font-size:1rem;
+      color:rgba(255,255,255,.82);
+      line-height:1.7;
+      flex:1;
+    }
+    html[data-theme="light"] .transfer-page .transfer-hint{color:#475569;}
+    .transfer-page .transfer-meta{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:14px;
+      margin-bottom:20px;
+    }
+    .transfer-page .transfer-meta div{
+      background:rgba(15,23,42,.45);
+      border:1px solid rgba(99,102,241,.32);
+      border-radius:16px;
+      padding:16px 18px;
+      position:relative;
+      overflow:hidden;
+    }
+    .transfer-page .transfer-meta div::after{
+      content:'';
+      position:absolute;
+      inset:0;
+      background:linear-gradient(120deg,transparent,rgba(255,255,255,.08));
+      opacity:0;
+      transition:opacity .3s ease;
+    }
+    .transfer-page .transfer-meta div:hover::after{opacity:1;}
+    html[data-theme="light"] .transfer-page .transfer-meta div{
+      background:#f8fafc;
+      border-color:rgba(148,163,184,.6);
+    }
+    .transfer-page .transfer-meta .transfer-label{
+      display:block;
+      font-size:.9rem;
+      color:rgba(255,255,255,.7);
+      margin-bottom:6px;
+    }
+    html[data-theme="light"] .transfer-page .transfer-meta .transfer-label{color:#64748b;}
+    .transfer-page .transfer-meta strong{
+      font-size:1.2rem;
+      font-weight:800;
+      color:#fefefe;
+    }
+    html[data-theme="light"] .transfer-page .transfer-meta strong{color:#0f172a;}
+    .transfer-guidelines{
+      list-style:none;
+      margin:0 0 26px;
+      padding:0;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .transfer-guidelines li{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      background:rgba(15,23,42,.35);
+      border:1px solid rgba(99,102,241,.22);
+      border-radius:18px;
+      padding:14px 18px;
+      font-weight:600;
+      color:rgba(255,255,255,.85);
+    }
+    .transfer-guidelines i{
+      color:#8b5cf6;
+      font-size:1.1rem;
+      margin-top:4px;
+    }
+    html[data-theme="light"] .transfer-guidelines li{
+      background:#f8fafc;
+      border-color:rgba(148,163,184,.4);
+      color:#1f2937;
+    }
+    .transfer-form{display:flex;flex-direction:column;gap:22px;}
+    .transfer-field{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding:20px 22px;
+      border-radius:28px;
+      background:rgba(7,12,30,.85);
+      border:1px solid rgba(120,133,255,.2);
+      box-shadow:0 26px 45px rgba(4,7,18,.65), inset 0 1px 0 rgba(255,255,255,.05);
+      backdrop-filter:blur(18px);
+    }
+    html[data-theme="light"] .transfer-field{
+      background:rgba(255,255,255,.96);
+      border-color:rgba(148,163,184,.38);
+      box-shadow:0 26px 38px rgba(15,23,42,.14), inset 0 1px 0 rgba(255,255,255,.9);
+    }
+    .transfer-field span{
+      font-weight:800;
+      color:inherit;
+      font-size:.9rem;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      opacity:.8;
+    }
+    .transfer-field input,
+    .transfer-field textarea{
+      border:1.5px solid rgba(126,132,255,.32);
+      background:linear-gradient(140deg,rgba(17,25,54,.95),rgba(10,16,35,.88));
+      border-radius:20px;
+      padding:16px 22px;
+      color:#f8fafc;
+      font-size:1.08rem;
+      font-weight:700;
+      outline:none;
+      transition:border-color .25s ease, box-shadow .25s ease, transform .18s ease;
+      resize:none;
+      min-height:58px;
+      width:100%;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    html[data-theme="light"] .transfer-field input,
+    html[data-theme="light"] .transfer-field textarea{
+      background:linear-gradient(140deg,#fefefe,#f2f6ff);
+      border-color:rgba(148,163,184,.55);
+      color:#0f172a;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
+    }
+    .transfer-field input:focus,
+    .transfer-field textarea:focus{
+      border-color:#8b5cf6;
+      box-shadow:0 0 0 3px rgba(99,102,241,.32), inset 0 1px 0 rgba(255,255,255,.12);
+      transform:translateY(-2px);
+    }
+    .transfer-field textarea{min-height:86px;}
+    .transfer-field input::placeholder,
+    .transfer-field textarea::placeholder{color:rgba(255,255,255,.45);font-weight:600;letter-spacing:.03em;}
+    html[data-theme="light"] .transfer-field input::placeholder,
+    html[data-theme="light"] .transfer-field textarea::placeholder{color:#94a3b8;}
+    .transfer-helper{
+      font-size:.95rem;
+      font-weight:600;
+      color:rgba(255,255,255,.75);
+    }
+    html[data-theme="light"] .transfer-helper{color:#475569;}
+    .transfer-helper.warn{color:#f87171;}
+    .transfer-status{
+      min-height:32px;
+      border-radius:14px;
+      padding:12px 16px;
+      font-weight:700;
+      display:none;
+    }
+    .transfer-status.show{display:block;}
+    .transfer-status.success{background:rgba(34,197,94,.18);color:#86efac;}
+    .transfer-status.error{background:rgba(248,113,113,.18);color:#fecaca;}
+    .transfer-status.info{background:rgba(99,102,241,.15);color:#c7d2fe;}
+    .transfer-actions{display:flex;justify-content:flex-end;margin-top:8px;}
+    .transfer-actions button{
+      border:none;
+      border-radius:18px;
+      padding:14px 24px;
+      font-size:1rem;
+      font-weight:800;
+      background:linear-gradient(135deg,#6366f1,#8b5cf6);
+      color:#fff;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      transition:opacity .2s ease, transform .2s ease;
+    }
+    .transfer-actions button:disabled{opacity:.6;cursor:not-allowed;}
+    .transfer-actions button:not(:disabled):hover{transform:translateY(-2px);}
+    .transfer-footnote{
+      margin-top:18px;
+      font-size:.9rem;
+      color:rgba(255,255,255,.65);
+    }
+    html[data-theme="light"] .transfer-footnote{color:#64748b;}
+    @media(max-width:540px){
+      .transfer-page .transfer-meta{grid-template-columns:1fr;}
+      .transfer-actions{flex-direction:column;}
+      .transfer-actions button{width:100%;justify-content:center;}
+    }
   </style>
   <!-- Settings page inline styles -->
   <style>
@@ -2188,13 +2433,6 @@ button#logoutBtn:hover{background:#990000}
     // ابدأ مباشرة دون الانتظار
     applyCardsVisibility();
 
-    // تمت إزالة التحقق من رقم الهاتف — لا حاجة لطلبه
-
-    // تمت إزالة بانر رقم الهاتف
-
-    // تمت إزالة نافذة إدخال رقم الهاتف
-
-    // تمت إزالة حفظ رقم الهاتف
 
     // توافق قديم للثيم
     document.addEventListener('DOMContentLoaded', function () {
@@ -2277,7 +2515,6 @@ button#logoutBtn:hover{background:#990000}
             '<div class="main-content">',
             '  <div class="container">',
             '    <h2>إعدادات الحساب</h2>',
-            '    <div class="sub">انقر على أي قيمة لنسخها مباشرة</div>',
             '    <div class="info-list">',
             '      <div class="info-card col-6"><div class="label"><i class="fa-regular fa-id-badge"></i> الاسم</div><div class="value"><span id="username" class="copyable">--</span></div></div>',
             '      <div class="info-card col-6"><div class="label"><i class="fa-solid fa-signal"></i> المستوى</div><div class="value"><span id="level" class="copyable badge">--</span></div></div>',
@@ -2606,6 +2843,429 @@ button#logoutBtn:hover{background:#990000}
         return {
           build: build,
           onShow: onShow
+        };
+      })();
+
+      var transferRoute = (function(){
+        var DEFAULT_BASE = "https://z3em-manwal.laithqarqaz1.workers.dev/";
+        var state = {
+          root: null,
+          refs: null,
+          auth: null,
+          db: null,
+          unsubAuth: null,
+          currentUser: null,
+          profile: null,
+          loading: false,
+          eventsBound: false,
+          balanceListenerBound: false
+        };
+
+        function createError(code, message){
+          var err = new Error(message || code || "transfer_error");
+          err.code = code || "transfer_error";
+          return err;
+        }
+
+        function parseNumber(value){
+          if (value == null) return 0;
+          if (typeof value === "number") return Number(value) || 0;
+          if (typeof value === "string"){
+            var cleaned = value.replace(/[^\d\-,.]/g, "").replace(/,/g, "");
+            var num = Number(cleaned);
+            return Number.isFinite(num) ? num : 0;
+          }
+          return 0;
+        }
+
+        function formatBalance(value){
+          var n = Number(value) || 0;
+          if (typeof window.formatCurrencyFromJOD === "function"){
+            try { return window.formatCurrencyFromJOD(n); } catch(_){}
+          }
+          try { return n.toFixed(3) + " $"; } catch(_){ return String(n); }
+        }
+
+        function readSessionKey(){
+          try{
+            var raw = localStorage.getItem("sessionKeyInfo");
+            if (!raw) return "";
+            var parsed = JSON.parse(raw);
+            return parsed && parsed.sessionKey ? parsed.sessionKey : "";
+          }catch(_){ return ""; }
+        }
+
+        function buildApiUrl(){
+          var base = DEFAULT_BASE;
+          try{
+            var stored = localStorage.getItem("MANWAL_ROUTER_BASE");
+            if (stored) base = stored;
+          }catch(_){}
+          try{
+            var url = new URL(base);
+            url.searchParams.set("game","transfers");
+            return url.toString();
+          }catch(_){
+            return DEFAULT_BASE + (DEFAULT_BASE.indexOf("?") >= 0 ? "&" : "?") + "game=transfers";
+          }
+        }
+
+        function ensureFirebase(){
+          if (typeof firebase === "undefined") return;
+          try{
+            if (window.__ORIG_FIREBASE__){
+              if (window.__ORIG_FIREBASE__.auth) firebase.auth = window.__ORIG_FIREBASE__.auth;
+              if (window.__ORIG_FIREBASE__.firestore) firebase.firestore = window.__ORIG_FIREBASE__.firestore;
+            }
+          }catch(_){}
+          try{
+            if ((!firebase.apps || !firebase.apps.length) && window.__FIREBASE_CONFIG__){
+              firebase.initializeApp(window.__FIREBASE_CONFIG__);
+            }
+          }catch(_){}
+          try{
+            if (!state.auth) state.auth = firebase.auth();
+          }catch(_){}
+          try{
+            if (!state.db) state.db = firebase.firestore();
+          }catch(_){}
+        }
+
+        function ensureRoot(){
+          if (state.root) return state.root;
+          var root = document.createElement("div");
+          root.className = "transfer-page";
+          root.innerHTML = [
+            '<div class="transfer-spacer" aria-hidden="true"></div>',
+            "<main>",
+            '  <h2><span><i class="fa-solid fa-right-left"></i> تحويل رصيد</span></h2>',
+            '  <div class="transfer-headline">',
+            '    <span class="transfer-badge"><i class="fa-solid fa-bolt"></i> فوري</span>',
+            '  </div>',
+            '  <div class="transfer-meta">',
+            '    <div><span class="transfer-label">رصيدك الحالي</span><strong data-transfer-balance>--</strong></div>',
+            '    <div><span class="transfer-label">الايدي الخاص بك</span><strong data-transfer-my-webuid>--</strong></div>',
+            "  </div>",
+            '  <ul class="transfer-guidelines">',
+            '    <li><i class="fa-solid fa-scale-balanced"></i><span>يمكنك مراجعة كل تحويل من سجل <strong>محفظتي</strong> مباشرة بعد التنفيذ.</span></li>',
+            '    <li><i class="fa-solid fa-circle-info"></i><span>التحويل غير قابل للإلغاء بعد الإرسال، فتأكد من الايدي قبل التأكيد.</span></li>',
+            '    <li><i class="fa-solid fa-hand-holding-dollar"></i><span>لا رسوم على عمليات التحويل، الرصيد ينتقل بالكامل للمستلم.</span></li>',
+            "  </ul>",
+            '  <form id="transferForm" class="transfer-form" novalidate>',
+            '    <label class="transfer-field">',
+            '      <span>ايدي المستلم</span>',
+            '      <input id="transferTarget" type="text" inputmode="text" autocomplete="off" maxlength="40" placeholder="مثال: ***********8454" required />',
+            "    </label>",
+            '    <label class="transfer-field">',
+            '      <span>المبلغ بالدولار</span>',
+            '      <input id="transferAmount" type="number" step="0.001" min="0.001" placeholder="0.000" required />',
+            "    </label>",
+            '    <label class="transfer-field">',
+            '      <span>ملاحظة (اختياري)</span>',
+            '      <textarea id="transferNote" rows="2" maxlength="180" placeholder="تظهر في سجل التحويل (اختياري)"></textarea>',
+            "    </label>",
+            '    <div id="transferHelper" class="transfer-helper"></div>',
+            '    <div id="transferStatus" class="transfer-status" role="status" aria-live="polite"></div>',
+            '    <div class="transfer-actions">',
+            '      <button id="transferSubmit" type="submit"><i class="fa-solid fa-paper-plane"></i> تأكيد التحويل</button>',
+            "    </div>",
+            "  </form>",
+            "</main>"
+          ].join("");
+          state.root = root;
+          state.refs = {
+            balance: root.querySelector('[data-transfer-balance]'),
+            senderWebuid: root.querySelector('[data-transfer-my-webuid]'),
+            helper: root.querySelector("#transferHelper"),
+            status: root.querySelector("#transferStatus"),
+            form: root.querySelector("#transferForm"),
+            target: root.querySelector("#transferTarget"),
+            amount: root.querySelector("#transferAmount"),
+            note: root.querySelector("#transferNote"),
+            submit: root.querySelector("#transferSubmit")
+          };
+          bindFormEvents();
+          bindBalanceListener();
+          updateHelperText();
+          return root;
+        }
+
+        function bindBalanceListener(){
+          if (state.balanceListenerBound) return;
+          try{
+            window.addEventListener("balance:change", function(evt){
+              if (!state.profile) return;
+              var val = evt && evt.detail ? Number(evt.detail.value) : NaN;
+              if (Number.isFinite(val)){
+                state.profile.balance = val;
+                updateProfileUI();
+              }
+            });
+            state.balanceListenerBound = true;
+          }catch(_){}
+        }
+
+        function bindFormEvents(){
+          if (!state.refs || state.eventsBound) return;
+          state.eventsBound = true;
+          if (state.refs.form){
+            state.refs.form.addEventListener("submit", handleSubmit);
+          }
+          if (state.refs.amount){
+            state.refs.amount.addEventListener("input", updateHelperText);
+          }
+          if (state.refs.target){
+            state.refs.target.addEventListener("input", function(){ showStatus(); });
+          }
+        }
+
+        function bindAuth(){
+          ensureFirebase();
+          if (!state.auth){
+            setNeedLogin();
+            return;
+          }
+          if (state.unsubAuth) return;
+          state.unsubAuth = state.auth.onAuthStateChanged(function(user){
+            state.currentUser = user || null;
+            if (!user){
+              state.profile = null;
+              updateProfileUI();
+              setNeedLogin();
+              return;
+            }
+            setFormDisabled(false);
+            loadProfile(user);
+          });
+        }
+
+        function setNeedLogin(){
+          setFormDisabled(true);
+          showStatus("info","سجّل الدخول لاستخدام تحويل الرصيد.");
+          if (state.refs && state.refs.helper){
+            state.refs.helper.textContent = "تحتاج إلى تسجيل الدخول لتستطيع التحويل.";
+            state.refs.helper.classList.remove("warn");
+          }
+        }
+
+        function setFormDisabled(disabled){
+          if (!state.refs) return;
+          var keys = ["target","amount","note","submit"];
+          keys.forEach(function(key){
+            if (state.refs[key]) state.refs[key].disabled = disabled || state.loading;
+          });
+        }
+
+        function loadProfile(user){
+          if (!user || !state.db){
+            showStatus("error","تعذر تحميل معلومات المستخدم.");
+            return;
+          }
+          try{
+            setFormDisabled(true);
+            showStatus("info","جاري تحميل بياناتك...");
+            state.db.collection("users").doc(user.uid).get().then(function(doc){
+              if (!doc || !doc.exists){
+                throw new Error("لا توجد بيانات حساب متاحة.");
+              }
+              var data = doc.data() || {};
+              state.profile = {
+                uid: user.uid,
+                webuid: data.webuid || data.webUid || user.uid,
+                balance: parseNumber(data.balance || data.balanceUsd || data.balanceUSD)
+              };
+              updateProfileUI();
+              showStatus();
+              setFormDisabled(false);
+            }).catch(function(err){
+              state.profile = null;
+              updateProfileUI();
+              setFormDisabled(true);
+              showStatus("error", err && err.message ? err.message : "تعذر تحميل بيانات المستخدم.");
+            });
+          }catch(_){
+            setFormDisabled(true);
+            showStatus("error","تعذر الوصول لقاعدة البيانات.");
+          }
+        }
+
+        function updateProfileUI(){
+          if (!state.refs) return;
+          if (state.profile){
+            if (state.refs.balance) state.refs.balance.textContent = formatBalance(state.profile.balance);
+            if (state.refs.senderWebuid) state.refs.senderWebuid.textContent = state.profile.webuid || "--";
+            setFormDisabled(false);
+          } else {
+            if (state.refs.balance) state.refs.balance.textContent = "--";
+            if (state.refs.senderWebuid) state.refs.senderWebuid.textContent = "--";
+            setFormDisabled(true);
+          }
+          updateHelperText();
+        }
+
+        function updateHelperText(){
+          if (!state.refs || !state.refs.helper) return;
+          var helper = state.refs.helper;
+          if (!state.profile){
+            helper.textContent = "أدخل بياناتك بعد تسجيل الدخول للبدء.";
+            helper.classList.remove("warn");
+            return;
+          }
+          var amount = Number(state.refs.amount && state.refs.amount.value);
+          if (!Number.isFinite(amount) || amount <= 0){
+            helper.textContent = "أدخل قيمة التحويل المطلوبة.";
+            helper.classList.remove("warn");
+            return;
+          }
+          var remaining = (state.profile.balance || 0) - amount;
+          if (remaining < -0.0001){
+            helper.textContent = "القيمة المطلوبة تتجاوز رصيدك الحالي.";
+            helper.classList.add("warn");
+          } else {
+            helper.textContent = "الرصيد بعد التحويل: " + formatBalance(Math.max(remaining, 0));
+            helper.classList.remove("warn");
+          }
+        }
+
+        function showStatus(type, message){
+          var box = state.refs && state.refs.status;
+          if (!box) return;
+          if (!message){
+            box.className = "transfer-status";
+            box.textContent = "";
+            return;
+          }
+          box.className = "transfer-status show " + (type || "info");
+          box.textContent = message;
+        }
+
+        function setLoading(loading, hint){
+          state.loading = !!loading;
+          setFormDisabled(!state.profile || state.loading);
+          if (loading && hint) showStatus("info", hint);
+        }
+
+        function submitTransfer(target, amount, note){
+          return new Promise(function(resolve, reject){
+            var user = state.currentUser;
+            if (!user) { reject(createError("auth_required","سجّل الدخول أولاً.")); return; }
+            var sessionKey = readSessionKey();
+            if (!sessionKey) { reject(createError("session_missing","يرجى إعادة تسجيل الدخول لتجديد الجلسة.")); return; }
+            user.getIdToken(true).then(function(token){
+              var payload = {
+                action: "transfer",
+                targetWebuid: target,
+                amount: Number(amount),
+                note: note || ""
+              };
+              return fetch(buildApiUrl(), {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer " + token,
+                  "X-SessionKey": sessionKey
+                },
+                body: JSON.stringify(payload)
+              });
+            }).then(async function(res){
+              var data = await res.json().catch(function(){ return {}; });
+              if (!res.ok || data.success === false || data.ok === false){
+                var msg = (data && data.error) ? data.error : "فشل تنفيذ التحويل.";
+                reject(createError(data && data.code, msg));
+                return;
+              }
+              resolve({
+                amount: Number(data.amount || amount),
+                senderBalance: Number(data.senderBalance),
+                receiverWebuid: data.receiverWebuid || target
+              });
+            }).catch(function(err){
+              reject(createError(err && err.code, err && err.message ? err.message : "تعذر تنفيذ التحويل."));
+            });
+          });
+        }
+
+        function updateCachedBalance(value){
+          var val = Number(value);
+          if (!Number.isFinite(val)) return;
+          try { window.__BAL_BASE__ = val; window.__BALANCE__ = val; } catch(_){}
+          try {
+            var formatted = (typeof window.formatCurrencyFromJOD === "function")
+              ? window.formatCurrencyFromJOD(val)
+              : (val.toFixed(2) + " $");
+            var textEl = document.getElementById("headerBalanceText");
+            var currencyEl = document.getElementById("headerBalanceCurrency");
+            if (textEl){
+              var parts = formatted.split(/\s+/);
+              textEl.textContent = parts.shift() || formatted;
+              if (currencyEl) currencyEl.textContent = parts.join(" ") || "—";
+            }
+            window.dispatchEvent(new CustomEvent("balance:change", { detail: { value: val, formatted: formatted } }));
+          } catch(_){}
+          var uid = state.currentUser && state.currentUser.uid;
+          if (uid){
+            try { localStorage.setItem("balance:cache:"+uid, String(val)); } catch(_){}
+          }
+        }
+
+        function handleSubmit(e){
+          if (e && typeof e.preventDefault === "function") e.preventDefault();
+          if (!state.refs || state.loading) return;
+          var target = (state.refs.target && state.refs.target.value || "").trim();
+          var amount = Number(state.refs.amount && state.refs.amount.value);
+          var note = (state.refs.note && state.refs.note.value || "").trim();
+          if (!target){
+            showStatus("error","أدخل webuid المستلم.");
+            return;
+          }
+          if (!Number.isFinite(amount) || amount <= 0){
+            showStatus("error","أدخل قيمة صالحة للتحويل.");
+            return;
+          }
+          if (note.length > 180) note = note.slice(0, 180);
+          if (state.profile && amount - (state.profile.balance || 0) > 0.0001){
+            showStatus("error","القيمة تتجاوز رصيدك الحالي.");
+            return;
+          }
+          setLoading(true, "جاري تنفيذ التحويل...");
+          submitTransfer(target, amount, note).then(function(result){
+            if (state.refs && state.refs.form) state.refs.form.reset();
+            if (state.profile && Number.isFinite(result.senderBalance)){
+              state.profile.balance = result.senderBalance;
+              updateProfileUI();
+              updateCachedBalance(result.senderBalance);
+            } else if (state.profile){
+              state.profile.balance = Math.max(0, (state.profile.balance || 0) - amount);
+              updateProfileUI();
+            }
+            updateHelperText();
+            showStatus("success","تم تحويل " + formatBalance(result.amount || amount) + " إلى " + (result.receiverWebuid || target) + " فوراً.");
+          }).catch(function(err){
+            showStatus("error", err && err.message ? err.message : "تعذر تنفيذ التحويل.");
+          }).finally(function(){
+            setLoading(false);
+          });
+        }
+
+        function build(){
+          var frag = document.createDocumentFragment();
+          frag.appendChild(ensureRoot());
+          bindAuth();
+          return frag;
+        }
+
+        function onShow(){
+          ensureRoot();
+          bindAuth();
+          if (state.currentUser && !state.profile){
+            loadProfile(state.currentUser);
+          }
+        }
+
+        return {
+          build: build,
+          onShow: onShow,
+          ready: function(){ return true; }
         };
       })();
 
@@ -2941,13 +3601,40 @@ button#logoutBtn:hover{background:#990000}
               '.categories[data-smm-inline="1"]{display:block!important;grid-template-columns:none!important;width:100%;max-width:min(960px,100%);margin:0 auto;padding:0;}',
               '.categories[data-smm-inline="1"] .smm-inline-form{max-width:920px;margin:0 auto;}',
               '.smm-inline-group{display:flex;flex-direction:column;}',
+              '.smm-inline-group-search{margin-bottom:-10px;}',
+              '.smm-inline-group-search .smm-inline-hint{margin-top:4px;}',
               '.smm-inline-search{position:relative;}',
-              '.smm-inline-search input{width:100%;border:1px solid rgba(120,145,255,.5);border-radius:16px;padding:14px 48px 14px 18px;font-size:1rem;background:#0b133c;color:#f4f6ff;outline:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);}',
+              '.smm-inline-field{width:100%;border:1.5px solid rgba(125,150,255,.55);border-radius:16px;padding:16px 22px;font-size:1.05rem;font-weight:700;color:#e8ecff;background:linear-gradient(180deg,#101a48,#0a1231);box-shadow:0 20px 40px rgba(4,6,18,.6);outline:none;transition:border-color .2s ease,box-shadow .2s ease;}',
+              '.smm-inline-field::placeholder{color:#b7c5ff;font-weight:600;}',
+              '.smm-inline-field:focus{border-color:#7d96ff;box-shadow:0 24px 44px rgba(61,96,255,.45);}',
+              '.smm-inline-field[disabled]{opacity:.5;cursor:not-allowed;}',
+              '.smm-inline-search-input{padding-right:60px!important;}',
               '.smm-inline-search i{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#99b7ff;}',
-              '.smm-inline-form input[type="url"], .smm-inline-form input[type="number"]{width:100%;border:1px solid rgba(120,145,255,.45);border-radius:16px;padding:13px 20px;font-size:1rem;background:#0e1741;color:#f3f6ff;outline:none;box-shadow:0 12px 26px rgba(6,8,24,.55);}',
-              '.smm-inline-select{width:100%;border-radius:16px;border:1px solid rgba(125,150,255,.6);padding:16px 60px 16px 22px;font-size:1.05rem;font-weight:700;color:#e8ecff;background:linear-gradient(180deg,#101a48,#0a1231);box-shadow:0 20px 40px rgba(4,6,18,.6);appearance:none;-moz-appearance:none;-webkit-appearance:none;text-align:right;direction:rtl;background-image:url(\"data:image/svg+xml,%3Csvg width%3D%2714%27 height%3D%279%27 viewBox%3D%270 0 14 9%27 fill%3D%27none%27 xmlns%3D%27http://www.w3.org/2000/svg%27%3E%3Cpath d%3D%27M2 2L7 7L12 2%27 stroke%3D%27%23BBD3FF%27 stroke-width%3D%271.8%27 stroke-linecap%3D%27round%27 stroke-linejoin%3D%27round%27/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:left 26px center;background-size:14px;color-scheme:light;}',
+              '.smm-inline-select{appearance:none;-moz-appearance:none;-webkit-appearance:none;text-align:right;direction:rtl;background-image:url(\"data:image/svg+xml,%3Csvg width%3D%2714%27 height%3D%279%27 viewBox%3D%270 0 14 9%27 fill%3D%27none%27 xmlns%3D%27http://www.w3.org/2000/svg%27%3E%3Cpath d%3D%27M2 2L7 7L12 2%27 stroke%3D%27%23BBD3FF%27 stroke-width%3D%271.8%27 stroke-linecap%3D%27round%27 stroke-linejoin%3D%27round%27/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:left 26px center;background-size:14px;color-scheme:light;padding-right:22px;padding-left:60px;}',
               '.smm-inline-select:focus{border-color:#7d96ff;box-shadow:0 24px 44px rgba(61,96,255,.45);}',
               '.smm-inline-select option, .smm-inline-select optgroup{background:#0e1741;color:#f3f6ff;}',
+              '.smm-select{position:relative;width:100%;font-weight:700;color:#f3f6ff;}',
+              '.smm-select-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1.5px solid rgba(125,150,255,.65);border-radius:16px;padding:15px 20px;background:linear-gradient(180deg,#0d1435,#080f25);color:inherit;box-shadow:0 20px 40px rgba(4,6,18,.65);cursor:pointer;transition:border-color .2s ease,box-shadow .2s ease,transform .12s ease;}',
+              '.smm-select-trigger:focus-visible{outline:2px solid rgba(125,150,255,.65);outline-offset:2px;}',
+              '.smm-select.open .smm-select-trigger{border-color:#9c9ede;box-shadow:0 22px 48px rgba(7,14,46,.75);}',
+              '.smm-select.is-disabled .smm-select-trigger{opacity:.45;cursor:not-allowed;box-shadow:none;}',
+              '.smm-select-value{flex:1;display:flex;align-items:center;gap:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:1.05rem;}',
+              '.smm-option-pill,.smm-value-pill{flex:0 0 auto;min-width:48px;padding:3px 10px;border-radius:12px;background:linear-gradient(135deg,rgba(124,126,208,.35),rgba(88,91,165,.45));color:#fff;font-size:.75rem;font-weight:800;letter-spacing:.02em;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(5,6,20,.55);border:1px solid rgba(255,255,255,.15);}',
+              '.smm-option-pill{margin-inline-end:10px;}',
+              '.smm-value-pill{margin-inline-end:8px;}',
+              '.smm-option-label,.smm-value-text{flex:1;min-width:0;text-align:right;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:1.03rem;}',
+              '.smm-select-value.is-placeholder{color:#8aa0f2;font-weight:600;}',
+              '.smm-select-caret{color:#8aa0f2;font-size:.9rem;display:inline-flex;}',
+              '.smm-select-dropdown{position:absolute;top:calc(100% + 6px);inset-inline:0;background:linear-gradient(180deg,#070b22,#0f1533);border:1px solid rgba(125,150,255,.4);border-radius:18px;box-shadow:0 28px 55px rgba(4,6,20,.75);max-height:280px;overflow:auto;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .15s ease,transform .15s ease;z-index:20;padding:8px 0;}',
+              '.smm-select.open .smm-select-dropdown{opacity:1;transform:translateY(0);pointer-events:auto;}',
+              '.smm-option{width:100%;border:0;background:transparent;color:#f3f6ff;text-align:right;padding:10px 18px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;transition:background .15s ease;}',
+              '.smm-option:not(.is-disabled):hover{background:rgba(124,126,208,.22);}',
+              '.smm-option.is-selected{background:linear-gradient(135deg,rgba(122,124,208,.35),rgba(92,94,191,.35));color:#fff;}',
+              '.smm-option.is-disabled{opacity:.35;cursor:not-allowed;}',
+              '.smm-select-dropdown::-webkit-scrollbar{width:6px;}',
+              '.smm-select-dropdown::-webkit-scrollbar-track{background:rgba(255,255,255,.05);border-radius:999px;}',
+              '.smm-select-dropdown::-webkit-scrollbar-thumb{background:rgba(124,126,208,.65);border-radius:999px;}',
+              '.smm-select-native{position:absolute;inset:auto;opacity:0;pointer-events:none;width:0;height:0;}',
               '.smm-inline-label-row{display:flex;align-items:center;justify-content:space-between;gap:14px;}',
               '.smm-inline-label-row label{margin-bottom:0;flex:1;}',
               '.smm-service-pill{min-width:66px;text-align:center;font-weight:800;font-size:.95rem;color:#1c2f8d;background:linear-gradient(180deg,#f4f6ff,#dfe5ff);border:1px solid rgba(76,124,255,.45);border-radius:999px;padding:7px 20px;box-shadow:0 14px 32px rgba(62,92,255,.32);transition:opacity .2s ease;}',
@@ -2956,14 +3643,35 @@ button#logoutBtn:hover{background:#990000}
               '.smm-inline-description-body{width:100%;border:1px solid rgba(125,150,255,.55);border-radius:16px;padding:16px 22px;font-size:1.02rem;font-weight:600;color:#f5f7ff;background:linear-gradient(180deg,#101a48,#0a1231);line-height:1.7;min-height:96px;box-shadow:0 20px 40px rgba(4,6,18,.6);white-space:pre-line;word-break:break-word;transition:border-color .2s ease,box-shadow .2s ease;}',
               '.smm-inline-description-body.empty{color:#8aa0f2;}',
               '.smm-inline-hint{font-size:.88rem;color:#c0cbff;margin-top:6px;}',
-              '.smm-inline-total{font-size:1.4rem;font-weight:800;color:#f5f7ff;}',
+              '.smm-inline-hint.error{color:#f87171;font-weight:700;}',
+              '.smm-inline-hint.success{color:#34d399;font-weight:700;}',
+              '.smm-inline-total{font-size:inherit;font-weight:inherit;line-height:inherit;text-align:center;font-variant-numeric:tabular-nums;}',
               '.smm-inline-row{display:flex;flex-wrap:wrap;gap:16px;}',
               '.smm-inline-row .smm-inline-group{flex:1;min-width:240px;}',
               '.smm-inline-submit{border:0;border-radius:18px;padding:14px 18px;font-weight:800;font-size:1.05rem;background:linear-gradient(135deg,#4c6ef5,#7c3aed);color:#fff;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease;}',
               '.smm-inline-submit:hover{transform:translateY(-1px);box-shadow:0 15px 35px rgba(79,70,229,.25);}',
               '.smm-inline-message{text-align:center;margin:18px 0 0;font-weight:600;}',
+              'html[data-theme="light"] .smm-inline-form label, body.light-mode .smm-inline-form label{color:#1b1d3b;}',
+              'html[data-theme="light"] .smm-inline-form, body.light-mode .smm-inline-form{background:linear-gradient(180deg,#ffffff,#f5f6ff);border:1px solid rgba(82,92,196,.18);box-shadow:0 24px 50px rgba(12,16,48,.08);}',
+              'html[data-theme="light"] .smm-inline-field, body.light-mode .smm-inline-field{background:linear-gradient(180deg,#ffffff,#f4f5ff);color:#111540;border:1.5px solid rgba(82,92,196,.3);box-shadow:0 18px 36px rgba(27,32,72,.08);color-scheme:light;}',
+              'html[data-theme="light"] .smm-inline-field::placeholder, body.light-mode .smm-inline-field::placeholder{color:#7a82a8;}',
+              'html[data-theme="light"] .smm-inline-select option, html[data-theme="light"] .smm-inline-select optgroup, body.light-mode .smm-inline-select option, body.light-mode .smm-inline-select optgroup{background:#f4f6fb;color:#111540;}',
+              'html[data-theme="light"] .smm-select{color:#111540;}',
+              'html[data-theme="light"] .smm-select-trigger{background:linear-gradient(180deg,#ffffff,#f5f7ff);color:#111540;border-color:rgba(82,92,196,.35);box-shadow:0 16px 34px rgba(18,22,60,.12);}',
+              'html[data-theme="light"] .smm-select.open .smm-select-trigger{border-color:#4c6ef5;box-shadow:0 20px 40px rgba(18,22,60,.18);}',
+              'html[data-theme="light"] .smm-select-value.is-placeholder{color:#6f72a6;}',
+              'html[data-theme="light"] .smm-select-dropdown{background:linear-gradient(180deg,#ffffff,#f4f5ff);border-color:rgba(82,92,196,.25);box-shadow:0 24px 48px rgba(18,22,60,.15);}',
+              'html[data-theme="light"] .smm-option{color:#1b1d3b;}',
+              'html[data-theme="light"] .smm-option-pill, html[data-theme="light"] .smm-value-pill{background:linear-gradient(135deg,rgba(76,110,245,.22),rgba(124,126,208,.28));color:#1b1d3b;box-shadow:0 6px 16px rgba(18,22,60,.18);border-color:rgba(82,92,196,.3);}',
+              'html[data-theme="light"] .smm-option.is-selected{background:linear-gradient(135deg,rgba(76,110,245,.14),rgba(124,126,208,.18));color:#1b1d3b;}',
+              'html[data-theme="light"] .smm-inline-description-body, body.light-mode .smm-inline-description-body{background:linear-gradient(180deg,#ffffff,#f5f6ff);color:#111540;border:1px solid rgba(82,92,196,.2);box-shadow:0 18px 36px rgba(27,32,72,.08);}',
+              'html[data-theme="light"] .smm-inline-description-body.empty, body.light-mode .smm-inline-description-body.empty{color:#6c7398;}',
+              'html[data-theme="light"] .smm-inline-hint, body.light-mode .smm-inline-hint{color:#7a82a8;}',
+              'html[data-theme="light"] .smm-inline-hint.success, body.light-mode .smm-inline-hint.success{color:#059669;}',
+              'html[data-theme="light"] .smm-inline-total, body.light-mode .smm-inline-total{color:#111540;}',
+              'html[data-theme="light"] .smm-inline-search i, body.light-mode .smm-inline-search i{color:#7c83a8;}',
               'html[data-theme=\"dark\"] .smm-inline-form{background:linear-gradient(180deg,#050b1e,#0a132f);border-color:rgba(118,139,255,.45);}',
-              'html[data-theme=\"dark\"] .smm-inline-form input{background:#0e1741;color:#f3f6ff;border-color:rgba(118,139,255,.45);box-shadow:0 12px 26px rgba(0,0,0,.45);}',
+              'html[data-theme=\"dark\"] .smm-inline-field, body.dark-mode .smm-inline-field{background:linear-gradient(180deg,#050b1e,#080f29);color:#e8ecff;border-color:rgba(125,150,255,.65);box-shadow:0 20px 36px rgba(0,0,0,.55);color-scheme:dark;}',
               'html[data-theme=\"dark\"] .smm-inline-select, body.dark-mode .smm-inline-select{background:linear-gradient(180deg,#050b1e,#080f29);color:#e8ecff;border-color:rgba(125,150,255,.65);box-shadow:0 20px 36px rgba(0,0,0,.55);color-scheme:dark;}',
               'html[data-theme=\"dark\"] .smm-inline-select option, body.dark-mode .smm-inline-select option, html[data-theme=\"dark\"] .smm-inline-select optgroup, body.dark-mode .smm-inline-select optgroup{background:#050b1e;color:#e8ecff;}',
               'html[data-theme=\"dark\"] .smm-service-pill{background:rgba(27,52,137,.8);color:#e2e8ff;border-color:rgba(76,124,255,.45);box-shadow:0 15px 32px rgba(20,30,82,.5);}',
@@ -3109,12 +3817,299 @@ button#logoutBtn:hover{background:#990000}
           services: [],
           categories: [],
           selectedCategory: '',
-          selectedServiceId: '',
-          searchQuery: ''
+          selectedServiceId: ''
         };
 
         var uiRefs = null;
         var qtyUserEdited = false;
+
+        var CATEGORY_ICON_RULES = [
+          { icon: '🤖', keywords: ['gpt', 'شات gpt', 'بريميوم'] },
+          { icon: '🎵', keywords: ['تيك توك', 'tiktok'] },
+          { icon: '📘', keywords: ['فيسبوك', 'facebook'] },
+          { icon: '📸', keywords: ['انستجرام', 'انستا', 'instagram'] },
+          { icon: '▶️', keywords: ['يوتيوب', 'youtube'] },
+          { icon: '✈️', keywords: ['تيليجرام', 'تيلجرام', 'تليجرام', 'telegram'] },
+          { icon: '🟢', keywords: ['واتس', 'whatsapp'] },
+          { icon: '👻', keywords: ['سناب', 'snap'] },
+          { icon: '🐦', keywords: ['تويتر', 'twitter', 'ريتويت'] },
+          { icon: '💼', keywords: ['لينكد', 'linkedin'] },
+          { icon: '🎧', keywords: ['سبوتيفاي', 'spotify'] },
+          { icon: '🎮', keywords: ['بلاستيشن', 'بلايستيشن', 'playstation', ' ps', 'ps5', 'psn', 'تويتش', 'twitch'] },
+          { icon: '💳', keywords: ['visa', 'فيزا'] },
+          { icon: '🏆', keywords: ['vip', 'نجوم', 'premium'] },
+          { icon: '✅', keywords: ['توثيق', 'verified'] },
+          { icon: '📰', keywords: ['جرايد', 'جريدة', 'google', 'جوجل'] },
+          { icon: '🕹️', keywords: ['كيك', 'kick', 'بيغو', 'bigo'] },
+          { icon: '🎯', keywords: ['رشق', 'خدمات'] },
+          { icon: '🌐', keywords: ['قنوات', 'قناة', 'channel'] },
+          { icon: '📈', keywords: ['ساعات', 'minutes', 'مشاهدات', 'views'] },
+          { icon: '📱', keywords: ['kwai', 'كواى', 'كواي'] },
+          { icon: '💬', keywords: ['تعليقات', 'comments'] },
+          { icon: '💖', keywords: ['لايك', 'likes'] },
+          { icon: '👥', keywords: ['متابعين', 'followers', 'اعضاء'] }
+        ];
+
+        function getCategoryIcon(label){
+          var text = (label || '').toLowerCase();
+          for (var i = 0; i < CATEGORY_ICON_RULES.length; i++){
+            var rule = CATEGORY_ICON_RULES[i];
+            for (var j = 0; j < rule.keywords.length; j++){
+              if (text.indexOf(rule.keywords[j]) !== -1){
+                return rule.icon;
+              }
+            }
+          }
+          return '🏷️';
+        }
+
+        function formatCategoryLabel(label){
+          if (!label) return label || '';
+          return getCategoryIcon(label) + ' ' + label;
+        }
+
+        var customSelectInstances = [];
+        var customSelectOpen = null;
+
+        function closeCustomSelect(instance){
+          if (!instance) return;
+          instance.wrapper.classList.remove('open');
+          instance.trigger.setAttribute('aria-expanded', 'false');
+          if (customSelectOpen === instance) customSelectOpen = null;
+        }
+
+        function openCustomSelect(instance){
+          if (!instance || instance.select.disabled) return;
+          if (customSelectOpen && customSelectOpen !== instance){
+            closeCustomSelect(customSelectOpen);
+          }
+          instance.wrapper.classList.add('open');
+          instance.trigger.setAttribute('aria-expanded', 'true');
+          customSelectOpen = instance;
+        }
+
+        document.addEventListener('click', function(e){
+          if (!customSelectOpen) return;
+          if (!customSelectOpen.wrapper.contains(e.target)){
+            closeCustomSelect(customSelectOpen);
+          }
+        }, true);
+
+        document.addEventListener('keydown', function(e){
+          if (e.key === 'Escape' && customSelectOpen){
+            closeCustomSelect(customSelectOpen);
+          }
+        });
+
+        function createCustomSelect(select){
+          if (!select || select.__customSelect) return select && select.__customSelect;
+          var wrapper = document.createElement('div');
+          wrapper.className = 'smm-select';
+          var trigger = document.createElement('button');
+          trigger.type = 'button';
+          trigger.className = 'smm-select-trigger';
+          trigger.setAttribute('aria-haspopup', 'listbox');
+          trigger.setAttribute('aria-expanded', 'false');
+          if (select.id) trigger.setAttribute('aria-labelledby', select.id);
+          var valueNode = document.createElement('span');
+          valueNode.className = 'smm-select-value is-placeholder';
+          valueNode.textContent = '—';
+          var caret = document.createElement('span');
+          caret.className = 'smm-select-caret';
+          caret.innerHTML = '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i>';
+          trigger.appendChild(valueNode);
+          trigger.appendChild(caret);
+          var dropdown = document.createElement('div');
+          dropdown.className = 'smm-select-dropdown';
+          dropdown.setAttribute('role', 'listbox');
+          if (select.id) dropdown.id = select.id + '__dropdown';
+
+          var parent = select.parentNode;
+          if (parent){
+            parent.insertBefore(wrapper, select);
+          }
+          wrapper.appendChild(trigger);
+          wrapper.appendChild(dropdown);
+          wrapper.appendChild(select);
+          select.classList.add('smm-select-native');
+          select.setAttribute('aria-hidden', 'true');
+          select.tabIndex = -1;
+
+          var instance = {
+            select: select,
+            wrapper: wrapper,
+            trigger: trigger,
+            dropdown: dropdown,
+            valueNode: valueNode
+          };
+          select.__customSelect = instance;
+          customSelectInstances.push(instance);
+
+          trigger.addEventListener('click', function(ev){
+            ev.preventDefault();
+            if (instance.wrapper.classList.contains('open')) closeCustomSelect(instance);
+            else openCustomSelect(instance);
+          });
+
+          select.addEventListener('change', function(){
+            updateCustomSelectValue(select);
+          });
+
+          return instance;
+        }
+
+        function ensureCustomSelect(select){
+          if (!select) return null;
+          return select.__customSelect || createCustomSelect(select);
+        }
+
+        function setValueNodeContent(instance, label, pill, isPlaceholder){
+          if (!instance || !instance.valueNode) return;
+          var node = instance.valueNode;
+          node.innerHTML = '';
+          node.classList.toggle('is-placeholder', !!isPlaceholder);
+          if (pill){
+            var pillEl = document.createElement('span');
+            pillEl.className = 'smm-value-pill';
+            pillEl.textContent = pill;
+            node.appendChild(pillEl);
+          }
+          var textEl = document.createElement('span');
+          textEl.className = 'smm-value-text';
+          textEl.textContent = label || '—';
+          node.appendChild(textEl);
+        }
+
+        function updateCustomSelectValue(select){
+          if (!select || !select.__customSelect) return;
+          var instance = select.__customSelect;
+          var selectedOption = select.options[select.selectedIndex] || null;
+          var label = '';
+          var badge = '';
+          if (selectedOption){
+            label = selectedOption.textContent || selectedOption.value || '';
+            badge = (selectedOption.dataset && selectedOption.dataset.serviceId) || '';
+          }
+          if (!label){
+            label = select.dataset.placeholder || '—';
+          }
+          var isPlaceholder = !selectedOption || selectedOption.disabled;
+          setValueNodeContent(instance, label, isPlaceholder ? '' : badge, isPlaceholder);
+
+          var currentValue = selectedOption ? selectedOption.value : '';
+          Array.prototype.forEach.call(instance.dropdown.children, function(btn){
+            if (!btn || !btn.dataset) return;
+            var isSelected = btn.dataset.value === currentValue;
+            btn.classList.toggle('is-selected', isSelected);
+            btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+          });
+
+          instance.wrapper.classList.toggle('is-disabled', !!select.disabled);
+          instance.trigger.disabled = !!select.disabled;
+          if (select.disabled && instance.wrapper.classList.contains('open')){
+            closeCustomSelect(instance);
+          }
+        }
+
+        function syncCustomSelect(select){
+          var instance = ensureCustomSelect(select);
+          if (!instance) return;
+          instance.dropdown.innerHTML = '';
+          Array.prototype.forEach.call(select.options || [], function(option){
+            if (!option || String(option.tagName).toUpperCase() !== 'OPTION') return;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'smm-option';
+            btn.dataset.value = option.value;
+            btn.setAttribute('role', 'option');
+            var label = option.textContent || option.value || '—';
+            var badge = (option.dataset && option.dataset.serviceId) || '';
+            if (badge){
+              var pill = document.createElement('span');
+              pill.className = 'smm-option-pill';
+              pill.textContent = badge;
+              btn.appendChild(pill);
+            }
+            var textSpan = document.createElement('span');
+            textSpan.className = 'smm-option-label';
+            textSpan.textContent = label;
+            btn.appendChild(textSpan);
+            if (option.disabled){
+              btn.classList.add('is-disabled');
+              btn.setAttribute('aria-disabled', 'true');
+            }
+            btn.addEventListener('click', function(e){
+              e.preventDefault();
+              if (option.disabled || select.disabled) return;
+              if (select.value !== option.value){
+                select.value = option.value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+              closeCustomSelect(instance);
+            });
+            instance.dropdown.appendChild(btn);
+          });
+          updateCustomSelectValue(select);
+        }
+
+        function applyQtyWarning(message){
+          if (!uiRefs || !uiRefs.qtyHint) return;
+          var base = uiRefs.qtyHint.dataset.baseHint || uiRefs.qtyHint.textContent || '';
+          if (message){
+            uiRefs.qtyHint.textContent = message;
+            uiRefs.qtyHint.classList.add('error');
+          } else {
+            uiRefs.qtyHint.textContent = base;
+            uiRefs.qtyHint.classList.remove('error');
+          }
+        }
+
+        function normalizeDigits(value){
+          var map = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9' };
+          return String(value == null ? '' : value).replace(/[٠-٩]/g, function(ch){ return map[ch] || ch; });
+        }
+
+        function setSearchStatus(message, type){
+          if (!uiRefs || !uiRefs.searchStatus) return;
+          var base = uiRefs.searchStatus.dataset.baseText;
+          if (!base){
+            base = uiRefs.searchStatus.textContent || '';
+            uiRefs.searchStatus.dataset.baseText = base;
+          }
+          var text = message || base;
+          uiRefs.searchStatus.textContent = text;
+          uiRefs.searchStatus.classList.remove('error','success');
+          if (type === 'error') uiRefs.searchStatus.classList.add('error');
+          else if (type === 'success') uiRefs.searchStatus.classList.add('success');
+        }
+
+        function enforceQtyBounds(){
+          if (!uiRefs || !uiRefs.qty) return;
+          var service = getSelectedService();
+          if (!service){
+            applyQtyWarning('');
+            return;
+          }
+          var raw = (uiRefs.qty.value || '').trim();
+          if (!raw){
+            applyQtyWarning('');
+            return;
+          }
+          var qty = Number(raw);
+          if (!Number.isFinite(qty)){
+            applyQtyWarning('الكمية يجب أن تكون أرقامًا صحيحة فقط');
+            return;
+          }
+          var min = Number(service.min) || 0;
+          var max = Number(service.max) || 0;
+          var message = '';
+          if (min && qty < min){
+            message = 'الحد الأدنى للكمية هو ' + min;
+          } else if (max && max > 0 && qty > max){
+            message = 'الحد الأقصى للكمية هو ' + max;
+          }
+          applyQtyWarning(message);
+        }
 
         function normalizeDescriptionValue(value){
           if (value == null) return '';
@@ -3170,13 +4165,40 @@ button#logoutBtn:hover{background:#990000}
           };
         }
 
-        function escapeHtml(str){
-          return (str == null ? '' : String(str))
-            .replace(/&/g,'&amp;')
-            .replace(/</g,'&lt;')
-            .replace(/>/g,'&gt;')
-            .replace(/"/g,'&quot;')
-            .replace(/'/g,'&#39;');
+        function buildDescriptionFragment(text){
+          var frag = document.createDocumentFragment();
+          if (text == null) return frag;
+          var value = String(text);
+          if (!value){
+            frag.appendChild(document.createTextNode(''));
+            return frag;
+          }
+          var normalized = value.replace(/\r\n?/g, '\n');
+          var lines = normalized.split('\n');
+          var urlRegex = /(https?:\/\/[^\s]+)/g;
+          lines.forEach(function(line, lineIndex){
+            if (lineIndex > 0) frag.appendChild(document.createElement('br'));
+            var lastIndex = 0;
+            var match;
+            urlRegex.lastIndex = 0;
+            while ((match = urlRegex.exec(line)) !== null){
+              if (match.index > lastIndex){
+                frag.appendChild(document.createTextNode(line.slice(lastIndex, match.index)));
+              }
+              var url = match[0];
+              var anchor = document.createElement('a');
+              anchor.href = url;
+              anchor.target = '_blank';
+              anchor.rel = 'noopener noreferrer';
+              anchor.textContent = url;
+              frag.appendChild(anchor);
+              lastIndex = match.index + url.length;
+            }
+            if (lastIndex < line.length){
+              frag.appendChild(document.createTextNode(line.slice(lastIndex)));
+            }
+          });
+          return frag;
         }
 
         function buildCategories(list){
@@ -3194,13 +4216,30 @@ button#logoutBtn:hover{background:#990000}
 
         function getFilteredServices(){
           var cat = uiState.selectedCategory;
-          var query = normalizeText(uiState.searchQuery || '');
           return uiState.services.filter(function(service){
             if (cat && service.categoryKey !== cat) return false;
-            if (!query) return true;
-            var haystack = (service.normalizedName || '') + ' ' + (service.normalizedDescription || '') + ' ' + (service.id || '') + ' ' + (service.categoryKey || '');
-            return haystack.indexOf(query) !== -1;
+            return true;
           });
+        }
+
+        function findServiceByIdFragment(fragment){
+          if (!fragment) return null;
+          var digits = normalizeDigits(fragment).replace(/\D/g,'').trim();
+          if (!digits) return null;
+          var exact = uiState.services.find(function(service){
+            return String(service.id) === digits;
+          });
+          return exact || null;
+        }
+
+        function focusServiceByIdFragment(fragment){
+          var service = findServiceByIdFragment(fragment);
+          if (!service) return null;
+          uiState.selectedCategory = service.categoryKey || uiState.selectedCategory || '';
+          renderCategories();
+          uiState.selectedServiceId = service.id;
+          renderServices();
+          return service;
         }
 
         function renderCategories(){
@@ -3214,6 +4253,7 @@ button#logoutBtn:hover{background:#990000}
             placeholder.selected = true;
             select.appendChild(placeholder);
             select.disabled = true;
+            syncCustomSelect(select);
             return;
           }
           select.disabled = false;
@@ -3223,10 +4263,11 @@ button#logoutBtn:hover{background:#990000}
           uiState.categories.forEach(function(cat){
             var opt = document.createElement('option');
             opt.value = cat.key;
-            opt.textContent = cat.label;
+            opt.textContent = formatCategoryLabel(cat.label);
             if (cat.key === uiState.selectedCategory) opt.selected = true;
             select.appendChild(opt);
           });
+          syncCustomSelect(select);
         }
 
         function renderServices(){
@@ -3248,6 +4289,7 @@ button#logoutBtn:hover{background:#990000}
             uiState.selectedServiceId = '';
             qtyUserEdited = false;
             updateDetails();
+            syncCustomSelect(select);
             return;
           }
           select.disabled = false;
@@ -3260,11 +4302,14 @@ button#logoutBtn:hover{background:#990000}
           filtered.forEach(function(service){
             var opt = document.createElement('option');
             opt.value = service.id;
-            opt.textContent = '#' + service.id + ' • ' + (service.name || ('خدمة #' + service.id));
+            opt.textContent = service.name || ('خدمة ' + service.id);
+            opt.dataset.serviceId = service.id;
             if (service.id === uiState.selectedServiceId) opt.selected = true;
             select.appendChild(opt);
           });
           updateDetails();
+          enforceQtyBounds();
+          syncCustomSelect(select);
         }
 
         function ensureForm(section){
@@ -3274,20 +4319,21 @@ button#logoutBtn:hover{background:#990000}
           var form = document.createElement('div');
           form.className = 'smm-inline-form';
           form.innerHTML = [
-            '<div class="smm-inline-group">',
-              '<label>بحث</label>',
+              '<div class="smm-inline-group smm-inline-group-search">',
+              '<label>ابحث برقم الخدمة</label>',
               '<div class="smm-inline-search">',
-                '<input type="text" data-smm-search placeholder="ابحث عن الخدمة أو التصنيف...">',
+                '<input type="text" data-smm-search class="smm-inline-field smm-inline-search-input" placeholder="أدخل رقم الخدمة..." inputmode="numeric" autocomplete="off">',
                 '<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>',
               '</div>',
+              '<p class="smm-inline-hint" data-smm-search-status></p>',
             '</div>',
             '<div class="smm-inline-group">',
               '<label for="smmInlineCategory">الفئة</label>',
-              '<select id="smmInlineCategory" data-smm-category class="smm-inline-select"></select>',
+              '<select id="smmInlineCategory" data-smm-category class="smm-inline-field smm-inline-select"></select>',
             '</div>',
             '<div class="smm-inline-group">',
               '<label for="smmInlineService" data-smm-service-label>الخدمة</label>',
-              '<select id="smmInlineService" data-smm-service class="smm-inline-select"></select>',
+              '<select id="smmInlineService" data-smm-service class="smm-inline-field smm-inline-select"></select>',
               '<p class="smm-inline-hint" data-smm-service-empty>اختر فئة لعرض الخدمات.</p>',
             '</div>',
             '<div class="smm-inline-group">',
@@ -3296,17 +4342,17 @@ button#logoutBtn:hover{background:#990000}
             '</div>',
             '<div class="smm-inline-group">',
               '<label for="smmInlineLink">الرابط</label>',
-              '<input id="smmInlineLink" type="url" data-smm-link placeholder="أدخل الرابط المطلوب" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
+              '<input id="smmInlineLink" type="url" data-smm-link class="smm-inline-field" placeholder="أدخل الرابط المطلوب" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
             '</div>',
             '<div class="smm-inline-row">',
               '<div class="smm-inline-group">',
                 '<label for="smmInlineQty">الكمية</label>',
-                '<input id="smmInlineQty" type="number" step="1" data-smm-qty placeholder="أدخل الكمية المطلوبة">',
+                '<input id="smmInlineQty" type="number" step="1" data-smm-qty class="smm-inline-field" placeholder="أدخل الكمية المطلوبة">',
                 '<div class="smm-inline-hint" data-smm-qty-hint>الحد الأدنى - الحد الأقصى سيتم عرضه بعد اختيار الخدمة.</div>',
               '</div>',
               '<div class="smm-inline-group">',
-                '<label>السعر</label>',
-                '<div class="smm-inline-total" data-smm-total>—</div>',
+                '<label for="smmInlineTotal">السعر</label>',
+                '<input id="smmInlineTotal" type="text" data-smm-total class="smm-inline-field smm-inline-total" value="—" readonly>',
               '</div>',
             '</div>',
             '<button type="button" class="smm-inline-submit" data-smm-submit>تنفيذ الطلب</button>'
@@ -3316,6 +4362,7 @@ button#logoutBtn:hover{background:#990000}
             section: section,
             form: form,
             search: form.querySelector('[data-smm-search]'),
+            searchStatus: form.querySelector('[data-smm-search-status]'),
             category: form.querySelector('[data-smm-category]'),
             service: form.querySelector('[data-smm-service]'),
             serviceEmpty: form.querySelector('[data-smm-service-empty]'),
@@ -3327,10 +4374,27 @@ button#logoutBtn:hover{background:#990000}
             total: form.querySelector('[data-smm-total]'),
             submit: form.querySelector('[data-smm-submit]')
           };
+          if (uiRefs.category) uiRefs.category.dataset.placeholder = 'اختر الفئة';
+          if (uiRefs.service) uiRefs.service.dataset.placeholder = 'اختر الخدمة';
           if (uiRefs.search){
             uiRefs.search.addEventListener('input', function(e){
-              uiState.searchQuery = e.target.value || '';
-              renderServices();
+              var raw = e.target.value || '';
+              var digits = normalizeDigits(raw).replace(/\D/g,'');
+              if (digits !== raw) e.target.value = digits;
+              if (!digits){
+                setSearchStatus('', '');
+                return;
+              }
+              if (!uiState.services.length){
+                setSearchStatus('لم يتم تحميل الخدمات بعد.', 'error');
+                return;
+              }
+              var matched = focusServiceByIdFragment(digits);
+              if (matched){
+                setSearchStatus('تم تحديد الخدمة #' + matched.id, 'success');
+              } else {
+                setSearchStatus('لا توجد خدمة بهذا الرقم.', 'error');
+              }
             });
           }
           if (uiRefs.category){
@@ -3345,17 +4409,26 @@ button#logoutBtn:hover{background:#990000}
               uiState.selectedServiceId = e.target.value || '';
               qtyUserEdited = false;
               updateDetails();
+              enforceQtyBounds();
             });
           }
           if (uiRefs.qty){
+            uiRefs.qty.addEventListener('keydown', function(e){
+              if (e.key === ' ') e.preventDefault();
+            });
             uiRefs.qty.addEventListener('input', function(){
+              var sanitized = (this.value || '').replace(/\D/g,'');
+              if (sanitized !== this.value) this.value = sanitized;
               qtyUserEdited = true;
+              enforceQtyBounds();
               updateTotal();
             });
           }
           if (uiRefs.submit){
             uiRefs.submit.addEventListener('click', handleSubmit);
           }
+          if (uiRefs.category) syncCustomSelect(uiRefs.category);
+          if (uiRefs.service) syncCustomSelect(uiRefs.service);
           return uiRefs;
         }
 
@@ -3491,7 +4564,8 @@ button#logoutBtn:hover{background:#990000}
               uiRefs.description.textContent = 'اختر خدمة لعرض تفاصيلها والتعليمات.';
               uiRefs.description.classList.add('empty');
             } else if (service.description){
-              uiRefs.description.innerHTML = escapeHtml(service.description).replace(/\n/g, '<br>');
+              uiRefs.description.innerHTML = '';
+              uiRefs.description.appendChild(buildDescriptionFragment(service.description));
               uiRefs.description.classList.remove('empty');
             } else {
               uiRefs.description.textContent = 'لا يوجد وصف متاح لهذه الخدمة.';
@@ -3509,18 +4583,28 @@ button#logoutBtn:hover{background:#990000}
           if (!uiRefs || !uiRefs.qty) return;
           if (!service){
             uiRefs.qty.value = '';
-            if (uiRefs.qtyHint) uiRefs.qtyHint.textContent = 'الحد الأدنى - الحد الأقصى سيتم عرضه بعد اختيار الخدمة.';
+            if (uiRefs.qtyHint){
+              uiRefs.qtyHint.dataset.baseHint = 'الحد الأدنى - الحد الأقصى سيتم عرضه بعد اختيار الخدمة.';
+              uiRefs.qtyHint.textContent = uiRefs.qtyHint.dataset.baseHint;
+              uiRefs.qtyHint.classList.remove('error');
+            }
             qtyUserEdited = false;
+            applyQtyWarning('');
             return;
           }
           var min = Number(service.min) || 0;
           var max = Number(service.max) || 0;
           if (uiRefs.qtyHint){
-            uiRefs.qtyHint.textContent = (min ? ('الحد الأدنى ' + min) : 'بدون حد أدنى') + ' - ' + (max ? ('الحد الأقصى ' + max) : 'بدون حد أقصى');
+            var base = (min ? ('الحد الأدنى ' + min) : 'بدون حد أدنى') + ' - ' + (max ? ('الحد الأقصى ' + max) : 'بدون حد أقصى');
+            uiRefs.qtyHint.dataset.baseHint = base;
+            uiRefs.qtyHint.textContent = base;
+            uiRefs.qtyHint.classList.remove('error');
           }
+          applyQtyWarning('');
           if (!qtyUserEdited){
             uiRefs.qty.value = min ? String(min) : '';
           }
+          enforceQtyBounds();
         }
 
         function clampQuantity(){
@@ -3540,12 +4624,12 @@ button#logoutBtn:hover{background:#990000}
           if (!uiRefs || !uiRefs.total) return;
           var service = getSelectedService();
           if (!service){
-            uiRefs.total.textContent = '—';
+            uiRefs.total.value = '—';
             return;
           }
           var qty = Number(uiRefs.qty && uiRefs.qty.value);
           if (!Number.isFinite(qty) || qty <= 0){
-            uiRefs.total.textContent = '—';
+            uiRefs.total.value = '—';
             return;
           }
           var unit = Number(service.unit) || 1000;
@@ -3554,11 +4638,11 @@ button#logoutBtn:hover{background:#990000}
             ratePerUnit = Number(service.rate);
           }
           if (ratePerUnit == null || !Number.isFinite(ratePerUnit)){
-            uiRefs.total.textContent = '—';
+            uiRefs.total.value = '—';
             return;
           }
           var total = ratePerUnit * qty;
-          uiRefs.total.textContent = total.toFixed(3) + ' $';
+          uiRefs.total.value = total.toFixed(3) + ' $';
         }
 
         function submitInlineOrder(service, link, qty){
@@ -3593,11 +4677,13 @@ button#logoutBtn:hover{background:#990000}
             showToast('يرجى إدخال الرابط المطلوب', false);
             return;
           }
-          var qty = Number(uiRefs.qty && uiRefs.qty.value);
+          var qtyRaw = (uiRefs.qty && uiRefs.qty.value || '').trim();
+          var qty = qtyRaw ? parseInt(qtyRaw, 10) : NaN;
           if (!Number.isFinite(qty) || qty <= 0){
             showToast('يرجى إدخال كمية صحيحة', false);
             return;
           }
+          uiRefs.qty.value = String(qty);
           var min = Number(service.min) || 0;
           var max = Number(service.max) || 0;
           if (min && qty < min){
@@ -3608,6 +4694,7 @@ button#logoutBtn:hover{background:#990000}
             showToast('الحد الأقصى للطلب هو ' + max, false);
             return;
           }
+          applyQtyWarning('');
           submitInlineOrder(service, link, qty);
         }
 
@@ -3701,6 +4788,7 @@ button#logoutBtn:hover{background:#990000}
         'freefireinbut': { url: 'freefireinbut.html', title: 'فري فاير' },
         'settings':      { title: 'إعدادات الحساب', build: settingsRoute.build, onShow: settingsRoute.onShow },
         'reviews':       { title: 'التقييمات', build: reviewsRoute.build, onShow: reviewsRoute.onShow, ready: reviewsRoute.ready },
+        'transfer':      { title: 'تحويل رصيد', build: transferRoute.build, onShow: transferRoute.onShow, ready: transferRoute.ready },
         'wallet':        { title: 'محفظتي', build: walletRoute.build, onShow: walletRoute.onShow, ready: walletRoute.ready }
       };
 
@@ -3832,17 +4920,15 @@ button#logoutBtn:hover{background:#990000}
             '<span data-manual-anchor class="manual-games-anchor" aria-hidden="true" style="display:none"></span>\n' +
           '</section>',
         social:
-          '<div class="search-container">\n' +
-            '<input type="text" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" />\n' +
-          '</div>\n' +
           '<section class="categories" data-smm-inline="1">\n' +
             '<div class="smm-inline-form">\n' +
-              '<div class="smm-inline-group">\n' +
-                '<label>بحث</label>\n' +
+              '<div class="smm-inline-group smm-inline-group-search">\n' +
+                '<label>ابحث برقم الخدمة</label>\n' +
                 '<div class="smm-inline-search">\n' +
-                  '<input type="text" placeholder="ابحث عن الخدمة أو التصنيف...">\n' +
+                  '<input type="text" placeholder="أدخل رقم الخدمة..." inputmode="numeric">\n' +
                   '<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>\n' +
                 '</div>\n' +
+                '<p class="smm-inline-hint"></p>\n' +
               '</div>\n' +
               '<div class="smm-inline-group">\n' +
                 '<label>الفئة</label>\n' +
@@ -3869,7 +4955,7 @@ button#logoutBtn:hover{background:#990000}
                 '</div>\n' +
                 '<div class="smm-inline-group">\n' +
                   '<label>السعر</label>\n' +
-                  '<div class="smm-inline-total">—</div>\n' +
+                  '<input type="text" class="smm-inline-field smm-inline-total" value="—" disabled>\n' +
                 '</div>\n' +
               '</div>\n' +
               '<button type="button" class="smm-inline-submit" disabled>تنفيذ الطلب</button>\n' +
@@ -4057,6 +5143,7 @@ button#logoutBtn:hover{background:#990000}
         if (path.endsWith('freefireinbut.html'))  { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('freefireinbut'); return; }
         if (path.endsWith('reviews.html'))        { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('reviews'); return; }
         if (path.endsWith('wallet.html'))         { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('wallet'); return; }
+        if (path.endsWith('transfer.html'))       { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('transfer'); return; }
         if (path.endsWith('settings.html'))       { e.preventDefault(); e.stopPropagation(); try{ e.stopImmediatePropagation(); }catch(_){} navigate('settings'); return; }
       }
       document.addEventListener('pointerdown', handleCardNavEvent, true);
@@ -4139,7 +5226,6 @@ button#logoutBtn:hover{background:#990000}
         <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
         <span>انضم للقروب الآن</span>
       </a>
-      <p class="wa-note">تظهر هذه الرسالة مرة واحدة خلال جلسة التصفح الحالية.</p>
     </div>
   </div>
 
@@ -4147,14 +5233,14 @@ button#logoutBtn:hover{background:#990000}
     (function(){
       var modal = document.getElementById('wa-join-modal');
       if(!modal) return;
-      var KEY = 'wa_join_once_v1';
+      var KEY = 'wa_join_session_seen';
 
       function lockScroll(on){ try { document.body.style.overflow = on ? 'hidden' : ''; } catch(_){} }
-      function open(){ modal.style.display = 'flex'; lockScroll(true); try { localStorage.setItem(KEY, '1'); } catch(_){} }
-      function close(){ modal.style.display = 'none'; lockScroll(false); try { localStorage.setItem(KEY, '1'); } catch(_){} }
+      function open(){ modal.style.display = 'flex'; lockScroll(true); try { sessionStorage.setItem(KEY, '1'); } catch(_){} }
+      function close(){ modal.style.display = 'none'; lockScroll(false); }
 
       var seen = '0';
-      try { seen = localStorage.getItem(KEY) || '0'; } catch(_){ seen = '0'; }
+      try { seen = sessionStorage.getItem(KEY) || '0'; } catch(_){ seen = '0'; }
       if (seen !== '1') {
         if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', open);
