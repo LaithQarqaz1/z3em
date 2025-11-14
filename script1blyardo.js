@@ -1,4 +1,4 @@
-﻿// ================== إعدادات Firebase (كما هي) ==================
+// ================== إعدادات Firebase (كما هي) ==================
 const firebaseConfig = {
           apiKey:"AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
           authDomain:"z3em-d9b11.firebaseapp.com",
@@ -174,24 +174,122 @@ function generateSessionKey(len = 64) {
   return rand(ALPHA + SYMBOLS, len);
 }
 
+function readSessionKeyInfo() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+async function persistSessionKeyRecord(uid, sessionKey, ttlSeconds) {
+  if (!uid || !sessionKey) throw new Error("session_invalid");
+  const payload = {
+    sessionKey,
+    ttlSeconds: Number.isFinite(Number(ttlSeconds)) && Number(ttlSeconds) >= 0 ? Number(ttlSeconds) : 0
+  };
+  try {
+    if (firebase && firebase.firestore && firebase.firestore.FieldValue && typeof firebase.firestore.FieldValue.serverTimestamp === "function") {
+      payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    } else {
+      payload.createdAt = new Date().toISOString();
+    }
+  } catch {
+    payload.createdAt = new Date().toISOString();
+  }
+  await db.collection("users").doc(uid)
+    .collection("keys").doc("session")
+    .set(payload, { merge: true });
+  try {
+    localStorage.setItem("sessionKeyInfo", JSON.stringify({
+      uid,
+      sessionKey,
+      ts: Date.now(),
+      ttlSeconds: payload.ttlSeconds
+    }));
+  } catch {}
+}
+
+async function rotateAndStoreSessionKey(uid, ttlSeconds) {
+  if (!uid) throw new Error("uid_missing");
+  const cached = readSessionKeyInfo();
+  const resolvedTtl = Number.isFinite(Number(ttlSeconds))
+    ? Number(ttlSeconds)
+    : (Number(cached.ttlSeconds) || 0);
+  const newKey = generateSessionKey();
+  await persistSessionKeyRecord(uid, newKey, resolvedTtl);
+  return newKey;
+}
+
 // كتابة sessionKey الجديد في Firestore ثم تحديث localStorage
 async function rotateSessionKeyAfterOrder(uid, ttlSeconds = 0) {
-  const newKey = generateSessionKey();
   try {
-    await db.collection("users").doc(uid)
-      .collection("keys").doc("session")
-      .set({
-        sessionKey: newKey,
-        ttlSeconds,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-
-    localStorage.setItem("sessionKeyInfo", JSON.stringify({
-      uid, sessionKey: newKey, ts: Date.now(), ttlSeconds
-    }));
+    await rotateAndStoreSessionKey(uid, ttlSeconds);
   } catch (e) {
     console.warn("Session rotate failed:", e?.message || e);
   }
+}
+
+async function ensureSessionKeyValue(user, { forceRotate = false } = {}) {
+  const cached = getLocalSessionKey();
+  if (!user) return cached || "";
+  if (!forceRotate && cached) return cached;
+  try {
+    const rotated = await rotateAndStoreSessionKey(user.uid);
+    if (rotated) return rotated;
+  } catch (err) {
+    console.warn("ensure_session_key_failed:", err?.message || err);
+  }
+  return cached || "";
+}
+
+const TURNSTILE_RECOVERABLE_CODES = {
+  "turnstile_failed": true,
+  "turnstile_error": true,
+  "turnstile_missing": true,
+  "turnstile_token_missing": true,
+  "turnstile_expired": true,
+  "turnstile_required": true,
+  "turnstile_bad_token": true,
+  "turnstile_secret_missing": true
+};
+
+const SESSION_RECOVERABLE_CODES = {
+  "session_missing": true,
+  "session_invalid": true,
+  "session_mismatch": true,
+  "session_expired": true,
+  "session_not_found": true
+};
+
+function isTurnstileRecoverable(code) {
+  if (!code) return false;
+  return !!TURNSTILE_RECOVERABLE_CODES[String(code).toLowerCase()];
+}
+
+function isSessionRecoverable(code) {
+  if (!code) return false;
+  const normalized = String(code).toLowerCase();
+  if (SESSION_RECOVERABLE_CODES[normalized]) return true;
+  return normalized.startsWith("session_");
+}
+
+async function requestTurnstileTokenWithRetry(maxAttempts = 2) {
+  const limit = Number(maxAttempts) > 0 ? Number(maxAttempts) : 2;
+  let attempt = 0;
+  let lastError = null;
+  while (attempt < limit) {
+    attempt += 1;
+    try {
+      const token = await getTurnstileTokenInteractive();
+      if (token) return token;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  if (lastError) throw lastError;
+  throw new Error("turnstile_token_missing");
 }
 
 /* ================== الأسعار كما هي ================== */
@@ -242,11 +340,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
 
 /* ================== إرسال الطلب (مع كشف فشل رمز الجلسة) ================== */
 async function sendOrder() {
-  // التقط قيمة الآيدي من حقل المودال أو الحقل الأساسي إن وُجد
   const pidInput = document.getElementById("player-id") || document.getElementById("modal-player-id");
   const pid = pidInput ? (pidInput.value || "").trim() : "";
 
-  // التقط العرض المحدد من الكلاسات، مع احتياط باستخدام _pm_currentCard إن لم توجد كلاس selected
   let selectedOffers = Array.from(document.querySelectorAll('.offer-box.selected')).map(el => ({
     type: el.dataset.type,
     jewels: el.dataset.jewels || null,
@@ -266,15 +362,6 @@ async function sendOrder() {
     return;
   }
 
-  // التحقق من Turnstile قبل الإرسال
-  let turnstileToken = '';
-  try {
-    turnstileToken = await getTurnstileTokenInteractive();
-  } catch(_) {
-    showToast('فشل التحقق الأمني، حاول مجدداً', 'error');
-    return;
-  }
-
   const user = firebase.auth().currentUser;
   if (!user) {
     showToast("❌ يجب تسجيل الدخول أولاً", "error");
@@ -282,14 +369,12 @@ async function sendOrder() {
     return;
   }
 
-  // مفتاح الجلسة المحلي
-  const sessionKey = getLocalSessionKey();
+  let sessionKey = await ensureSessionKeyValue(user, { forceRotate: false });
   if (!sessionKey) {
     showSessionExpiredModal();
     return;
   }
 
-  // authkey من Firestore (كما هو)
   let authkey = null;
   try {
     const userDoc = await firebase.firestore().collection("users").doc(user.uid).get();
@@ -299,15 +384,20 @@ async function sendOrder() {
     return;
   }
 
-  // JWT
-  let idToken;
-  try { idToken = await user.getIdToken(true); }
-  catch (e) {
-    showToast("❌ فشل في التحقق من تسجيل الدخول", "error");
-    return;
+    let idToken;
+  try {
+    idToken = await user.getIdToken(true);
+  } catch (err) {
+    try {
+      await user.reload();
+      idToken = await user.getIdToken(true);
+    } catch (reloadErr) {
+      console.warn("id_token_failed:", reloadErr?.message || reloadErr);
+      showSessionExpiredModal();
+      return;
+    }
   }
 
-  // Quote
   let total, breakdown;
   try {
     const priceRes = await fetch("https://8ball.laithqarqaz1.workers.dev/", {
@@ -326,11 +416,17 @@ async function sendOrder() {
   }
 
   const currentUrl = window.location.href;
-
-  // ====== Purchase (مع اللودر وتعطيل الزر) ======
   const submitBtn = document.querySelector('.send-button');
+  const MAX_ATTEMPTS = 3;
+  const MAX_SESSION_RETRIES = 1;
+  const MAX_TURNSTILE_RESPONSE_RETRIES = 1;
+  let finalResult = null;
+  let sessionRetryCount = 0;
+  let turnstileResponseRetryCount = 0;
+  let lastError = null;
+  let lastFailureCode = "";
+
   try {
-    // إظهار اللودر وتعطيل الزر
     showPreloader();
     if (submitBtn) {
       submitBtn.disabled = true;
@@ -340,63 +436,105 @@ async function sendOrder() {
       submitBtn.style.pointerEvents = 'none';
     }
 
-    const response = await fetch("https://8ball.laithqarqaz1.workers.dev/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${idToken}`,
-        "X-SessionKey": sessionKey
-      },
-      body: JSON.stringify({
-        playerId: pid,
-        offers: selectedOffers,
-        currency: "دأ",
-        currentUrl,
-        authkey,
-        turnstileToken
-      })
-    });
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+      let turnstileToken = "";
+      try {
+        turnstileToken = await requestTurnstileTokenWithRetry(2);
+      } catch (tokenErr) {
+        lastError = tokenErr;
+        lastFailureCode = (tokenErr && tokenErr.code) ? tokenErr.code : "turnstile_error";
+        break;
+      }
 
-    // إن كانت 401 نتحقق من كود الخطأ ونُظهر النافذة المطلوبة
-    if (response.status === 401) {
-      let errJson = {};
-      try { errJson = await response.json(); } catch {}
-      const code = (errJson?.code || "").toLowerCase();
-      const sessionFail =
-        code === "session_missing" ||
-        code === "session_invalid" ||
-        code === "session_mismatch" ||
-        code === "session_expired";
+      let response;
+      let payload = {};
+      try {
+        response = await fetch("https://8ball.laithqarqaz1.workers.dev/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`,
+            "X-SessionKey": sessionKey
+          },
+          body: JSON.stringify({
+            playerId: pid,
+            offers: selectedOffers,
+            currency: "دأ",
+            currentUrl,
+            authkey,
+            turnstileToken
+          })
+        });
+        payload = await response.json().catch(() => ({}));
+      } catch (networkErr) {
+        lastError = networkErr;
+        break;
+      }
 
-      if (sessionFail) {
+      const code = (payload && payload.code ? String(payload.code).toLowerCase() : "");
+
+      if (response.status === 401 || isSessionRecoverable(code)) {
+        lastFailureCode = code || "session_invalid";
+        if (sessionRetryCount < MAX_SESSION_RETRIES) {
+          sessionRetryCount += 1;
+          sessionKey = await ensureSessionKeyValue(user, { forceRotate: true });
+          if (!sessionKey) {
+            lastError = new Error("session_missing");
+            break;
+          }
+          continue;
+        }
         showSessionModal("فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى");
         return;
       }
-      // إن لم يكن خطأ جلسة، عالج كالعادة
-      showToast("❌ فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
+
+      if (payload && payload.success === false) {
+        lastFailureCode = code || "";
+        if (isTurnstileRecoverable(code) && turnstileResponseRetryCount < MAX_TURNSTILE_RESPONSE_RETRIES) {
+          turnstileResponseRetryCount += 1;
+          continue;
+        }
+        if (isSessionRecoverable(code) && sessionRetryCount < MAX_SESSION_RETRIES) {
+          sessionRetryCount += 1;
+          sessionKey = await ensureSessionKeyValue(user, { forceRotate: true });
+          if (!sessionKey) {
+            lastError = new Error("session_missing");
+            break;
+          }
+          continue;
+        }
+        showToast("❌ فشل الشراء: " + (payload.error || "خطأ غير معروف"), "error");
+        return;
+      }
+
+      if (payload && payload.success) {
+        finalResult = payload;
+        break;
+      }
+    }
+
+    if (finalResult && finalResult.success) {
+      showConfirmation(finalResult.orderCode);
+      try { await rotateSessionKeyAfterOrder(user.uid); } catch {}
       return;
     }
 
-    const result = await response.json();
-
-    if (result.success) {
-      showConfirmation(result.orderCode);
-      // تدوير sessionKey بعد نجاح الطلب
-      try { await rotateSessionKeyAfterOrder(user.uid); } catch {}
-    } else {
-      // أيضًا إن أعاد الخادم كود جلسة مع 200 (احتمال ضعيف) نتعامل معه
-      const code = (result?.code || "").toLowerCase();
-      if (code.startsWith("session_")) {
+    if (lastError) {
+      if (isSessionRecoverable(lastFailureCode) || (lastError && lastError.message === "session_missing")) {
         showSessionModal("فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى");
-        return;
+      } else if (isTurnstileRecoverable(lastFailureCode)) {
+        showToast('فشل التحقق الأمني، حاول مجدداً', 'error');
+      } else {
+        showToast("❌ فشل الشراء: حدث خطأ أثناء المعالجة", "error");
       }
-      showToast("❌ فشل الشراء: " + (result.error || "خطأ غير معروف"), "error");
+      return;
     }
+
+    showToast("❌ فشل الشراء: لم يتم تلقي استجابة صالحة", "error");
   } catch (err) {
     console.error("Worker Error:", err);
     showToast("❌ حدث خطأ أثناء الشراء", "error");
   } finally {
-    // إخفاء اللودر وإرجاع حالة الزر مهما حصل
     hidePreloader();
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -577,6 +715,12 @@ const detectTheme = () => {
 document.addEventListener('DOMContentLoaded', () => {
   // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
 });
+
+
+
+
+
+
 
 
 

@@ -3809,6 +3809,140 @@ button#logoutBtn:hover{background:#990000}
           }
         }
 
+        var SESSION_KEY_ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var SESSION_KEY_SYMBOLS = "!@#$%&";
+
+        function readStoredSessionInfo(){
+          try{
+            var parsed = JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
+            return parsed && typeof parsed === "object" ? parsed : {};
+          }catch(_){
+            return {};
+          }
+        }
+
+        function ensureFirestoreInstance(){
+          if (typeof firebase === "undefined" || !firebase.firestore) return null;
+          try{
+            if (window.__ORIG_FIREBASE__){
+              if (window.__ORIG_FIREBASE__.auth) firebase.auth = window.__ORIG_FIREBASE__.auth;
+              if (window.__ORIG_FIREBASE__.firestore) firebase.firestore = window.__ORIG_FIREBASE__.firestore;
+            }
+          }catch(_){}
+          try{
+            if ((!firebase.apps || !firebase.apps.length) && window.__FIREBASE_CONFIG__){
+              firebase.initializeApp(window.__FIREBASE_CONFIG__);
+            }
+          }catch(_){}
+          try { return firebase.firestore(); } catch(_){ return null; }
+        }
+
+        function randomFromAlphabet(alphabet, length){
+          var source = alphabet && alphabet.length ? alphabet : SESSION_KEY_ALPHA;
+          var size = Number(length) > 0 ? Number(length) : 64;
+          var buffer = new Uint32Array(size);
+          try {
+            if (window.crypto && window.crypto.getRandomValues){
+              window.crypto.getRandomValues(buffer);
+            } else {
+              throw new Error("no_crypto");
+            }
+          } catch(_){
+            for (var i = 0; i < size; i++){
+              buffer[i] = Math.floor(Math.random() * source.length);
+            }
+          }
+          var out = "";
+          for (var j = 0; j < size; j++){
+            out += source.charAt(buffer[j] % source.length);
+          }
+          return out;
+        }
+
+        function generateSessionKeyValue(len){
+          return randomFromAlphabet(SESSION_KEY_ALPHA + SESSION_KEY_SYMBOLS, len || 64);
+        }
+
+        async function rotateSessionKeyForUser(user){
+          if (!user) return null;
+          var store = ensureFirestoreInstance();
+          if (!store) return null;
+          var info = readStoredSessionInfo();
+          var ttlSeconds = Number(info.ttlSeconds);
+          if (!Number.isFinite(ttlSeconds) || ttlSeconds < 0) ttlSeconds = 0;
+          var newKey = generateSessionKeyValue(64);
+          var payload = {
+            sessionKey: newKey,
+            ttlSeconds: ttlSeconds
+          };
+          try{
+            if (firebase && firebase.firestore && firebase.firestore.FieldValue && typeof firebase.firestore.FieldValue.serverTimestamp === "function"){
+              payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            } else {
+              payload.createdAt = new Date().toISOString();
+            }
+          }catch(_){}
+          try{
+            await store.collection("users").doc(user.uid).collection("keys").doc("session").set(payload, { merge: true });
+          }catch(err){
+            console.warn("smm_session_rotate_failed", err && err.message ? err.message : err);
+            return null;
+          }
+          try{
+            localStorage.setItem("sessionKeyInfo", JSON.stringify({
+              uid: user.uid,
+              sessionKey: newKey,
+              ts: Date.now(),
+              ttlSeconds: ttlSeconds
+            }));
+          }catch(_){}
+          return newKey;
+        }
+
+        async function ensureSessionKeyValue(user, forceRotate){
+          var cached = getLocalSessionKey();
+          if (!user) return cached || "";
+          if (!forceRotate && cached) return cached;
+          try {
+            var rotated = await rotateSessionKeyForUser(user);
+            if (rotated) return rotated;
+          } catch (err) {
+            try { console.warn("smm_session_rotate_failed", err && err.message ? err.message : err); } catch (_) {}
+          }
+          return cached || "";
+        }
+
+        var TURNSTILE_RECOVERABLE_CODES = {
+          "turnstile_failed": true,
+          "turnstile_error": true,
+          "turnstile_missing": true,
+          "turnstile_token_missing": true,
+          "turnstile_expired": true,
+          "turnstile_unavailable": true,
+          "turnstile_load_failed": true,
+          "turnstile_bad_token": true,
+          "turnstile_secret_missing": true
+        };
+
+        var SESSION_RECOVERABLE_CODES = {
+          "session_missing": true,
+          "session_invalid": true,
+          "session_mismatch": true,
+          "session_not_found": true,
+          "session_expired": true,
+          "session_error": true
+        };
+
+        function isTurnstileAutoRecoverable(code){
+          if (!code) return false;
+          return !!TURNSTILE_RECOVERABLE_CODES[String(code).toLowerCase()];
+        }
+
+        function isSessionAutoRecoverable(code){
+          if (!code) return false;
+          return !!SESSION_RECOVERABLE_CODES[String(code).toLowerCase()];
+        }
+
         function waitForUser(){
           var auth = ensureFirebaseAuth();
           if (!auth) return Promise.resolve(null);
@@ -4738,18 +4872,21 @@ button#logoutBtn:hover{background:#990000}
           });
         }
 
-        function placeInlineOrder(service, link, qty){
-          var currentUser = null;
-          var sessionKey = null;
-          return waitForUser().then(function(user){
-            if (!user) throw createError('login_required','سجّل الدخول لتنفيذ الطلب.');
-            currentUser = user;
-            sessionKey = getLocalSessionKey();
+        async function placeInlineOrder(service, link, qty){
+          var user = await waitForUser();
+          if (!user) throw createError('login_required','سجّل الدخول لتنفيذ الطلب.');
+          var attempts = 0;
+          var turnstileRetries = 0;
+          var sessionRetries = 0;
+          var lastError = null;
+          var nextForceSessionRotate = !getLocalSessionKey();
+
+          async function runAttempt(forceRotateSession){
+            var sessionKey = await ensureSessionKeyValue(user, forceRotateSession);
             if (!sessionKey) throw createError('session_missing','انتهت صلاحية الجلسة، يرجى إعادة تسجيل الدخول.');
-            return Promise.all([currentUser.getIdToken(true), getTurnstileToken()]);
-          }).then(function(results){
-            var idToken = results[0];
-            var turnstileToken = results[1];
+            var tokens = await Promise.all([user.getIdToken(true), getTurnstileToken()]);
+            var idToken = tokens[0];
+            var turnstileToken = tokens[1];
             var url = new URL(API_BASE);
             url.searchParams.set('mode','order');
             var payload = {
@@ -4760,7 +4897,7 @@ button#logoutBtn:hover{background:#990000}
               turnstileToken: turnstileToken,
               currentUrl: window.location.href
             };
-            return fetch(url.toString(), {
+            var res = await fetch(url.toString(), {
               method: 'POST',
               headers: {
                 'Content-Type':'application/json',
@@ -4769,13 +4906,35 @@ button#logoutBtn:hover{background:#990000}
               },
               body: JSON.stringify(payload)
             });
-          }).then(async function(res){
             var data = await res.json().catch(function(){ return {}; });
             if (!res.ok || data.success === false){
               throw createError(data.code || 'order_failed', data.error || 'تعذر تنفيذ الطلب');
             }
             return data;
-          });
+          }
+
+          while (attempts < 3){
+            attempts += 1;
+            var forceRotate = nextForceSessionRotate;
+            nextForceSessionRotate = false;
+            try {
+              return await runAttempt(forceRotate);
+            } catch (err) {
+              lastError = err;
+              var code = err && err.code ? String(err.code).toLowerCase() : '';
+              if (isTurnstileAutoRecoverable(code) && turnstileRetries < 1){
+                turnstileRetries += 1;
+                continue;
+              }
+              if (isSessionAutoRecoverable(code) && sessionRetries < 1){
+                sessionRetries += 1;
+                nextForceSessionRotate = true;
+                continue;
+              }
+              throw err;
+            }
+          }
+          throw lastError || createError('order_failed','تعذر تنفيذ الطلب');
         }
 
         function getSelectedService(){
