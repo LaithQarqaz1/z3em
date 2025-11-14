@@ -2649,7 +2649,6 @@ button#logoutBtn:hover{background:#990000}
             }, 1800);
           }catch(_){}
         }
-        try { if (!window.showToast) window.showToast = showToast; } catch(_){}
 
         function copyText(text){
           var val = (text || '').trim();
@@ -3809,140 +3808,6 @@ button#logoutBtn:hover{background:#990000}
           }
         }
 
-        var SESSION_KEY_ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        var SESSION_KEY_SYMBOLS = "!@#$%&";
-
-        function readStoredSessionInfo(){
-          try{
-            var parsed = JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
-            return parsed && typeof parsed === "object" ? parsed : {};
-          }catch(_){
-            return {};
-          }
-        }
-
-        function ensureFirestoreInstance(){
-          if (typeof firebase === "undefined" || !firebase.firestore) return null;
-          try{
-            if (window.__ORIG_FIREBASE__){
-              if (window.__ORIG_FIREBASE__.auth) firebase.auth = window.__ORIG_FIREBASE__.auth;
-              if (window.__ORIG_FIREBASE__.firestore) firebase.firestore = window.__ORIG_FIREBASE__.firestore;
-            }
-          }catch(_){}
-          try{
-            if ((!firebase.apps || !firebase.apps.length) && window.__FIREBASE_CONFIG__){
-              firebase.initializeApp(window.__FIREBASE_CONFIG__);
-            }
-          }catch(_){}
-          try { return firebase.firestore(); } catch(_){ return null; }
-        }
-
-        function randomFromAlphabet(alphabet, length){
-          var source = alphabet && alphabet.length ? alphabet : SESSION_KEY_ALPHA;
-          var size = Number(length) > 0 ? Number(length) : 64;
-          var buffer = new Uint32Array(size);
-          try {
-            if (window.crypto && window.crypto.getRandomValues){
-              window.crypto.getRandomValues(buffer);
-            } else {
-              throw new Error("no_crypto");
-            }
-          } catch(_){
-            for (var i = 0; i < size; i++){
-              buffer[i] = Math.floor(Math.random() * source.length);
-            }
-          }
-          var out = "";
-          for (var j = 0; j < size; j++){
-            out += source.charAt(buffer[j] % source.length);
-          }
-          return out;
-        }
-
-        function generateSessionKeyValue(len){
-          return randomFromAlphabet(SESSION_KEY_ALPHA + SESSION_KEY_SYMBOLS, len || 64);
-        }
-
-        async function rotateSessionKeyForUser(user){
-          if (!user) return null;
-          var store = ensureFirestoreInstance();
-          if (!store) return null;
-          var info = readStoredSessionInfo();
-          var ttlSeconds = Number(info.ttlSeconds);
-          if (!Number.isFinite(ttlSeconds) || ttlSeconds < 0) ttlSeconds = 0;
-          var newKey = generateSessionKeyValue(64);
-          var payload = {
-            sessionKey: newKey,
-            ttlSeconds: ttlSeconds
-          };
-          try{
-            if (firebase && firebase.firestore && firebase.firestore.FieldValue && typeof firebase.firestore.FieldValue.serverTimestamp === "function"){
-              payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-            } else {
-              payload.createdAt = new Date().toISOString();
-            }
-          }catch(_){}
-          try{
-            await store.collection("users").doc(user.uid).collection("keys").doc("session").set(payload, { merge: true });
-          }catch(err){
-            console.warn("smm_session_rotate_failed", err && err.message ? err.message : err);
-            return null;
-          }
-          try{
-            localStorage.setItem("sessionKeyInfo", JSON.stringify({
-              uid: user.uid,
-              sessionKey: newKey,
-              ts: Date.now(),
-              ttlSeconds: ttlSeconds
-            }));
-          }catch(_){}
-          return newKey;
-        }
-
-        async function ensureSessionKeyValue(user, forceRotate){
-          var cached = getLocalSessionKey();
-          if (!user) return cached || "";
-          if (!forceRotate && cached) return cached;
-          try {
-            var rotated = await rotateSessionKeyForUser(user);
-            if (rotated) return rotated;
-          } catch (err) {
-            try { console.warn("smm_session_rotate_failed", err && err.message ? err.message : err); } catch (_) {}
-          }
-          return cached || "";
-        }
-
-        var TURNSTILE_RECOVERABLE_CODES = {
-          "turnstile_failed": true,
-          "turnstile_error": true,
-          "turnstile_missing": true,
-          "turnstile_token_missing": true,
-          "turnstile_expired": true,
-          "turnstile_unavailable": true,
-          "turnstile_load_failed": true,
-          "turnstile_bad_token": true,
-          "turnstile_secret_missing": true
-        };
-
-        var SESSION_RECOVERABLE_CODES = {
-          "session_missing": true,
-          "session_invalid": true,
-          "session_mismatch": true,
-          "session_not_found": true,
-          "session_expired": true,
-          "session_error": true
-        };
-
-        function isTurnstileAutoRecoverable(code){
-          if (!code) return false;
-          return !!TURNSTILE_RECOVERABLE_CODES[String(code).toLowerCase()];
-        }
-
-        function isSessionAutoRecoverable(code){
-          if (!code) return false;
-          return !!SESSION_RECOVERABLE_CODES[String(code).toLowerCase()];
-        }
-
         function waitForUser(){
           var auth = ensureFirebaseAuth();
           if (!auth) return Promise.resolve(null);
@@ -4032,134 +3897,7 @@ button#logoutBtn:hover{background:#990000}
           node.style.display = '';
           if (tone === 'error') node.style.color = '#f87171';
           else if (tone === 'warning') node.style.color = '#fbbf24';
-          else if (tone === 'success') node.style.color = '#34d399';
           else node.style.color = '#94a3b8';
-        }
-
-        function showInlineResultOverlay(options){
-          options = options || {};
-          var success = options.success !== false;
-          var manual = options.manualForward === true;
-          var orderCode = options.orderCode || options.orderId || '';
-          var message = options.message || (success
-            ? (manual ? 'تم تحويل الطلب للتنفيذ اليدوي' : 'تم تسجيل الطلب بنجاح')
-            : 'تعذر تنفيذ الطلب');
-          var details = options.details;
-          var existing = document.getElementById('smm-inline-result');
-          if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
-
-          var overlay = document.createElement('div');
-          overlay.id = 'smm-inline-result';
-          overlay.className = 'smm-inline-result-overlay';
-          overlay.setAttribute('role', 'dialog');
-          overlay.setAttribute('aria-modal', 'true');
-          overlay.dir = 'rtl';
-          overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(5,7,20,.65);backdrop-filter:blur(5px);';
-
-          var card = document.createElement('div');
-          card.className = 'smm-inline-result-card';
-          card.style.cssText = 'width:min(520px,95vw);border-radius:24px;padding:34px 28px;text-align:center;position:relative;box-shadow:0 30px 90px rgba(5,5,20,.45);';
-          var dark = themeIsDark();
-          overlay.style.background = dark ? 'rgba(5,7,20,.75)' : 'rgba(9,12,32,.55)';
-          card.style.background = dark ? '#0b1225' : '#ffffff';
-          card.style.color = dark ? '#e2e8f0' : '#111827';
-
-          var accent = success ? '#22c55e' : '#ef4444';
-          var accentBg = success ? 'rgba(34,197,94,.16)' : 'rgba(239,68,68,.16)';
-
-          var closeBtn = document.createElement('button');
-          closeBtn.type = 'button';
-          closeBtn.textContent = '×';
-          closeBtn.setAttribute('aria-label', 'إغلاق');
-          closeBtn.style.cssText = 'position:absolute;top:14px;inset-inline-start:18px;width:38px;height:38px;border-radius:50%;border:0;font-size:22px;font-weight:700;cursor:pointer;';
-          closeBtn.style.background = dark ? 'rgba(255,255,255,.08)' : 'rgba(15,23,42,.08)';
-          closeBtn.style.color = dark ? '#f8fafc' : '#0f172a';
-
-          var icon = document.createElement('div');
-          icon.textContent = success ? '✅' : '⚠️';
-          icon.style.cssText = 'width:96px;height:96px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:700;';
-          icon.style.background = accentBg;
-          icon.style.color = accent;
-          icon.style.border = '2px solid ' + accent;
-
-          var title = document.createElement('h3');
-          title.textContent = success
-            ? (manual ? 'الطلب قيد المراجعة اليدوية' : 'تم تسجيل الطلب بنجاح')
-            : 'تعذر تنفيذ الطلب';
-          title.style.cssText = 'font-size:26px;margin:6px 0 10px;font-weight:800;';
-
-          var msg = document.createElement('p');
-          msg.textContent = message;
-          msg.style.cssText = 'margin:0 0 10px;line-height:1.7;';
-          msg.style.color = dark ? '#cbd5f5' : '#4a4f68';
-
-          var detail = null;
-          var detailText = details;
-          if (!detailText){
-            detailText = success
-              ? 'يمكنك متابعة حالة الطلب من صفحة الطلبات.'
-              : 'تحقق من البيانات وحاول مرة أخرى. إذا استمرت المشكلة يرجى التواصل مع الدعم.';
-          }
-          detail = document.createElement('p');
-          detail.textContent = detailText;
-          detail.style.cssText = 'margin:0 0 12px;font-size:15px;line-height:1.6;';
-          detail.style.color = dark ? '#9fb4ff' : '#64748b';
-
-          var codeLine = null;
-          if (orderCode){
-            codeLine = document.createElement('p');
-            codeLine.innerHTML = '🆔 كود الطلب: <strong>' + orderCode + '</strong>';
-            codeLine.style.cssText = 'margin:12px 0 6px;font-weight:700;';
-          }
-
-          var actions = document.createElement('div');
-          actions.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:18px;';
-
-          if (success){
-            var ordersBtn = document.createElement('a');
-            ordersBtn.href = 'talabat.html';
-            ordersBtn.textContent = 'عرض طلباتي';
-            ordersBtn.style.cssText = 'text-decoration:none;padding:12px 26px;border-radius:18px;font-weight:800;';
-            ordersBtn.style.background = accent;
-            ordersBtn.style.color = '#0f172a';
-            actions.appendChild(ordersBtn);
-          }
-
-          var closeAction = document.createElement('button');
-          closeAction.type = 'button';
-          closeAction.textContent = success ? 'إغلاق' : 'محاولة مجدداً';
-          closeAction.style.cssText = 'padding:12px 22px;border-radius:18px;font-weight:800;border:0;cursor:pointer;';
-          closeAction.style.background = dark ? '#1e293b' : '#e2e8f0';
-          closeAction.style.color = dark ? '#e2e8f0' : '#111827';
-          actions.appendChild(closeAction);
-
-          function cleanup(){
-            document.removeEventListener('keydown', escHandler);
-            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-          }
-
-          function escHandler(ev){
-            if (ev && (ev.key === 'Escape' || ev.key === 'Esc')) cleanup();
-          }
-
-          closeBtn.addEventListener('click', cleanup);
-          closeAction.addEventListener('click', cleanup);
-          overlay.addEventListener('click', function(e){
-            if (e.target === overlay) cleanup();
-          });
-          document.addEventListener('keydown', escHandler);
-
-          var nodes = [closeBtn, icon, title, msg];
-          if (codeLine) nodes.push(codeLine);
-          nodes.push(detail, actions);
-          card.append.apply(card, nodes);
-          overlay.appendChild(card);
-          document.body.appendChild(overlay);
-
-          try {
-            var audio = new Audio(success ? 'success.mp3' : 'error.mp3');
-            audio.play().catch(function(){});
-          } catch(_){}
         }
 
         function normalizeText(value){
@@ -4872,21 +4610,18 @@ button#logoutBtn:hover{background:#990000}
           });
         }
 
-        async function placeInlineOrder(service, link, qty){
-          var user = await waitForUser();
-          if (!user) throw createError('login_required','سجّل الدخول لتنفيذ الطلب.');
-          var attempts = 0;
-          var turnstileRetries = 0;
-          var sessionRetries = 0;
-          var lastError = null;
-          var nextForceSessionRotate = !getLocalSessionKey();
-
-          async function runAttempt(forceRotateSession){
-            var sessionKey = await ensureSessionKeyValue(user, forceRotateSession);
+        function placeInlineOrder(service, link, qty){
+          var currentUser = null;
+          var sessionKey = null;
+          return waitForUser().then(function(user){
+            if (!user) throw createError('login_required','سجّل الدخول لتنفيذ الطلب.');
+            currentUser = user;
+            sessionKey = getLocalSessionKey();
             if (!sessionKey) throw createError('session_missing','انتهت صلاحية الجلسة، يرجى إعادة تسجيل الدخول.');
-            var tokens = await Promise.all([user.getIdToken(true), getTurnstileToken()]);
-            var idToken = tokens[0];
-            var turnstileToken = tokens[1];
+            return Promise.all([currentUser.getIdToken(true), getTurnstileToken()]);
+          }).then(function(results){
+            var idToken = results[0];
+            var turnstileToken = results[1];
             var url = new URL(API_BASE);
             url.searchParams.set('mode','order');
             var payload = {
@@ -4897,7 +4632,7 @@ button#logoutBtn:hover{background:#990000}
               turnstileToken: turnstileToken,
               currentUrl: window.location.href
             };
-            var res = await fetch(url.toString(), {
+            return fetch(url.toString(), {
               method: 'POST',
               headers: {
                 'Content-Type':'application/json',
@@ -4906,35 +4641,13 @@ button#logoutBtn:hover{background:#990000}
               },
               body: JSON.stringify(payload)
             });
+          }).then(async function(res){
             var data = await res.json().catch(function(){ return {}; });
             if (!res.ok || data.success === false){
               throw createError(data.code || 'order_failed', data.error || 'تعذر تنفيذ الطلب');
             }
             return data;
-          }
-
-          while (attempts < 3){
-            attempts += 1;
-            var forceRotate = nextForceSessionRotate;
-            nextForceSessionRotate = false;
-            try {
-              return await runAttempt(forceRotate);
-            } catch (err) {
-              lastError = err;
-              var code = err && err.code ? String(err.code).toLowerCase() : '';
-              if (isTurnstileAutoRecoverable(code) && turnstileRetries < 1){
-                turnstileRetries += 1;
-                continue;
-              }
-              if (isSessionAutoRecoverable(code) && sessionRetries < 1){
-                sessionRetries += 1;
-                nextForceSessionRotate = true;
-                continue;
-              }
-              throw err;
-            }
-          }
-          throw lastError || createError('order_failed','تعذر تنفيذ الطلب');
+          });
         }
 
         function getSelectedService(){
@@ -5030,108 +4743,21 @@ button#logoutBtn:hover{background:#990000}
           uiRefs.total.value = total.toFixed(3) + ' $';
         }
 
-        function quantizeMoney(value){
-          var num = Number(value);
-          if (!Number.isFinite(num)) return null;
-          return Math.round((num + Number.EPSILON) * 100) / 100;
-        }
-
-        function calculateOrderCost(service, qty){
-          if (!service) return null;
-          var ratePerUnit = Number(service.rate);
-          var quantity = Number(qty);
-          if (!Number.isFinite(ratePerUnit) || !Number.isFinite(quantity) || quantity <= 0) return null;
-          return quantizeMoney(ratePerUnit * quantity);
-        }
-
-        function getCachedSessionUid(){
-          try{
-            var parsed = JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
-            return parsed && parsed.uid ? parsed.uid : "";
-          }catch(_){
-            return "";
-          }
-        }
-
-        function getCachedWalletBalance(){
-          if (typeof window !== "undefined" && window.__BAL_BASE__ != null){
-            var baseVal = Number(window.__BAL_BASE__);
-            if (Number.isFinite(baseVal)) return baseVal;
-          }
-          var uid = getCachedSessionUid();
-          if (!uid) return null;
-          try{
-            var raw = localStorage.getItem("balance:cache:" + uid);
-            if (raw == null) return null;
-            var val = Number(raw);
-            if (Number.isFinite(val)) return val;
-          }catch(_){}
-          return null;
-        }
-
-        function adjustCachedWalletBalance(delta){
-          if (!Number.isFinite(delta) || delta === 0) return;
-          var uid = getCachedSessionUid();
-          var current = getCachedWalletBalance();
-          if (current == null) current = 0;
-          var updated = quantizeMoney(current + delta);
-          if (updated == null) return;
-          try { window.__BAL_BASE__ = updated; } catch(_){}
-          if (uid){
-            try { localStorage.setItem("balance:cache:" + uid, String(updated)); } catch(_){}
-          }
-          try {
-            var evt = new CustomEvent("balance:change", { detail: { value: updated } });
-            window.dispatchEvent(evt);
-          } catch(_){}
-        }
-
         function submitInlineOrder(service, link, qty){
           if (!uiRefs || !uiRefs.section) return;
           setInlineLoading(true);
           setMessage(uiRefs.section, 'جاري تنفيذ الطلب...', 'info');
           placeInlineOrder(service, link, qty).then(function(result){
-            var orderIdentifier = '';
-            if (result && (result.orderCode || result.orderId)){
-              orderIdentifier = String(result.orderCode || result.orderId);
-            }
-            var suffix = orderIdentifier ? (' #' + orderIdentifier) : '';
-            var manual = !!(result && result.manualForward);
-            var successMessage = manual
-              ? 'تم تحويل الطلب للتنفيذ اليدوي'
-              : 'تم تسجيل الطلب وجاري تنفيذه';
-            setMessage(uiRefs.section, successMessage + suffix, 'success');
-            showInlineResultOverlay({
-              success: true,
-              orderCode: orderIdentifier,
-              manualForward: manual,
-              message: manual
-                ? 'تمت إحالة طلبك للفريق اليدوي وسيتم التواصل معك فور التنفيذ.'
-                : 'يمكنك متابعة حالة الطلب من صفحة الطلبات.',
-              details: manual
-                ? 'يُرجى متابعة إشعاراتك، وسيتم تنفيذ الطلب خلال وقت قصير.'
-                : 'لا تنسَ نسخ كود الطلب للاطلاع على حالته في أي وقت.'
-            });
-            if (result && result.estimatedCharge != null){
-              var chargeVal = Number(result.estimatedCharge);
-              if (Number.isFinite(chargeVal) && chargeVal > 0){
-                adjustCachedWalletBalance(-chargeVal);
-              }
-            }
+            setMessage(uiRefs.section, '', '');
+            var suffix = result && result.orderId ? (' #' + result.orderId) : '';
             showToast('تم تسجيل الطلب' + suffix, true);
             try{
               if (uiRefs.link) uiRefs.link.value = '';
-              if (uiRefs.qty) uiRefs.qty.value = '';
             }catch(_){}
           }).catch(function(err){
             var raw = err && (err.message || err.error || err.hint);
             var msg = (typeof raw === 'string' && raw.trim()) ? raw : 'تعذر تنفيذ الطلب';
             setMessage(uiRefs.section, msg, 'error');
-            showInlineResultOverlay({
-              success: false,
-              message: msg,
-              details: err && err.code ? ('رمز الخطأ: ' + err.code) : ''
-            });
             showToast(msg, false);
           }).finally(function(){
             setInlineLoading(false);
@@ -5167,22 +4793,6 @@ button#logoutBtn:hover{background:#990000}
             return;
           }
           applyQtyWarning('');
-          var estimatedCost = calculateOrderCost(service, qty);
-          var cachedBalance = getCachedWalletBalance();
-          if (estimatedCost != null && cachedBalance != null && (cachedBalance + 1e-9) < estimatedCost){
-            var warn = 'رصيدك غير كافٍ لإتمام هذا الطلب.';
-            if (Number.isFinite(estimatedCost) && Number.isFinite(cachedBalance)){
-              warn += ' التكلفة المتوقعة ' + estimatedCost.toFixed(2) + ' $ مقابل رصيد متاح قدره ' + cachedBalance.toFixed(2) + ' $.';
-            }
-            setMessage(uiRefs.section, warn, 'error');
-            showToast(warn, false);
-            showInlineResultOverlay({
-              success: false,
-              message: warn,
-              details: Number.isFinite(cachedBalance) ? ('رصيدك الحالي: ' + cachedBalance.toFixed(2) + ' $') : ''
-            });
-            return;
-          }
           submitInlineOrder(service, link, qty);
         }
 

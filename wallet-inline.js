@@ -180,14 +180,6 @@
         return 'deposit';
       }
 
-      function isServiceOrder(item){
-        if (!item) return false;
-        if (item.__walletType === 'service_order' || item.transactionType === 'order') return true;
-        var provider = (item.provider || item.game || '').toString().toLowerCase();
-        if (!provider) return false;
-        return provider === 'smm' || provider === 'boost' || provider === 'social';
-      }
-
       function ensureKind(item, fallback){
         var kind = getKind(item);
         if (item && !item.__kind) item.__kind = kind || fallback || 'deposit';
@@ -256,42 +248,6 @@
 
       function buildMetaParts(item, kind){
         var parts = [];
-        var isOrder = isServiceOrder(item);
-        if (isOrder){
-          var svcName = item.serviceName || item.methodName || '';
-          var svcCategory = item.serviceCategory || item.category || '';
-          var qty = item.quantity;
-          if (!isFinite(qty) && isFinite(item.serviceQuantity)) qty = item.serviceQuantity;
-          var providerOrderId = item.providerOrderId || '';
-          var providerStatus = item.providerStatus || '';
-          var link = item.serviceLink || item.link || '';
-          var note = item.description || item.transferNote || '';
-          if (svcName){
-            parts.push('<span><i class="fas fa-tags"></i> ' + svcName + '</span>');
-          }
-          if (svcCategory){
-            parts.push('<span><i class="fas fa-layer-group"></i> ' + svcCategory + '</span>');
-          }
-          if (isFinite(qty)){
-            parts.push('<span><i class="fas fa-list-ol"></i> الكمية: ' + formatNumber(qty, 0) + '</span>');
-          }
-          if (providerOrderId){
-            parts.push('<span><i class="fas fa-barcode"></i> رقم المزود: ' + providerOrderId + '</span>');
-          }
-          if (providerStatus){
-            parts.push('<span><i class="fas fa-signal"></i> حالة المزود: ' + providerStatus + '</span>');
-          }
-          if (item.manualForward){
-            parts.push('<span><i class="fas fa-user-gear"></i> تنفيذ يدوي</span>');
-          }
-          if (link){
-            parts.push('<span><i class="fas fa-link"></i> <a href="' + link + '" target="_blank" rel="noopener">الرابط</a></span>');
-          }
-          if (note){
-            parts.push('<span><i class="fas fa-note-sticky"></i> ' + note + '</span>');
-          }
-          return parts.join('');
-        }
         var country = item.countryName || item.country || '';
         var method = item.methodName || item.method || '';
         var transferPeer = item.transferPeer || item.transferPeerUid || '';
@@ -330,26 +286,14 @@
         var change = resolveChange(data);
         var balances = resolveBalances(data);
         var method = data.methodName || data.method || '';
-        var isOrder = isServiceOrder(data);
         var titleBase = kind === 'withdraw' ? 'طلب سحب' : 'طلب إيداع';
-        var title = '';
-        if (isOrder){
-          var providerLabel = (data.provider || data.game || '').toString().trim();
-          title = data.serviceName || method || 'طلب خدمة مدفوعة';
-          if (providerLabel){
-            title += ' • ' + providerLabel.toUpperCase();
-          }
-        } else {
-          title = method ? titleBase + ' - ' + method : titleBase;
-        }
+        var title = method ? titleBase + ' - ' + method : titleBase;
         var metaHtml = buildMetaParts(data, kind);
         var ts = data.timestamp || data.createdAt || data.created_at || data.computedAt || '';
         var shortDate = formatShortDate(ts);
         var longDate = formatDate(ts);
         var proof = data.proof || data.proofUrl || '';
-        var actionIcon = isOrder
-          ? 'fa-bag-shopping'
-          : (kind === 'withdraw' ? 'fa-arrow-up-right' : 'fa-arrow-down-left');
+        var actionIcon = kind === 'withdraw' ? 'fa-arrow-up-right' : 'fa-arrow-down-left';
 
         var balancePieces = [];
         if (balances.after != null) {
@@ -659,16 +603,6 @@
             }
             return obj[key];
           }
-          var providerFieldRaw = readField(flat,'provider') || '';
-          var gameFieldRaw = readField(flat,'game') || '';
-          var serviceNameField = readField(flat,'serviceName') || readField(flat,'service') || '';
-          var serviceCategoryField = readField(flat,'category') || readField(flat,'serviceCategory') || '';
-          var providerOrderIdField = readField(flat,'providerOrderId') || '';
-          var providerStatusField = readField(flat,'providerStatus') || '';
-          var serviceLinkField = readField(flat,'link') || '';
-          var descriptionField = readField(flat,'description') || '';
-          var quantityField = parseNumeric(readField(flat,'quantity'));
-          var manualForward = readField(flat,'manualForward') === true;
           var kind = (readField(flat,'kind') || 'deposit').toString().toLowerCase() === 'withdraw' ? 'withdraw' : 'deposit';
           var created = readField(flat,'createdAt');
           var createdDate = null;
@@ -697,31 +631,6 @@
             timestamp: createdDate || new Date(),
             __kind: kind
           };
-          if (providerFieldRaw) item.provider = providerFieldRaw;
-          if (gameFieldRaw) item.game = gameFieldRaw;
-          if (serviceNameField) item.serviceName = serviceNameField;
-          if (serviceCategoryField) item.serviceCategory = serviceCategoryField;
-          if (providerOrderIdField) item.providerOrderId = providerOrderIdField;
-          if (providerStatusField) item.providerStatus = providerStatusField;
-          if (serviceLinkField) item.serviceLink = serviceLinkField;
-          if (descriptionField && !item.description) item.description = descriptionField;
-          if (manualForward) item.manualForward = true;
-          if (isFinite(quantityField)) item.quantity = quantityField;
-          var providerLower = (providerFieldRaw || '').toString().trim().toLowerCase();
-          var gameLower = (gameFieldRaw || '').toString().trim().toLowerCase();
-          if (providerLower === 'smm' || gameLower === 'smm'){
-            item.__walletType = 'service_order';
-            item.transactionType = 'order';
-            item.countryName = serviceCategoryField || 'خدمات التواصل الاجتماعي';
-            if (serviceNameField){
-              item.methodName = 'طلب خدمة - ' + serviceNameField;
-            } else if (!item.methodName){
-              item.methodName = 'طلب خدمة سوشال';
-            }
-            if (!item.transferNote && descriptionField){
-              item.transferNote = descriptionField;
-            }
-          }
           if (kind === 'withdraw'){
             item.debited = amount;
             item.debitedJOD = amount;
