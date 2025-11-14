@@ -4566,8 +4566,8 @@ button#logoutBtn:hover{background:#990000}
               '<div class="smm-inline-description-body empty" data-smm-description>اختر خدمة لعرض تفاصيلها والتعليمات.</div>',
             '</div>',
             '<div class="smm-inline-group">',
-              '<label for="smmInlineLink">الرابط</label>',
-              '<input id="smmInlineLink" type="url" data-smm-link class="smm-inline-field" placeholder="أدخل الرابط المطلوب" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
+              '<label for="smmInlineLink">الرابط أو رقم الهاتف</label>',
+              '<input id="smmInlineLink" type="text" data-smm-link class="smm-inline-field" placeholder="أدخل الرابط أو رقم الهاتف المطلوب" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
             '</div>',
             '<div class="smm-inline-row">',
               '<div class="smm-inline-group">',
@@ -4985,8 +4985,8 @@ button#logoutBtn:hover{background:#990000}
             return;
           }
           var link = (uiRefs.link && uiRefs.link.value || '').trim();
-          if (!link){
-            showToast('يرجى إدخال الرابط المطلوب', false);
+        if (!link){
+          showToast('يرجى إدخال الرابط أو رقم الهاتف المطلوب', false);
             return;
           }
           var qtyRaw = (uiRefs.qty && uiRefs.qty.value || '').trim();
@@ -5272,8 +5272,8 @@ button#logoutBtn:hover{background:#990000}
                 '<div class="smm-inline-description-body empty">اختر خدمة لعرض تفاصيلها.</div>\n' +
               '</div>\n' +
               '<div class="smm-inline-group">\n' +
-                '<label>الرابط</label>\n' +
-                '<input type="url" placeholder="أدخل الرابط المطلوب" disabled>\n' +
+                '<label>الرابط أو رقم الهاتف</label>\n' +
+                '<input type="text" placeholder="أدخل الرابط أو رقم الهاتف المطلوب" disabled>\n' +
               '</div>\n' +
               '<div class="smm-inline-row">\n' +
                 '<div class="smm-inline-group">\n' +
