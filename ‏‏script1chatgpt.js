@@ -14,6 +14,72 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 let pricesFetchOnce = false;
 
+// ===== Turnstile إعداد =====
+const TURNSTILE_SITE_KEY = "0x4AAAAAABmiVmi7wosqeHQT";
+let _tsWidgetId = null;
+let _tsReadyPromise = null;
+let _tsToken = "";
+function ensureTurnstileScript() {
+  if (window.turnstile) return Promise.resolve();
+  if (_tsReadyPromise) return _tsReadyPromise;
+  _tsReadyPromise = new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    s.async = true;
+    s.defer = true;
+    s.onload = () => resolve();
+    s.onerror = () => resolve();
+    document.head.appendChild(s);
+  });
+  return _tsReadyPromise;
+}
+function themeIsDark(){
+  try{
+    const htmlTheme = (document.documentElement.getAttribute('data-theme')||'').toLowerCase();
+    if (htmlTheme === 'dark') return true;
+    if (htmlTheme === 'light') return false;
+    return document.body.classList.contains('dark-mode');
+  }catch(_){ return false; }
+}
+async function getTurnstileTokenInteractive() {
+  try { await ensureTurnstileScript(); } catch {}
+  const modalCard = document.querySelector('#purchase-modal .pm-card') || document.body;
+  let holder = document.getElementById('cf-turnstile-container');
+  if (!holder) {
+    holder = document.createElement('div');
+    holder.id = 'cf-turnstile-container';
+    holder.style.cssText = 'margin-top:10px; display:block;';
+    modalCard.appendChild(holder);
+  }
+  const opts = {
+    sitekey: TURNSTILE_SITE_KEY,
+    theme: themeIsDark()? 'dark' : 'light',
+    callback: (t) => { _tsToken = t || ''; },
+    'expired-callback': () => { _tsToken = ''; try{ window.turnstile && _tsWidgetId!=null && window.turnstile.reset(_tsWidgetId); }catch(_){} },
+  };
+  _tsToken = '';
+  if (!_tsWidgetId && window.turnstile && window.turnstile.render) {
+    _tsWidgetId = window.turnstile.render(holder, opts);
+  } else if (window.turnstile && window.turnstile.reset && _tsWidgetId != null) {
+    try { window.turnstile.reset(_tsWidgetId); } catch {}
+  }
+  const started = Date.now();
+  while (Date.now() - started < 15000) {
+    try {
+      if (window.turnstile && _tsWidgetId != null) {
+        const r = window.turnstile.getResponse(_tsWidgetId);
+        if (r) { _tsToken = r; break; }
+      }
+    } catch {}
+    if (_tsToken) break;
+    await new Promise(r => setTimeout(r, 200));
+  }
+  if (!_tsToken) throw new Error('turnstile_token_missing');
+  const freshToken = _tsToken;
+  _tsToken = '';
+  return freshToken;
+}
+
 /* ================== أدوات محلية للجلسة ================== */
 // نقرأ مفتاح الجلسة من localStorage (حُفظ أثناء الدخول)
 function getLocalSessionKey() {
@@ -127,74 +193,53 @@ async function rotateSessionKeyAfterOrder(uid, ttlSeconds = 0) {
   }
 }
 
-/* ================== تسريع تحميل الأسعار (SWR + Cache) ================== */
-function persistOffers(data) {
-  try {
-    const prices = (data && typeof data === 'object' && data.prices) ? data.prices : data;
-    if (!prices || typeof prices !== 'object') return;
-    const wrapped = Object.assign({}, prices, { prices, ts: Date.now(), source: 'freefire' });
-    localStorage.setItem('offersPrices', JSON.stringify(wrapped));
-  } catch (e) { console.warn('persistOffers failed:', e); }
+/* ================== تعريف الخدمة لهذه الصفحة ================== */
+const GAME = "chatgpt"; // هذه الصفحة لفري فاير نيجيري
+function getManwalBase(defaultUrl) {
+  try { return localStorage.getItem("MANWAL_ROUTER_BASE") || defaultUrl; } catch { return defaultUrl; }
 }
+const WORKER_BASE = getManwalBase("https://z3em-manwal.laithqarqaz1.workers.dev/");
 
-function primeOffersFromCache(maxAgeMs = 15 * 60 * 1000) {
+/* ================== الأسعار كما هي ================== */
+async function loadPrices(useruid = null) {
   try {
-    const raw = localStorage.getItem('offersPrices');
-    if (!raw) return false;
-    const obj = JSON.parse(raw);
-    const ts = obj && obj.ts ? Number(obj.ts) : 0;
-    const fresh = ts && (Date.now() - ts) <= maxAgeMs;
-    localStorage.setItem('offersPrices', raw);
-    return fresh;
-  } catch { return false; }
-}
-
-async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = true } = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort('timeout'), timeoutMs);
-  try {
+    const url = new URL(WORKER_BASE);
     // لا نجلب أسعار عامة بدون معرف مستخدم
     if (!useruid) return;
-    const url = new URL('https://super-cherry-532e.stwrqsy.workers.dev/');
-    url.searchParams.set('mode', 'all');
-    url.searchParams.set('useruid', useruid);
-    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store' });
+    url.searchParams.set("mode", "all");
+    url.searchParams.set("useruid", useruid);
+
+    const res = await fetch(url.toString(), { method: "GET", headers: { "X-Game": GAME } });
     const data = await res.json();
-    if (!data || data.success === false) throw new Error(data?.error || 'فشل جلب الأسعار');
-    persistOffers(data);
-  } catch (e) {
-    const hasCache = !!localStorage.getItem('offersPrices');
-    if (!(silentOnCached && hasCache)) {
-      showToast('❗ فشل في تحميل الأسعار، ستتم المحاولة لاحقًا', 'error');
-      console.error('Prices load error:', e);
+
+    if (!data || data.success === false) {
+      throw new Error(data?.error || "فشل جلب الأسعار");
     }
-  } finally { clearTimeout(timer); }
+
+    localStorage.setItem("offersPrices", JSON.stringify(data));
+  } catch (e) {
+    showToast("❗ فشل في تحميل الأسعار، ستتم المحاولة لاحقًا", "error");
+    console.error("Prices load error:", e);
+  }
 }
 
-// عرض سريع من الكاش + تحديث في الخلفية
-(function fastPricesBoot(){
-  primeOffersFromCache();
+// مراقبة حالة تسجيل الدخول ثم جلب الأسعار بمستوى المستخدم إن وُجد
+try { const cachedUid = getLocalUid(); if (cachedUid && !pricesFetchOnce) { pricesFetchOnce = true; loadPrices(cachedUid).catch(()=>{}); } } catch {}
+firebase.auth().onAuthStateChanged(async (user) => {
   try {
-    const cachedUid = getLocalUid();
-    if (cachedUid && !pricesFetchOnce) {
+    if (user && !pricesFetchOnce) {
       pricesFetchOnce = true;
-      loadPrices(cachedUid, { timeoutMs: 6000, silentOnCached: true }).catch(()=>{});
-    }
-  } catch {}
-  firebase.auth().onAuthStateChanged(async (user) => {
-    try {
-      if (user && !pricesFetchOnce) {
-        pricesFetchOnce = true;
-        await loadPrices(user.uid, { timeoutMs: 6000, silentOnCached: true });
-        const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
-        if (userDoc.exists) {
-          const userData = userDoc.data();
-          const firebaseUsername = userData.username || '';
-        }
+      await loadPrices(user.uid);
+      const userDoc = await firebase.firestore().collection("users").doc(user.uid).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        const firebaseUsername = userData.username || "";
       }
-    } catch (error) { console.warn('Auth state post-loadPrices error:', error); }
-  });
-})();
+    }
+  } catch (error) {
+    console.warn("Auth state post-loadPrices error:", error);
+  }
+});
 
 /* ================== إرسال الطلب (مع كشف فشل رمز الجلسة) ================== */
 async function sendOrder() {
@@ -226,8 +271,6 @@ async function sendOrder() {
   let turnstileToken = '';
   try { turnstileToken = await getTurnstileTokenInteractive(); }
   catch(_) { showToast('فشل التحقق الأمني، حاول مجدداً', 'error'); return; }
-
-  // تم تعطيل Turnstile بناءً على طلبك
 
   const user = firebase.auth().currentUser;
   if (!user) {
@@ -264,9 +307,9 @@ async function sendOrder() {
   // Quote
   let total, breakdown;
   try {
-    const priceRes = await fetch("https://super-cherry-532e.stwrqsy.workers.dev/", {
+    const priceRes = await fetch(WORKER_BASE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Game": GAME },
       body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
     });
     const priceData = await priceRes.json();
@@ -294,12 +337,13 @@ async function sendOrder() {
       submitBtn.style.pointerEvents = 'none';
     }
 
-    const response = await fetch("https://super-cherry-532e.stwrqsy.workers.dev", {
+    const response = await fetch(WORKER_BASE, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`,
-        "X-SessionKey": sessionKey
+        "X-SessionKey": sessionKey,
+        "X-Game": GAME
       },
       body: JSON.stringify({
         playerId: pid,
@@ -327,7 +371,7 @@ async function sendOrder() {
         return;
       }
       // إن لم يكن خطأ جلسة، عالج كالعادة
-      showToast("فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
+      showToast("❌ فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
       return;
     }
 
@@ -344,11 +388,11 @@ async function sendOrder() {
         showSessionModal("فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى");
         return;
       }
-      showToast("فشل الشراء: " + (result.error || "خطأ غير معروف"), "error");
+      showToast("❌ فشل الشراء: " + (result.error || "خطأ غير معروف"), "error");
     }
   } catch (err) {
     console.error("Worker Error:", err);
-    showToast("حدث خطأ أثناء الشراء", "error");
+    showToast("❌ حدث خطأ أثناء الشراء", "error");
   } finally {
     // إخفاء اللودر وإرجاع حالة الزر مهما حصل
     hidePreloader();
@@ -363,7 +407,7 @@ async function sendOrder() {
 
 /* ================== نافذة التأكيد كما هي ================== */
 function showConfirmation(orderCode, {
-  orderUrl = "index.html#/orders",
+  orderUrl = "talabat.html",
   homeUrl  = "index.html",
   theme    = "auto"
 } = {}) {
@@ -531,6 +575,9 @@ const detectTheme = () => {
 document.addEventListener('DOMContentLoaded', () => {
   // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
 });
+
+
+
 
 
 

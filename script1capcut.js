@@ -63,7 +63,6 @@ async function getTurnstileTokenInteractive() {
   } else if (window.turnstile && window.turnstile.reset && _tsWidgetId != null) {
     try { window.turnstile.reset(_tsWidgetId); } catch {}
   }
-  // انتظر حتى يتوفر التوكن
   const started = Date.now();
   while (Date.now() - started < 15000) {
     try {
@@ -194,16 +193,23 @@ async function rotateSessionKeyAfterOrder(uid, ttlSeconds = 0) {
   }
 }
 
+/* ================== تعريف الخدمة لهذه الصفحة ================== */
+const GAME = "capcut"; // هذه الصفحة لفري فاير نيجيري
+function getManwalBase(defaultUrl) {
+  try { return localStorage.getItem("MANWAL_ROUTER_BASE") || defaultUrl; } catch { return defaultUrl; }
+}
+const WORKER_BASE = getManwalBase("https://z3em-manwal.laithqarqaz1.workers.dev/");
+
 /* ================== الأسعار كما هي ================== */
 async function loadPrices(useruid = null) {
   try {
-    const url = new URL("https://z3em-freefireauto2.laithqarqaz1.workers.dev/");
+    const url = new URL(WORKER_BASE);
     // لا نجلب أسعار عامة بدون معرف مستخدم
     if (!useruid) return;
     url.searchParams.set("mode", "all");
     url.searchParams.set("useruid", useruid);
 
-    const res = await fetch(url.toString(), { method: "GET" });
+    const res = await fetch(url.toString(), { method: "GET", headers: { "X-Game": GAME } });
     const data = await res.json();
 
     if (!data || data.success === false) {
@@ -218,12 +224,7 @@ async function loadPrices(useruid = null) {
 }
 
 // مراقبة حالة تسجيل الدخول ثم جلب الأسعار بمستوى المستخدم إن وُجد
-// جلب مبكر باستخدام uid المخزن محلياً إذا وُجد، ثم متابعة عبر onAuthStateChanged
-try {
-  const cachedUid = getLocalUid();
-  if (cachedUid && !pricesFetchOnce) { pricesFetchOnce = true; loadPrices(cachedUid).catch(()=>{}); }
-} catch {}
-
+try { const cachedUid = getLocalUid(); if (cachedUid && !pricesFetchOnce) { pricesFetchOnce = true; loadPrices(cachedUid).catch(()=>{}); } } catch {}
 firebase.auth().onAuthStateChanged(async (user) => {
   try {
     if (user && !pricesFetchOnce) {
@@ -268,12 +269,8 @@ async function sendOrder() {
 
   // التحقق من Turnstile قبل الإرسال
   let turnstileToken = '';
-  try {
-    turnstileToken = await getTurnstileTokenInteractive();
-  } catch(_) {
-    showToast('فشل التحقق الأمني، حاول مجدداً', 'error');
-    return;
-  }
+  try { turnstileToken = await getTurnstileTokenInteractive(); }
+  catch(_) { showToast('فشل التحقق الأمني، حاول مجدداً', 'error'); return; }
 
   const user = firebase.auth().currentUser;
   if (!user) {
@@ -310,9 +307,9 @@ async function sendOrder() {
   // Quote
   let total, breakdown;
   try {
-    const priceRes = await fetch("https://z3em-freefireauto2.laithqarqaz1.workers.dev/", {
+    const priceRes = await fetch(WORKER_BASE, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Game": GAME },
       body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
     });
     const priceData = await priceRes.json();
@@ -340,12 +337,13 @@ async function sendOrder() {
       submitBtn.style.pointerEvents = 'none';
     }
 
-    const response = await fetch("https://z3em-freefireauto2.laithqarqaz1.workers.dev/", {
+    const response = await fetch(WORKER_BASE, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`,
-        "X-SessionKey": sessionKey
+        "X-SessionKey": sessionKey,
+        "X-Game": GAME
       },
       body: JSON.stringify({
         playerId: pid,
@@ -577,7 +575,6 @@ const detectTheme = () => {
 document.addEventListener('DOMContentLoaded', () => {
   // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
 });
-
 
 
 

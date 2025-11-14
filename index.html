@@ -1289,20 +1289,7 @@ button#logoutBtn:hover{background:#990000}
       .search-container button{ padding:10px 16px }
     }
   </style>
-  <script>
-  // Register Service Worker only in allowed protocols (https or localhost over http)
-  (function(){
-    try {
-      var h = (location.hostname||'');
-      var isLocal = h === 'localhost' || h === '127.0.0.1' || /^0\.0\.0\.0$/.test(h) || /^192\.168\./.test(h) || /^10\./.test(h) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(h);
-      var proto = String(location.protocol || '').toLowerCase();
-      var canRegister = ('serviceWorker' in navigator) && (proto === 'https:' || (proto === 'http:' && isLocal));
-      if (canRegister) {
-        navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function(e){ console.warn('SW register skipped', e); });
-      }
-    } catch(e) { console.warn('SW register skipped', e); }
-  })();
-  </script>
+
 
   <!-- Preload/Warm important game images for seamless navigation -->
   <script>
@@ -4400,7 +4387,6 @@ button#logoutBtn:hover{background:#990000}
           }
           var normalized = value.replace(/\r\n?/g, '\n');
           var lines = normalized.split('\n');
-          var urlRegex = /(https?:\/\/[^\s]+)/g;
           lines.forEach(function(line, lineIndex){
             if (lineIndex > 0) frag.appendChild(document.createElement('br'));
             var lastIndex = 0;
@@ -4985,8 +4971,8 @@ button#logoutBtn:hover{background:#990000}
             return;
           }
           var link = (uiRefs.link && uiRefs.link.value || '').trim();
-        if (!link){
-          showToast('يرجى إدخال الرابط أو رقم الهاتف المطلوب', false);
+          if (!link){
+            showToast('يرجى إدخال الرابط أو رقم الهاتف المطلوب', false);
             return;
           }
           var qtyRaw = (uiRefs.qty && uiRefs.qty.value || '').trim();
