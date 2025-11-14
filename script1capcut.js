@@ -224,7 +224,7 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
     const url = new URL('https://z3em-manwal.laithqarqaz1.workers.dev/');
     url.searchParams.set('mode', 'all');
     url.searchParams.set('useruid', useruid);
-    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store', headers: { 'X-Game': 'netflix' } });
+    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store', headers: { 'X-Game': 'capcut' } });
     const data = await res.json();
     if (!data || data.success === false) throw new Error(data?.error || 'فشل جلب الأسعار');
     persistOffers(data);
@@ -330,7 +330,7 @@ async function sendOrder() {
   try {
     const priceRes = await fetch("https://z3em-manwal.laithqarqaz1.workers.dev/", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Game": "netflix" },
+      headers: { "Content-Type": "application/json", "X-Game": "capcut" },
       body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
     });
     const priceData = await priceRes.json();
@@ -364,7 +364,7 @@ async function sendOrder() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`,
         "X-SessionKey": sessionKey,
-        "X-Game": "netflix"
+        "X-Game": "capcut"
       },
       body: JSON.stringify({
         playerId: pid,

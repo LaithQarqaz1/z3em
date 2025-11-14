@@ -56,6 +56,7 @@
       let ALL_ITEMS = [];
       let CURRENT_FILTER = 'all';
       let LAST_USER_ID = null;
+      let LEDGER_ONLY = false;
 
       function cardSkeleton(){ const d=document.createElement('div'); d.className='card loading'; d.style.minHeight='118px'; return d; }
       function showSkeleton(n=3){ listEl.innerHTML=''; for(let i=0;i<n;i++) listEl.appendChild(cardSkeleton()); }
@@ -569,71 +570,105 @@
       async function fetchTransfers(uid){
         try{
           const snap = await db.collection('userTransactions').doc(uid).get();
-          if (!snap.exists) return [];
-          const data = snap.data() || {};
-          const entries = Array.isArray(data.entries) ? data.entries : [];
-          return entries.map(function(entry){
-            if (!entry) return null;
-            var kind = (entry.kind || 'deposit').toLowerCase() === 'withdraw' ? 'withdraw' : 'deposit';
-            var created = entry.createdAt;
-            var createdDate = null;
-            if (created && typeof created.toDate === 'function') createdDate = created.toDate();
-            else if (created instanceof Date) createdDate = created;
-            else if (typeof created === 'string'){
-              var parsed = Date.parse(created);
-              if (!isNaN(parsed)) createdDate = new Date(parsed);
-            } else if (created && typeof created.seconds === 'number'){
-              createdDate = new Date(created.seconds * 1000);
-            }
-            var amount = parseNumeric(entry.amount);
-            var balanceBefore = parseNumeric(entry.balanceBefore);
-            var balanceAfter = parseNumeric(entry.balanceAfter);
-            var peer = entry.peerWebuid || entry.peerUid || '';
-            var item = {
-              code: entry.code || '',
-              status: entry.status || 'completed',
-              methodName: entry.methodName || (kind === 'withdraw' ? ('تحويل إلى ' + (peer || 'مستلم')) : ('تحويل من ' + (peer || 'مرسل'))),
-              countryName: entry.countryName || 'تحويل داخلي',
-              transferPeer: peer,
-              transferNote: entry.note || entry.transferNote || '',
-              createdAt: createdDate || new Date(),
-              timestamp: createdDate || new Date(),
-              __kind: kind
-            };
-            if (kind === 'withdraw'){
-              item.debited = amount;
-              item.debitedJOD = amount;
-              item.amountCurrency = amount;
-              item.currency = entry.currency || 'JOD';
-              item.balanceBefore = balanceBefore;
-              item.balanceAfter = balanceAfter;
-            } else {
-              item.added = amount;
-              item.addedAmount = amount;
-              item.addedCurrency = entry.currency || 'JOD';
-              item.amountJOD = amount;
-              item.currency = entry.currency || 'JOD';
-              item.balanceBefore = balanceBefore;
-              item.balanceAfter = balanceAfter;
-            }
-            return item;
-          }).filter(Boolean);
+          if (!snap || !snap.exists) return [];
+          return normalizeTransferEntries(snap.data() || {});
         }catch(err){
           console.warn('fetchTransfers failed', err);
           return [];
         }
       }
 
+      function normalizeTransferEntries(data){
+        var raw = [];
+        if (Array.isArray(data.entries)) raw = data.entries;
+        else if (data.entries && Array.isArray(data.entries.values)){
+          raw = data.entries.values.map(function(v){
+            return (v && v.mapValue && v.mapValue.fields) || v;
+          });
+        } else {
+          raw = Array.isArray(data) ? data : [];
+        }
+        return raw.map(function(entry){
+          if (!entry) return null;
+          var flat = entry;
+          if (entry.mapValue && entry.mapValue.fields) flat = entry.mapValue.fields;
+          function readField(obj, key){
+            if (!obj) return undefined;
+            if (typeof obj[key] === 'object' && obj[key] !== null){
+              var valObj = obj[key];
+              if (valObj.stringValue != null) return valObj.stringValue;
+              if (valObj.doubleValue != null) return Number(valObj.doubleValue);
+              if (valObj.integerValue != null) return Number(valObj.integerValue);
+              if (valObj.timestampValue != null) return valObj.timestampValue;
+            }
+            return obj[key];
+          }
+          var kind = (readField(flat,'kind') || 'deposit').toString().toLowerCase() === 'withdraw' ? 'withdraw' : 'deposit';
+          var created = readField(flat,'createdAt');
+          var createdDate = null;
+          if (created && typeof created.toDate === 'function') createdDate = created.toDate();
+          else if (created instanceof Date) createdDate = created;
+          else if (typeof created === 'string'){
+            var parsed = Date.parse(created);
+            if (!isNaN(parsed)) createdDate = new Date(parsed);
+          } else if (created && typeof created.seconds === 'number'){
+            createdDate = new Date(created.seconds * 1000);
+          }
+          var amount = parseNumeric(readField(flat,'amount'));
+          var balanceBefore = parseNumeric(readField(flat,'balanceBefore'));
+          var balanceAfter = parseNumeric(readField(flat,'balanceAfter'));
+          var peer = readField(flat,'peerWebuid') || readField(flat,'peerUid') || '';
+          var note = readField(flat,'note') || readField(flat,'transferNote') || '';
+          var currency = readField(flat,'currency') || 'JOD';
+          var item = {
+            code: readField(flat,'code') || '',
+            status: readField(flat,'status') || 'completed',
+            methodName: readField(flat,'methodName') || (kind === 'withdraw' ? ('تحويل إلى ' + (peer || 'مستلم')) : ('تحويل من ' + (peer || 'مرسل'))),
+            countryName: readField(flat,'countryName') || 'تحويل داخلي',
+            transferPeer: peer,
+            transferNote: note,
+            createdAt: createdDate || new Date(),
+            timestamp: createdDate || new Date(),
+            __kind: kind
+          };
+          if (kind === 'withdraw'){
+            item.debited = amount;
+            item.debitedJOD = amount;
+            item.amountCurrency = amount;
+            item.currency = currency;
+            item.balanceBefore = balanceBefore;
+            item.balanceAfter = balanceAfter;
+          } else {
+            item.added = amount;
+            item.addedAmount = amount;
+            item.addedCurrency = currency;
+            item.amountJOD = amount;
+            item.currency = currency;
+            item.balanceBefore = balanceBefore;
+            item.balanceAfter = balanceAfter;
+          }
+          Object.keys(flat || {}).forEach(function(key){
+            if (item[key] !== undefined && item[key] !== null) return;
+            var extra = readField(flat, key);
+            if (extra !== undefined) item[key] = extra;
+          });
+          return item;
+        }).filter(Boolean);
+      }
+
       async function fetchAllTransactions(uid){
-        const depositsPromise = (async function(){
-          let depositList = await fetchFromDepositRequests(uid);
-          if (!depositList.length) depositList = await fetchFromOrdersPrefix(uid);
-          return depositList;
-        })();
-        const withdrawPromise = fetchFromWithdrawRequests(uid);
-        const transfersPromise = fetchTransfers(uid);
-        const results = await Promise.all([depositsPromise, withdrawPromise, transfersPromise]);
-        return sortByNewest(mergeByCode([].concat(results[0] || [], results[1] || [], results[2] || [])));
+        const transfers = await fetchTransfers(uid);
+        if (transfers.length){
+          LEDGER_ONLY = true;
+          return sortByNewest(transfers);
+        }
+        LEDGER_ONLY = false;
+        const [deposits, withdraws, orders] = await Promise.all([
+          fetchFromDepositRequests(uid),
+          fetchFromWithdrawRequests(uid),
+          fetchFromOrdersPrefix(uid)
+        ]);
+        return sortByNewest(mergeByCode([].concat(deposits || [], withdraws || [], orders || [])));
       }
 
       function applyFilter(arr){
@@ -734,23 +769,24 @@
 
         if (cached) updateCardFromData(card, cached);
 
-        const collections = knownKind === 'withdraw'
-          ? ['withdrawRequests', 'depositRequests']
-          : ['depositRequests', 'withdrawRequests'];
-
         let fresh = null;
-        for (let i = 0; i < collections.length; i++){
-          const col = collections[i];
-          try{
-            const snap = await db.collection(col).doc(code).get();
-            if (snap && snap.exists){
-              fresh = Object.assign({ id: snap.id }, snap.data() || {});
-              if (!fresh.code) fresh.code = code;
-              fresh.__kind = ensureKind(fresh, col === 'withdrawRequests' ? 'withdraw' : 'deposit');
-              knownKind = fresh.__kind;
-              break;
-            }
-          }catch(_){ }
+        if (!LEDGER_ONLY){
+          const collections = knownKind === 'withdraw'
+            ? ['withdrawRequests', 'depositRequests']
+            : ['depositRequests', 'withdrawRequests'];
+          for (let i = 0; i < collections.length; i++){
+            const col = collections[i];
+            try{
+              const snap = await db.collection(col).doc(code).get();
+              if (snap && snap.exists){
+                fresh = Object.assign({ id: snap.id }, snap.data() || {});
+                if (!fresh.code) fresh.code = code;
+                fresh.__kind = ensureKind(fresh, col === 'withdrawRequests' ? 'withdraw' : 'deposit');
+                knownKind = fresh.__kind;
+                break;
+              }
+            }catch(_){ }
+          }
         }
 
         if (fresh){

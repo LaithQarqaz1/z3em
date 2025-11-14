@@ -1163,7 +1163,7 @@ function wirePageBalanceBox(){
 (function(){
   try{
     var links = {
-      whatsapp: 'https://wa.me/963981983751',
+      whatsapp: 'https://chat.whatsapp.com/Gs3vxpniU791qwwYqm3y6a?mode=wwt',
       telegram: 'https://t.me/963969898534',
       facebook: 'https://www.facebook.com/share/1B1b48AcqV/',
       email: 'mailto:hazemediek@gmail.com',
