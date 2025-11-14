@@ -1277,6 +1277,12 @@
   /***** تخزين sessionKey محليًا لاستخدامه بالطلبات (localStorage) *****/
   const saveSessionLocal   = (obj) => localStorage.setItem("sessionKeyInfo", JSON.stringify(obj));
   const getSessionLocal    = () => JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
+  const POST_LOGIN_STORAGE_KEY = "postLoginPayload";
+  const savePostLoginPayload = (payload = {}) => {
+    try {
+      localStorage.setItem(POST_LOGIN_STORAGE_KEY, JSON.stringify({ ...payload, ts: Date.now() }));
+    } catch (_) {}
+  };
 
   /***** مراجع عناصر الواجهة *****/
   const emailInput    = document.getElementById('emailInput');
@@ -1526,14 +1532,14 @@
     try {
       const sessionKey = await rotateSessionKey(googleFlowState.user.uid);
       const idToken = await getIdToken(googleFlowState.user);
-      const params = new URLSearchParams({
+      savePostLoginPayload({
         uid: googleFlowState.user.uid,
         email: googleFlowState.user.email || '',
         token: idToken,
-        sessionKey: sessionKey
+        sessionKey
       });
       resetGoogleFlow();
-      window.location.href = "index.html?" + params.toString();
+      window.location.href = "index.html";
     } catch (error) {
       loginError.textContent = translateFirebaseError(error?.code);
     }
@@ -1651,15 +1657,13 @@
 
         const sessionKey = await rotateSessionKey(user.uid);
         const idToken = await getIdToken(user);
-
-        const params = new URLSearchParams({
+        savePostLoginPayload({
           uid: user.uid,
           email: user.email,
           token: idToken,
-          sessionKey: sessionKey
+          sessionKey
         });
-
-        window.location.href = "index.html?" + params.toString();
+        window.location.href = "index.html";
       } catch (err) {
         console.log("خطأ Firebase:", err.code, err.message);
         loginError.textContent = translateFirebaseError(err.code);

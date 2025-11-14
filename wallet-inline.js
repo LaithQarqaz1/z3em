@@ -56,7 +56,6 @@
       let ALL_ITEMS = [];
       let CURRENT_FILTER = 'all';
       let LAST_USER_ID = null;
-      let LEDGER_ONLY = false;
 
       function cardSkeleton(){ const d=document.createElement('div'); d.className='card loading'; d.style.minHeight='118px'; return d; }
       function showSkeleton(n=3){ listEl.innerHTML=''; for(let i=0;i<n;i++) listEl.appendChild(cardSkeleton()); }
@@ -647,28 +646,20 @@
             item.balanceBefore = balanceBefore;
             item.balanceAfter = balanceAfter;
           }
-          Object.keys(flat || {}).forEach(function(key){
-            if (item[key] !== undefined && item[key] !== null) return;
-            var extra = readField(flat, key);
-            if (extra !== undefined) item[key] = extra;
-          });
           return item;
         }).filter(Boolean);
       }
 
       async function fetchAllTransactions(uid){
-        const transfers = await fetchTransfers(uid);
-        if (transfers.length){
-          LEDGER_ONLY = true;
-          return sortByNewest(transfers);
-        }
-        LEDGER_ONLY = false;
-        const [deposits, withdraws, orders] = await Promise.all([
-          fetchFromDepositRequests(uid),
-          fetchFromWithdrawRequests(uid),
-          fetchFromOrdersPrefix(uid)
-        ]);
-        return sortByNewest(mergeByCode([].concat(deposits || [], withdraws || [], orders || [])));
+        const depositsPromise = (async function(){
+          let depositList = await fetchFromDepositRequests(uid);
+          if (!depositList.length) depositList = await fetchFromOrdersPrefix(uid);
+          return depositList;
+        })();
+        const withdrawPromise = fetchFromWithdrawRequests(uid);
+        const transfersPromise = fetchTransfers(uid);
+        const results = await Promise.all([depositsPromise, withdrawPromise, transfersPromise]);
+        return sortByNewest(mergeByCode([].concat(results[0] || [], results[1] || [], results[2] || [])));
       }
 
       function applyFilter(arr){
@@ -769,24 +760,23 @@
 
         if (cached) updateCardFromData(card, cached);
 
+        const collections = knownKind === 'withdraw'
+          ? ['withdrawRequests', 'depositRequests']
+          : ['depositRequests', 'withdrawRequests'];
+
         let fresh = null;
-        if (!LEDGER_ONLY){
-          const collections = knownKind === 'withdraw'
-            ? ['withdrawRequests', 'depositRequests']
-            : ['depositRequests', 'withdrawRequests'];
-          for (let i = 0; i < collections.length; i++){
-            const col = collections[i];
-            try{
-              const snap = await db.collection(col).doc(code).get();
-              if (snap && snap.exists){
-                fresh = Object.assign({ id: snap.id }, snap.data() || {});
-                if (!fresh.code) fresh.code = code;
-                fresh.__kind = ensureKind(fresh, col === 'withdrawRequests' ? 'withdraw' : 'deposit');
-                knownKind = fresh.__kind;
-                break;
-              }
-            }catch(_){ }
-          }
+        for (let i = 0; i < collections.length; i++){
+          const col = collections[i];
+          try{
+            const snap = await db.collection(col).doc(code).get();
+            if (snap && snap.exists){
+              fresh = Object.assign({ id: snap.id }, snap.data() || {});
+              if (!fresh.code) fresh.code = code;
+              fresh.__kind = ensureKind(fresh, col === 'withdrawRequests' ? 'withdraw' : 'deposit');
+              knownKind = fresh.__kind;
+              break;
+            }
+          }catch(_){ }
         }
 
         if (fresh){

@@ -1,4 +1,4 @@
-﻿// ================== إعدادات Firebase (كما هي) ==================
+// ================== إعدادات Firebase (كما هي) ==================
 const firebaseConfig = {
           apiKey:"AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
           authDomain:"z3em-d9b11.firebaseapp.com",
@@ -531,6 +531,7 @@ const detectTheme = () => {
 document.addEventListener('DOMContentLoaded', () => {
   // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
 });
+
 
 
 

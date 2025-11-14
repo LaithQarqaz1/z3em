@@ -1,4 +1,4 @@
-﻿// ================== إعدادات Firebase (كما هي) ==================
+// ================== إعدادات Firebase (كما هي) ==================
 const firebaseConfig = {
           apiKey:"AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
           authDomain:"z3em-d9b11.firebaseapp.com",
@@ -221,10 +221,10 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
   try {
     // لا نجلب أسعار عامة بدون معرف مستخدم
     if (!useruid) return;
-    const url = new URL('https://z3em-manwal.laithqarqaz1.workers.dev/');
+    const url = new URL('https://divine-butterfly-bc16.stwrqsy.workers.dev/');
     url.searchParams.set('mode', 'all');
     url.searchParams.set('useruid', useruid);
-    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store', headers: { 'X-Game': 'netflix' } });
+    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store' });
     const data = await res.json();
     if (!data || data.success === false) throw new Error(data?.error || 'فشل جلب الأسعار');
     persistOffers(data);
@@ -293,6 +293,8 @@ async function sendOrder() {
   try { turnstileToken = await getTurnstileTokenInteractive(); }
   catch(_) { showToast('فشل التحقق الأمني، حاول مجدداً', 'error'); return; }
 
+  // تم تعطيل Turnstile بناءً على طلبك
+
   const user = firebase.auth().currentUser;
   if (!user) {
     showToast("❌ يجب تسجيل الدخول أولاً", "error");
@@ -328,9 +330,9 @@ async function sendOrder() {
   // Quote
   let total, breakdown;
   try {
-    const priceRes = await fetch("https://z3em-manwal.laithqarqaz1.workers.dev/", {
+    const priceRes = await fetch("https://divine-butterfly-bc16.stwrqsy.workers.dev/", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Game": "netflix" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
     });
     const priceData = await priceRes.json();
@@ -358,13 +360,12 @@ async function sendOrder() {
       submitBtn.style.pointerEvents = 'none';
     }
 
-    const response = await fetch("https://z3em-manwal.laithqarqaz1.workers.dev/", {
+    const response = await fetch("https://divine-butterfly-bc16.stwrqsy.workers.dev", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`,
-        "X-SessionKey": sessionKey,
-        "X-Game": "netflix"
+        "X-SessionKey": sessionKey
       },
       body: JSON.stringify({
         playerId: pid,
@@ -428,7 +429,7 @@ async function sendOrder() {
 
 /* ================== نافذة التأكيد كما هي ================== */
 function showConfirmation(orderCode, {
-  orderUrl = "talabat.html",
+  orderUrl = "index.html#/orders",
   homeUrl  = "index.html",
   theme    = "auto"
 } = {}) {
@@ -596,6 +597,8 @@ const detectTheme = () => {
 document.addEventListener('DOMContentLoaded', () => {
   // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
 });
+
+
 
 
 
