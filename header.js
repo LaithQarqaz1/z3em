@@ -129,6 +129,145 @@ function hidePageLoader(){
 }
 window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('nav:loader:expected') === '1') return; } catch {} hidePageLoader(); });
 
+// Auto-retry worker requests when session key errors occur
+(function setupSessionKeyAutoRetry(){
+  try {
+    if (typeof window === 'undefined' || typeof window.fetch !== 'function') return;
+    if (window.__SESSION_KEY_RETRY_PATCHED__) return;
+    const nativeFetch = window.fetch.bind(window);
+    window.__SESSION_KEY_RETRY_PATCHED__ = true;
+
+    const SESSION_HEADER = 'X-SessionKey';
+    const SESSION_ERROR_CODES = new Set(['session_missing','session_invalid','session_mismatch','session_expired']);
+    const RAND_ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const RAND_SYMBOLS = '!@#$%&';
+    let rotatePromise = null;
+
+    function requestCarriesSession(req){
+      try { return !!req.headers.get(SESSION_HEADER); } catch { return false; }
+    }
+    function normalizeCode(val){
+      return (typeof val === 'string' ? val : '').trim().toLowerCase();
+    }
+    function isSessionCode(code){
+      if (!code) return false;
+      return SESSION_ERROR_CODES.has(code) || code.startsWith('session_');
+    }
+    function grabSessionCode(payload){
+      if (!payload || typeof payload !== 'object') return '';
+      const fields = ['code','errorCode','error_code','error'];
+      for (let i = 0; i < fields.length; i++){
+        const code = normalizeCode(payload[fields[i]]);
+        if (code) return code;
+      }
+      return '';
+    }
+    function extractTtl(payload){
+      if (!payload || typeof payload !== 'object') return 0;
+      const ttl = Number(payload.ttlSeconds ?? payload.ttl ?? payload.ttl_seconds ?? payload.ttlseconds ?? payload.sessionTtl ?? 0);
+      return Number.isFinite(ttl) && ttl > 0 ? ttl : 0;
+    }
+    function randomFromAlphabet(alphabet, len){
+      const set = (typeof alphabet === 'string' && alphabet.length) ? alphabet : RAND_ALPHA;
+      const length = Math.max(1, Number(len) || 1);
+      if (window.crypto && crypto.getRandomValues){
+        const buf = new Uint32Array(length);
+        crypto.getRandomValues(buf);
+        let out = '';
+        for (let i = 0; i < length; i++){ out += set[buf[i] % set.length]; }
+        return out;
+      }
+      let fallback = '';
+      for (let i = 0; i < length; i++){ fallback += set[Math.floor(Math.random() * set.length)]; }
+      return fallback;
+    }
+    function generateSessionKey(len = 64){
+      return randomFromAlphabet(RAND_ALPHA + RAND_SYMBOLS, len);
+    }
+    function persistSessionInfo(uid, key, ttlSeconds){
+      if (!uid || !key) return;
+      try {
+        localStorage.setItem('sessionKeyInfo', JSON.stringify({
+          uid,
+          sessionKey: key,
+          ts: Date.now(),
+          ttlSeconds: Number(ttlSeconds) || 0
+        }));
+      } catch {}
+    }
+    async function rotateSessionKey(ttlSeconds){
+      if (!window.firebase || !firebase.auth || !firebase.firestore) return null;
+      const user = firebase.auth().currentUser;
+      if (!user) return null;
+      if (!rotatePromise){
+        rotatePromise = (async () => {
+          const freshKey = generateSessionKey();
+          try {
+            const ref = firebase.firestore().collection('users').doc(user.uid).collection('keys').doc('session');
+            const payload = {
+              sessionKey: freshKey,
+              ttlSeconds: Number(ttlSeconds) || 0
+            };
+            const FieldValue = firebase.firestore.FieldValue;
+            if (FieldValue && FieldValue.serverTimestamp) {
+              payload.createdAt = FieldValue.serverTimestamp();
+            }
+            await ref.set(payload, { merge: true });
+          } catch (err) {
+            console.warn('Session key rotation write failed:', err);
+          }
+          persistSessionInfo(user.uid, freshKey, ttlSeconds);
+          return freshKey;
+        })().catch(err => { console.warn('Auto rotate session key failed:', err); return null; }).finally(() => { rotatePromise = null; });
+      }
+      return rotatePromise;
+    }
+    async function detectSessionError(resp){
+      if (!resp || typeof resp.clone !== 'function') return null;
+      let payload = null;
+      try { payload = await resp.clone().json(); } catch { payload = null; }
+      if (!payload) return null;
+      const code = grabSessionCode(payload);
+      if (!isSessionCode(code)) return null;
+      return { code, ttlSeconds: extractTtl(payload) };
+    }
+
+    window.fetch = async function sessionAwareFetch(input, init){
+      let request;
+      try { request = new Request(input, init); }
+      catch (_) { return nativeFetch(input, init); }
+      if (!requestCarriesSession(request)) {
+        return nativeFetch(request);
+      }
+
+      const firstResponse = await nativeFetch(request.clone());
+      const sessionError = await detectSessionError(firstResponse);
+      if (!sessionError) return firstResponse;
+
+      const newKey = await rotateSessionKey(sessionError.ttlSeconds);
+      if (!newKey) return firstResponse;
+
+      let retryRequest;
+      try {
+        const headers = new Headers(request.headers);
+        headers.set(SESSION_HEADER, newKey);
+        retryRequest = new Request(request, { headers, signal: request.signal });
+      } catch (err) {
+        console.warn('Failed to rebuild request for session retry:', err);
+        return firstResponse;
+      }
+      try {
+        return await nativeFetch(retryRequest);
+      } catch (retryErr) {
+        console.warn('Retry after session rotation failed:', retryErr);
+        return firstResponse;
+      }
+    };
+  } catch (err) {
+    console.warn('Session auto-retry bootstrap failed:', err);
+  }
+})();
+
 // =============================
 // Currency utils and formatting
 // =============================
