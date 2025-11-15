@@ -226,10 +226,12 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
       if (!resp || typeof resp.clone !== 'function') return null;
       let payload = null;
       try { payload = await resp.clone().json(); } catch { payload = null; }
-      if (!payload) return null;
+      const statusIs401 = Number(resp.status) === 401;
       const code = grabSessionCode(payload);
-      if (!isSessionCode(code)) return null;
-      return { code, ttlSeconds: extractTtl(payload) };
+      const ttl = extractTtl(payload);
+      if (isSessionCode(code)) return { code, ttlSeconds: ttl };
+      if (statusIs401) return { code: code || 'session_http_401', ttlSeconds: ttl };
+      return null;
     }
 
     window.fetch = async function sessionAwareFetch(input, init){
