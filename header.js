@@ -366,6 +366,16 @@ function watchSessionDocForDevice(user){
               payload.createdAt = FieldValue.serverTimestamp();
             }
             await ref.set(payload, { merge: true });
+            if (deviceId) {
+              try {
+                const userRef = firebase.firestore().collection('users').doc(user.uid);
+                const patch = { activeDeviceId: deviceId };
+                if (FieldValue && FieldValue.serverTimestamp) patch.activeDeviceAt = FieldValue.serverTimestamp();
+                await userRef.set(patch, { merge: true });
+              } catch (err) {
+                console.warn('Active device update failed:', err);
+              }
+            }
           } catch (err) {
             console.warn('Session key rotation write failed:', err);
           }
@@ -1401,6 +1411,15 @@ try {
       const cached = readCachedBalance(user.uid); if (cached != null) { try { window.__BAL_BASE__ = cached; } catch {}; setHeaderBalance((typeof window.formatCurrencyFromJOD === 'function') ? window.formatCurrencyFromJOD(cached) : (Number(cached).toFixed(2) + ' $')); broadcastBalance(cached); }
       const docRef = firebase.firestore().collection('users').doc(user.uid);
       unsubscribeBalance = docRef.onSnapshot(snap => {
+        try {
+          const data = snap.data() || {};
+          const remoteDevice = data.activeDeviceId || data.active_device_id || null;
+          const localDevice = (typeof getDeviceFingerprint === 'function') ? getDeviceFingerprint() : null;
+          if (remoteDevice && localDevice && remoteDevice !== localDevice) {
+            triggerSessionConflictLogout();
+            return;
+          }
+        } catch (err) { console.warn('activeDeviceId check failed:', err); }
         if (snap.exists) {
           const raw = snap.data().balance ?? 0; const num = Number(raw); const val = Number.isFinite(num) ? num : 0;
           try { window.__BAL_BASE__ = val; } catch {}

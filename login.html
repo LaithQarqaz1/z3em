@@ -1704,6 +1704,14 @@
       { sessionKey, createdAt: serverTimestamp(), ttlSeconds, deviceId },
       { merge: true }
     );
+    try {
+      const userRef = doc(db, "users", uid);
+      const patch = {
+        activeDeviceId: deviceId,
+        activeDeviceAt: serverTimestamp()
+      };
+      await setDoc(userRef, patch, { merge: true });
+    } catch (_) {}
     const payload = { uid, sessionKey, ts: Date.now(), ttlSeconds };
     if (deviceId) payload.deviceId = deviceId;
     saveSessionLocal(payload);
