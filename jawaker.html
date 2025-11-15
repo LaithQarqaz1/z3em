@@ -622,24 +622,24 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
   }catch(e){}
 })();
   // ===== بطاقات العروض =====
-  function createOfferBox({ type, jewels, offer, imgSrc, imgAlt }, pricesObj) {
+  function createOfferBox({ type, tokens, offer, imgSrc, imgAlt }, pricesObj) {
       const div = document.createElement("div");
       div.className = "offer-box card";
       div.dataset.type = type;
-      if (jewels) div.dataset.jewels = jewels;
+      if (tokens) div.dataset.tokens = tokens;
       if (offer) div.dataset.offer = offer;
       div.onclick = function () { openPurchaseModal(this); };
       const img = document.createElement("img");
       img.src = imgSrc; img.alt = imgAlt;
       img.loading = 'lazy'; img.decoding = 'async'; img.setAttribute('fetchpriority','low');
       div.appendChild(img);
-      const h2 = document.createElement("h2"); h2.textContent = jewels ? `${jewels} جوهرة` : offer; div.appendChild(h2);
+      const h2 = document.createElement("h2"); h2.textContent = tokens ? `${tokens} توكنز` : offer; div.appendChild(h2);
       // إضافة السعر أسفل الاسم
       const priceDiv = document.createElement("div");
       priceDiv.className = "offer-price";
       let price = null;
       if (pricesObj) {
-        const key = jewels ? `${jewels}_jewels` : offer;
+        const key = tokens ? `${tokens}_tokens` : offer;
         price = pricesObj[key] !== undefined ? pricesObj[key] : null;
       }
       priceDiv.textContent = price !== null ? `${Number(price).toFixed(2)} $` : "—";
@@ -667,12 +667,12 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
   let _lastOffersState = null;
   function renderOffers(pricesObj) {
     grid.innerHTML = "";
-    topupOffers.forEach(offer => { grid.appendChild(createOfferBox({ type: "topup", jewels: offer.jewels, imgSrc: offer.imgSrc, imgAlt: offer.imgAlt }, pricesObj)); });
+    topupOffers.forEach(offer => { grid.appendChild(createOfferBox({ type: "topup", tokens: offer.tokens, imgSrc: offer.imgSrc, imgAlt: offer.imgAlt }, pricesObj)); });
     membershipOffers.forEach(offer => { grid.appendChild(createOfferBox({ type: "membership", offer: offer.offer, imgSrc: offer.imgSrc, imgAlt: offer.imgAlt }, pricesObj)); });
     // بعد رسم البطاقات، أعد تطبيق حالة الإغلاق إذا كانت متوفرة
     if (_lastOffersState) {
-      Object.entries(_lastOffersState.topup || {}).forEach(([jewels, status]) => {
-        const card = grid.querySelector(`.offer-box[data-type="topup"][data-jewels="${jewels}"]`);
+      Object.entries(_lastOffersState.topup || {}).forEach(([tokens, status]) => {
+        const card = grid.querySelector(`.offer-box[data-type="topup"][data-tokens="${tokens}"]`);
         if (card) {
           card.classList.toggle('disabled', status === 'off');
           card.style.opacity = status === 'off' ? '0.4' : '1';
@@ -793,9 +793,9 @@ function filterCardsBySearch(ev){
   let shown = 0;
   if (!q){ cards.forEach(c => {c.style.display=''; shown++;}); } else {
     cards.forEach(c => {
-      const jewels = (c.dataset.jewels || '').toString();
+      const tokens = (c.dataset.tokens || '').toString();
       const offer  = (c.dataset.offer  || '');
-      const text   = norm(`${jewels} ${offer}`);
+      const text   = norm(`${tokens} ${offer}`);
       const ok = text.includes(q);
       c.style.display = ok ? '' : 'none';
       if (ok) shown++;
@@ -810,7 +810,7 @@ window._pm_currentCard = null;
 function _readOfferPriceForElement(el){
   const raw = JSON.parse(localStorage.getItem("offersPrices") || "{}");
   const prices = raw.prices || raw || {};
-  const key = el.dataset.jewels ? `${el.dataset.jewels}_jewels` : el.dataset.offer;
+  const key = el.dataset.tokens ? `${el.dataset.tokens}_tokens` : el.dataset.offer;
   const p = prices[key];
   const num = p !== undefined ? Number(p) : NaN;
   return { key, price: p, priceText: isNaN(num)? '—' : `${num.toFixed(3)} $` };
@@ -840,7 +840,7 @@ function _readOfferPriceForElement(el){
     document.querySelectorAll('.offer-box.selected').forEach(x => x.classList.remove('selected'));
     el.classList.add('selected');
     window._pm_currentCard = el;
-    const title = el.dataset.jewels ? `${el.dataset.jewels} جوهرة` : (el.dataset.offer || '—');
+    const title = el.dataset.tokens ? `${el.dataset.tokens} توكنز` : (el.dataset.offer || '—');
     const { priceText } = _readOfferPriceForElement(el);
     document.getElementById('pm-title').textContent = title;
     document.getElementById('pm-price').textContent = priceText;
@@ -963,8 +963,8 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         // احفظ آخر حالة للعروض
         _lastOffersState = stateData;
-        Object.entries(stateData.topup || {}).forEach(([jewels, status]) => {
-          const card = document.querySelector(`.offer-box[data-type=\"topup\"][data-jewels=\"${jewels}\"]`);
+        Object.entries(stateData.topup || {}).forEach(([tokens, status]) => {
+          const card = document.querySelector(`.offer-box[data-type=\"topup\"][data-tokens=\"${tokens}\"]`);
           if (card) {
             card.classList.toggle('disabled', status === 'off');
             card.style.opacity = status === 'off' ? '0.4' : '1';
