@@ -4036,6 +4036,8 @@ button#logoutBtn:hover{background:#990000}
         var uiRefs = null;
         var qtyUserEdited = false;
 
+        var urlRegex = /https?:\/\/[^\s<>\"']+/gi;
+
         var CATEGORY_ICON_RULES = [
           { icon: '🤖', keywords: ['gpt', 'شات gpt', 'بريميوم'] },
           { icon: '🎵', keywords: ['تيك توك', 'tiktok'] },

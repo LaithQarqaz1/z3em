@@ -1,4 +1,4 @@
-// ================== إعدادات Firebase (كما هي) ==================
+﻿// ================== إعدادات Firebase (كما هي) ==================
 const firebaseConfig = {
           apiKey:"AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
           authDomain:"z3em-d9b11.firebaseapp.com",
@@ -1237,8 +1237,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setBoostingState({ message: "سجّل الدخول لعرض هذا القسم" });
   }
 });
-
-
 
 
 
