@@ -129,6 +129,134 @@ function hidePageLoader(){
 }
 window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('nav:loader:expected') === '1') return; } catch {} hidePageLoader(); });
 
+// Device fingerprint helpers (used to lock each user session to a single device)
+const DEVICE_ID_STORAGE_KEY = 'session:device:id';
+function collectDeviceEntropy(){
+  try {
+    const nav = typeof navigator !== 'undefined' ? navigator : {};
+    const scr = typeof screen !== 'undefined' ? screen : {};
+    const tz = (typeof Intl !== 'undefined' && Intl.DateTimeFormat) ? (Intl.DateTimeFormat().resolvedOptions().timeZone || '') : '';
+    const languageList = Array.isArray(nav.languages) && nav.languages.length ? nav.languages.join(',') : (nav.language || '');
+    const platform = (nav.userAgentData && nav.userAgentData.platform) || nav.platform || '';
+    const userAgent = nav.userAgent || '';
+    const width = Number(scr.width || window.innerWidth || 0);
+    const height = Number(scr.height || window.innerHeight || 0);
+    const sorted = [width, height].sort((a,b)=>b-a);
+    const colorDepth = scr.colorDepth || scr.pixelDepth || '';
+    const pixelRatio = window.devicePixelRatio || '';
+    const hardware = `${nav.hardwareConcurrency || ''}:${nav.deviceMemory || ''}`;
+    const touch = nav.maxTouchPoints || '';
+    const avail = `${scr.availWidth || ''}:${scr.availHeight || ''}`;
+    const timezoneOffset = String(new Date().getTimezoneOffset());
+    const orientation = scr.orientation && scr.orientation.type ? scr.orientation.type : '';
+    return [
+      platform,
+      userAgent,
+      languageList,
+      tz,
+      sorted[0], sorted[1],
+      colorDepth,
+      pixelRatio,
+      hardware,
+      touch,
+      avail,
+      timezoneOffset,
+      orientation
+    ].join('|');
+  } catch {
+    return 'unknown-device';
+  }
+}
+function simpleDeviceHash(input){
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++){
+    hash ^= input.charCodeAt(i);
+    hash = (hash * 0x01000193) >>> 0;
+  }
+  return hash >>> 0;
+}
+function generateDeviceFingerprint(){
+  const entropy = collectDeviceEntropy();
+  const reversed = entropy.split('').reverse().join('');
+  const h1 = simpleDeviceHash(entropy).toString(16).padStart(8,'0');
+  const h2 = simpleDeviceHash(reversed).toString(16).padStart(8,'0');
+  return `dev-${h1}${h2}`;
+}
+function ensureDeviceFingerprint(){
+  if (window.__DEVICE_FINGERPRINT__) return window.__DEVICE_FINGERPRINT__;
+  let computed = '';
+  try { computed = generateDeviceFingerprint(); } catch { computed = ''; }
+  if (computed && computed.length >= 12) {
+    window.__DEVICE_FINGERPRINT__ = computed;
+    try { localStorage.setItem(DEVICE_ID_STORAGE_KEY, computed); } catch {}
+    return computed;
+  }
+  let stored = '';
+  try { stored = localStorage.getItem(DEVICE_ID_STORAGE_KEY) || ''; } catch {}
+  if (stored) {
+    window.__DEVICE_FINGERPRINT__ = stored;
+    return stored;
+  }
+  const fallback = `dev-fallback-${Math.random().toString(36).slice(2)}`;
+  window.__DEVICE_FINGERPRINT__ = fallback;
+  try { localStorage.setItem(DEVICE_ID_STORAGE_KEY, fallback); } catch {}
+  return fallback;
+}
+function getDeviceFingerprint(){
+  return window.__DEVICE_FINGERPRINT__ || ensureDeviceFingerprint();
+}
+try { ensureDeviceFingerprint(); window.getDeviceFingerprint = getDeviceFingerprint; } catch {}
+
+let sessionDocUnsubscribe = null;
+let sessionConflictHandled = false;
+function clearSessionDocWatcher(){
+  if (sessionDocUnsubscribe){
+    try { sessionDocUnsubscribe(); } catch {}
+    sessionDocUnsubscribe = null;
+  }
+}
+function triggerSessionConflictLogout(){
+  if (sessionConflictHandled) return;
+  sessionConflictHandled = true;
+  clearSessionDocWatcher();
+  try { localStorage.removeItem('sessionKeyInfo'); } catch {}
+  try { window.dispatchEvent(new CustomEvent('session:conflict')); } catch {}
+  const message = 'تم تسجيل الدخول من جهاز آخر وتم إنهاء هذه الجلسة.';
+  try { alert(message); } catch {}
+  try {
+    firebase.auth().signOut().catch(()=>{}).finally(() => {
+      try { window.location.href = 'login.html?session=conflict'; }
+      catch { window.location.reload(); }
+    });
+  } catch {
+    try { window.location.href = 'login.html?session=conflict'; }
+    catch { window.location.reload(); }
+  }
+}
+function watchSessionDocForDevice(user){
+  clearSessionDocWatcher();
+  if (!user || !firebase.firestore) return;
+  try {
+    const ref = firebase.firestore().collection('users').doc(user.uid).collection('keys').doc('session');
+    sessionDocUnsubscribe = ref.onSnapshot(snap => {
+      if (!snap.exists) return;
+      const data = snap.data() || {};
+      const remoteDevice = data.deviceId || data.deviceID || data.device_id || null;
+      const localDevice = (typeof getDeviceFingerprint === 'function') ? getDeviceFingerprint() : null;
+      const remoteLegacy = remoteDevice && !/^dev-/i.test(String(remoteDevice));
+      if (localDevice && (!remoteDevice || remoteLegacy)) {
+        try { ref.set({ deviceId: localDevice }, { merge: true }); } catch {}
+        return;
+      }
+      if (remoteDevice && localDevice && remoteDevice !== localDevice) {
+        triggerSessionConflictLogout();
+      }
+    }, err => { console.warn('Session doc listener error:', err); });
+  } catch (err) {
+    console.warn('Unable to subscribe to session doc:', err);
+  }
+}
+
 // Auto-retry worker requests when auth/session errors occur
 (function setupSessionKeyAutoRetry(){
   try {
@@ -139,6 +267,7 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
 
     const SESSION_HEADER = 'X-SessionKey';
     const AUTH_HEADER = 'Authorization';
+    const DEVICE_HEADER = 'X-DeviceId';
     const SESSION_ERROR_CODES = new Set(['session_missing','session_invalid','session_mismatch','session_expired']);
     const AUTH_ERROR_CODES = new Set([
       'auth_missing','auth_required','invalid_token','token_expired','invalid_alg','invalid_signature',
@@ -189,9 +318,10 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
     function randomFromAlphabet(alphabet, len){
       const set = (typeof alphabet === 'string' && alphabet.length) ? alphabet : RAND_ALPHA;
       const length = Math.max(1, Number(len) || 1);
-      if (window.crypto && crypto.getRandomValues){
+      const cryptoObj = (typeof window !== 'undefined' && window.crypto) || null;
+      if (cryptoObj && typeof cryptoObj.getRandomValues === 'function'){
         const buf = new Uint32Array(length);
-        crypto.getRandomValues(buf);
+        cryptoObj.getRandomValues(buf);
         let out = '';
         for (let i = 0; i < length; i++){ out += set[buf[i] % set.length]; }
         return out;
@@ -205,12 +335,14 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
     }
     function persistSessionInfo(uid, key, ttlSeconds){
       if (!uid || !key) return;
+      const deviceId = (typeof getDeviceFingerprint === 'function') ? getDeviceFingerprint() : '';
       try {
         localStorage.setItem('sessionKeyInfo', JSON.stringify({
           uid,
           sessionKey: key,
           ts: Date.now(),
-          ttlSeconds: Number(ttlSeconds) || 0
+          ttlSeconds: Number(ttlSeconds) || 0,
+          deviceId
         }));
       } catch {}
     }
@@ -221,12 +353,14 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
       if (!rotatePromise){
         rotatePromise = (async () => {
           const freshKey = generateSessionKey();
+          const deviceId = (typeof getDeviceFingerprint === 'function') ? getDeviceFingerprint() : '';
           try {
             const ref = firebase.firestore().collection('users').doc(user.uid).collection('keys').doc('session');
             const payload = {
               sessionKey: freshKey,
               ttlSeconds: Number(ttlSeconds) || 0
             };
+            if (deviceId) payload.deviceId = deviceId;
             const FieldValue = firebase.firestore.FieldValue;
             if (FieldValue && FieldValue.serverTimestamp) {
               payload.createdAt = FieldValue.serverTimestamp();
@@ -263,6 +397,17 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
         return null;
       }
     }
+    function ensureDeviceHeader(request){
+      if (!requestCarriesSession(request)) return request;
+      const fingerprint = (typeof getDeviceFingerprint === 'function') ? getDeviceFingerprint() : '';
+      if (!fingerprint) return request;
+      try {
+        const current = request.headers.get(DEVICE_HEADER);
+        if (current && current === fingerprint) return request;
+      } catch {}
+      const updated = rebuildRequestWithHeaders(request, headers => { headers.set(DEVICE_HEADER, fingerprint); });
+      return updated || request;
+    }
     async function classifyForRetry(resp, req){
       if (!resp || typeof resp.clone !== 'function') return null;
       let payload = null;
@@ -274,10 +419,10 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
       const hasAuth = requestCarriesAuth(req);
 
       if (hasSession && (isSessionCode(code) || (statusIs401 && !code))) {
-        return { kind: 'session', ttlSeconds };
+        return { kind: 'session', ttlSeconds, code: code || (statusIs401 ? 'session_http_401' : '') };
       }
       if (hasAuth && (isAuthCode(code) || (statusIs401 && !isSessionCode(code)))) {
-        return { kind: 'auth', ttlSeconds: 0 };
+        return { kind: 'auth', ttlSeconds: 0, code: code || (statusIs401 ? 'auth_http_401' : '') };
       }
       return null;
     }
@@ -286,6 +431,7 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
       let request;
       try { request = new Request(input, init); }
       catch (_) { return nativeFetch(input, init); }
+      request = ensureDeviceHeader(request);
       if (!shouldIntercept(request)) {
         return nativeFetch(request);
       }
@@ -296,9 +442,18 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
         if (!action) return response;
 
         if (action.kind === 'session'){
+          const conflictCodes = new Set(['session_mismatch','session_conflict','session_device_conflict']);
+          if (conflictCodes.has(action.code)) {
+            triggerSessionConflictLogout();
+            return response;
+          }
           const newKey = await rotateSessionKey(action.ttlSeconds);
           if (!newKey) return response;
-          const updated = rebuildRequestWithHeaders(request, headers => { headers.set(SESSION_HEADER, newKey); });
+          const updated = rebuildRequestWithHeaders(request, headers => {
+            headers.set(SESSION_HEADER, newKey);
+            const fingerprint = (typeof getDeviceFingerprint === 'function') ? getDeviceFingerprint() : '';
+            if (fingerprint) headers.set(DEVICE_HEADER, fingerprint);
+          });
           if (!updated) return response;
           request = updated;
           response = await nativeFetch(request.clone());
@@ -1223,6 +1378,8 @@ try {
     const ok = await initFirebaseApp();
     if (!ok || typeof firebase === 'undefined' || !firebase.auth) return;
     firebase.auth().onAuthStateChanged(user => {
+    clearSessionDocWatcher();
+    sessionConflictHandled = false;
     if (typeof unsubscribeBalance === 'function') { try { unsubscribeBalance(); } catch (err) { console.warn('unsubscribeBalance error:', err); } unsubscribeBalance = null; }
     const loginBtn = document.getElementById('loginSidebarBtn');
     const depositBtn = document.getElementById('depositBtn');
@@ -1232,6 +1389,7 @@ try {
     const logoutBtn = document.getElementById('logoutBtn');
 
     if (user) {
+      watchSessionDocForDevice(user);
       try { localStorage.setItem(LAST_UID_KEY, user.uid); } catch {}
       try { localStorage.setItem(LAST_LOGGED_KEY, '1'); } catch {}
       if (loginBtn) loginBtn.style.display = 'none';

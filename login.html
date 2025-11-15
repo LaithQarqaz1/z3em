@@ -1273,9 +1273,92 @@
   const generateExtraKey   = (len = 40) => rand(ALPHA + SYMBOLS, len);
   const generateSessionKey = (len = 64) => rand(ALPHA + SYMBOLS, len);
   const generateWebUID     = () => Math.floor(100000000000000 + Math.random() * 900000000000000).toString();
+  const DEVICE_ID_STORAGE_KEY = "session:device:id";
+  function collectDeviceEntropy(){
+    try {
+      const nav = typeof navigator !== "undefined" ? navigator : {};
+      const scr = typeof screen !== "undefined" ? screen : {};
+      const tz = (typeof Intl !== "undefined" && Intl.DateTimeFormat) ? (Intl.DateTimeFormat().resolvedOptions().timeZone || "") : "";
+      const languages = Array.isArray(nav.languages) && nav.languages.length ? nav.languages.join(",") : (nav.language || "");
+      const platform = (nav.userAgentData && nav.userAgentData.platform) || nav.platform || "";
+      const userAgent = nav.userAgent || "";
+      const width = Number(scr.width || window.innerWidth || 0);
+      const height = Number(scr.height || window.innerHeight || 0);
+      const sorted = [width, height].sort((a,b)=>b-a);
+      const colorDepth = scr.colorDepth || scr.pixelDepth || "";
+      const pixelRatio = window.devicePixelRatio || "";
+      const hardware = `${nav.hardwareConcurrency || ""}:${nav.deviceMemory || ""}`;
+      const touch = nav.maxTouchPoints || "";
+      const avail = `${scr.availWidth || ""}:${scr.availHeight || ""}`;
+      const timezoneOffset = String(new Date().getTimezoneOffset());
+      const orientation = scr.orientation && scr.orientation.type ? scr.orientation.type : "";
+      return [
+        platform,
+        userAgent,
+        languages,
+        tz,
+        sorted[0], sorted[1],
+        colorDepth,
+        pixelRatio,
+        hardware,
+        touch,
+        avail,
+        timezoneOffset,
+        orientation
+      ].join("|");
+    } catch {
+      return "unknown-device";
+    }
+  }
+  function hashEntropy(str){
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++){
+      hash ^= str.charCodeAt(i);
+      hash = (hash * 0x01000193) >>> 0;
+    }
+    return hash >>> 0;
+  }
+  function deriveDeviceId(){
+    const entropy = collectDeviceEntropy();
+    const reversed = entropy.split("").reverse().join("");
+    const h1 = hashEntropy(entropy).toString(16).padStart(8,"0");
+    const h2 = hashEntropy(reversed).toString(16).padStart(8,"0");
+    return `dev-${h1}${h2}`;
+  }
+  function ensureDeviceId(){
+    if (window.__DEVICE_FINGERPRINT__) return window.__DEVICE_FINGERPRINT__;
+    let computed = "";
+    try { computed = deriveDeviceId(); } catch { computed = ""; }
+    if (computed && computed.length >= 12) {
+      window.__DEVICE_FINGERPRINT__ = computed;
+      try { localStorage.setItem(DEVICE_ID_STORAGE_KEY, computed); } catch {}
+      return computed;
+    }
+    let stored = "";
+    try { stored = localStorage.getItem(DEVICE_ID_STORAGE_KEY) || ""; } catch {}
+    if (stored) { window.__DEVICE_FINGERPRINT__ = stored; return stored; }
+    const fallback = `dev-fallback-${Math.random().toString(36).slice(2)}`;
+    window.__DEVICE_FINGERPRINT__ = fallback;
+    try { localStorage.setItem(DEVICE_ID_STORAGE_KEY, fallback); } catch {}
+    return fallback;
+  }
+  function getDeviceId(){
+    return window.__DEVICE_FINGERPRINT__ || ensureDeviceId();
+  }
+  try {
+    ensureDeviceId();
+    if (!window.getDeviceFingerprint) window.getDeviceFingerprint = getDeviceId;
+  } catch (_) {}
 
   /***** تخزين sessionKey محليًا لاستخدامه بالطلبات (localStorage) *****/
-  const saveSessionLocal   = (obj) => localStorage.setItem("sessionKeyInfo", JSON.stringify(obj));
+  const saveSessionLocal   = (obj = {}) => {
+    const payload = { ...obj };
+    try {
+      const deviceId = getDeviceId();
+      if (deviceId) payload.deviceId = deviceId;
+    } catch (_) {}
+    localStorage.setItem("sessionKeyInfo", JSON.stringify(payload));
+  };
   const getSessionLocal    = () => JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
   const POST_LOGIN_STORAGE_KEY = "postLoginPayload";
   const savePostLoginPayload = (payload = {}) => {
@@ -1615,12 +1698,15 @@
   // جلسة متغيرة لكل دخول: كتابة في Firestore + حفظ في localStorage
   async function rotateSessionKey(uid, ttlSeconds = 0) {
     const sessionKey = generateSessionKey();
+    const deviceId = getDeviceId();
     await setDoc(
       doc(db, "users", uid, "keys", "session"),
-      { sessionKey, createdAt: serverTimestamp(), ttlSeconds },
+      { sessionKey, createdAt: serverTimestamp(), ttlSeconds, deviceId },
       { merge: true }
     );
-    saveSessionLocal({ uid, sessionKey, ts: Date.now(), ttlSeconds });
+    const payload = { uid, sessionKey, ts: Date.now(), ttlSeconds };
+    if (deviceId) payload.deviceId = deviceId;
+    saveSessionLocal(payload);
     return sessionKey;
   }
 
@@ -1700,15 +1786,13 @@
       const sessionKey = await rotateSessionKey(user.uid);
       const idToken = await getIdToken(user);
 
-      const params = new URLSearchParams({
+      savePostLoginPayload({
         uid: user.uid,
         email: user.email,
         token: idToken,
-        sessionKey: sessionKey
+        sessionKey
       });
-
-      // التوجيه للصفحة الرئيسية مع بيانات الجلسة
-      window.location.href = "index.html?" + params.toString();
+      window.location.href = "index.html";
     } catch (err) {
       loginError.textContent = translateFirebaseError(err.code);
     }
