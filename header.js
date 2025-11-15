@@ -129,7 +129,7 @@ function hidePageLoader(){
 }
 window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('nav:loader:expected') === '1') return; } catch {} hidePageLoader(); });
 
-// Auto-retry worker requests when session key errors occur
+// Auto-retry worker requests when auth/session errors occur
 (function setupSessionKeyAutoRetry(){
   try {
     if (typeof window === 'undefined' || typeof window.fetch !== 'function') return;
@@ -138,13 +138,28 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
     window.__SESSION_KEY_RETRY_PATCHED__ = true;
 
     const SESSION_HEADER = 'X-SessionKey';
+    const AUTH_HEADER = 'Authorization';
     const SESSION_ERROR_CODES = new Set(['session_missing','session_invalid','session_mismatch','session_expired']);
+    const AUTH_ERROR_CODES = new Set([
+      'auth_missing','auth_required','invalid_token','token_expired','invalid_alg','invalid_signature',
+      'invalid_issuer','invalid_audience','jwk_not_found','sub_userid_mismatch','firestore_auth_missing','jwt_parse_error'
+    ]);
     const RAND_ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const RAND_SYMBOLS = '!@#$%&';
     let rotatePromise = null;
+    let authRefreshPromise = null;
 
     function requestCarriesSession(req){
       try { return !!req.headers.get(SESSION_HEADER); } catch { return false; }
+    }
+    function requestCarriesAuth(req){
+      try {
+        const header = req.headers.get(AUTH_HEADER) || '';
+        return /^Bearer\s+\S+/i.test(header);
+      } catch { return false; }
+    }
+    function shouldIntercept(req){
+      return requestCarriesSession(req) || requestCarriesAuth(req);
     }
     function normalizeCode(val){
       return (typeof val === 'string' ? val : '').trim().toLowerCase();
@@ -152,6 +167,10 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
     function isSessionCode(code){
       if (!code) return false;
       return SESSION_ERROR_CODES.has(code) || code.startsWith('session_');
+    }
+    function isAuthCode(code){
+      if (!code) return false;
+      return AUTH_ERROR_CODES.has(code);
     }
     function grabSessionCode(payload){
       if (!payload || typeof payload !== 'object') return '';
@@ -222,15 +241,44 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
       }
       return rotatePromise;
     }
-    async function detectSessionError(resp){
+    async function refreshAuthToken(){
+      if (!window.firebase || !firebase.auth) return null;
+      const user = firebase.auth().currentUser;
+      if (!user) return null;
+      if (!authRefreshPromise){
+        authRefreshPromise = user.getIdToken(true).catch(err => {
+          console.warn('Auth token refresh failed:', err);
+          return null;
+        }).finally(() => { authRefreshPromise = null; });
+      }
+      return authRefreshPromise;
+    }
+    function rebuildRequestWithHeaders(request, mutateHeaders){
+      try {
+        const headers = new Headers(request.headers);
+        mutateHeaders(headers);
+        return new Request(request, { headers, signal: request.signal });
+      } catch (err) {
+        console.warn('Failed to rebuild request for retry:', err);
+        return null;
+      }
+    }
+    async function classifyForRetry(resp, req){
       if (!resp || typeof resp.clone !== 'function') return null;
       let payload = null;
-      try { payload = await resp.clone().json(); } catch { payload = null; }
-      const statusIs401 = Number(resp.status) === 401;
+      try { payload = await resp.clone().json(); } catch {}
       const code = grabSessionCode(payload);
-      const ttl = extractTtl(payload);
-      if (isSessionCode(code)) return { code, ttlSeconds: ttl };
-      if (statusIs401) return { code: code || 'session_http_401', ttlSeconds: ttl };
+      const ttlSeconds = extractTtl(payload);
+      const statusIs401 = Number(resp.status) === 401;
+      const hasSession = requestCarriesSession(req);
+      const hasAuth = requestCarriesAuth(req);
+
+      if (hasSession && (isSessionCode(code) || (statusIs401 && !code))) {
+        return { kind: 'session', ttlSeconds };
+      }
+      if (hasAuth && (isAuthCode(code) || (statusIs401 && !isSessionCode(code)))) {
+        return { kind: 'auth', ttlSeconds: 0 };
+      }
       return null;
     }
 
@@ -238,32 +286,36 @@ window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('na
       let request;
       try { request = new Request(input, init); }
       catch (_) { return nativeFetch(input, init); }
-      if (!requestCarriesSession(request)) {
+      if (!shouldIntercept(request)) {
         return nativeFetch(request);
       }
 
-      const firstResponse = await nativeFetch(request.clone());
-      const sessionError = await detectSessionError(firstResponse);
-      if (!sessionError) return firstResponse;
+      let response = await nativeFetch(request.clone());
+      for (let attempt = 0; attempt < 3; attempt++){
+        const action = await classifyForRetry(response, request);
+        if (!action) return response;
 
-      const newKey = await rotateSessionKey(sessionError.ttlSeconds);
-      if (!newKey) return firstResponse;
+        if (action.kind === 'session'){
+          const newKey = await rotateSessionKey(action.ttlSeconds);
+          if (!newKey) return response;
+          const updated = rebuildRequestWithHeaders(request, headers => { headers.set(SESSION_HEADER, newKey); });
+          if (!updated) return response;
+          request = updated;
+          response = await nativeFetch(request.clone());
+          continue;
+        }
 
-      let retryRequest;
-      try {
-        const headers = new Headers(request.headers);
-        headers.set(SESSION_HEADER, newKey);
-        retryRequest = new Request(request, { headers, signal: request.signal });
-      } catch (err) {
-        console.warn('Failed to rebuild request for session retry:', err);
-        return firstResponse;
+        if (action.kind === 'auth'){
+          const freshToken = await refreshAuthToken();
+          if (!freshToken) return response;
+          const updated = rebuildRequestWithHeaders(request, headers => { headers.set(AUTH_HEADER, `Bearer ${freshToken}`); });
+          if (!updated) return response;
+          request = updated;
+          response = await nativeFetch(request.clone());
+          continue;
+        }
       }
-      try {
-        return await nativeFetch(retryRequest);
-      } catch (retryErr) {
-        console.warn('Retry after session rotation failed:', retryErr);
-        return firstResponse;
-      }
+      return response;
     };
   } catch (err) {
     console.warn('Session auto-retry bootstrap failed:', err);
