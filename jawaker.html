@@ -3,10 +3,13 @@
  <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>جواكر | متجر زعيم</title>
-  <link rel="icon" href="emp.png" type="image/png">
+<title>جواكر | متجر زعيم</title>
+<link rel="icon" href="emp.png" type="image/png">
+  <link rel="apple-touch-icon" href="emp.png" sizes="180x180">
+  <meta property="og:image" content="emp.png">
+  <meta name="twitter:image" content="emp.png">
 
-  <!-- حارس مبكر: منع فتح الصفحة مباشرةً أو إن كانت البطاقة مغلقة -->
+  <!-- حارس مبكر: منع فتح الصفحة مباشرةً فقط (بدون الاعتماد على كاش الحالات) -->
   <script>
     (function(){
       try{
@@ -14,18 +17,7 @@
         var page = base.replace(/\.html$/,'');
         var redirectTo = 'index.html';
 
-        try{
-          var raw = localStorage.getItem('statesCache');
-          if (raw){
-            var obj = JSON.parse(raw);
-            var map = obj && obj.map ? obj.map : null;
-            if (map && page && map[page] === 'off'){
-              try{ sessionStorage.setItem('nav:reason','closed:'+page); }catch(_){ }
-              return window.location.replace(redirectTo);
-            }
-          }
-        }catch(_){/* ignore */}
-
+        // امنع الدخول المباشر إن لم يكن من داخل الموقع
         var nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')) || [];
         var type = nav[0] ? nav[0].type : (performance.navigation ? (performance.navigation.type === 1 ? 'reload' : (performance.navigation.type === 2 ? 'back_forward' : '')) : '');
         var isReload = type === 'reload';
@@ -162,7 +154,7 @@
     if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyStatesToPage); else try{ applyStatesToPage(); }catch(_){ }
   })();
   </script>
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  
   <!-- تهيئة Firebase أولاً -->
   <script src="script1jawaker.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"/>
@@ -172,7 +164,7 @@
   <link href="header.css" rel="stylesheet"/>
   <script defer src="header.js"></script>
   <script defer src="atff.js"></script>
-  <script defer src="scriptjawaker.js"></script>
+  <script defer src="script.js"></script>
   <link rel="stylesheet" href="loader.css">
   <script src="loader.js" defer></script>
   <audio id="toast-success-sound" preload="none" src="success.mp3"></audio>
@@ -200,13 +192,6 @@
     #purchase-modal .btn-primary:hover{ background:var(--btn-bg-hover) }
     #purchase-modal .btn-outline{ background:transparent; color:#ef4444; border-color:#ef4444 }
     #purchase-modal .pm-note{ margin-top:10px; font-size:14px; color:#16a34a; font-weight:700; text-align:center }
-    #purchase-modal .turnstile-wrap{ margin-top:12px; display:flex; flex-direction:column; align-items:center; gap:6px; }
-    #purchase-modal .turnstile-placeholder{ min-height:70px; min-width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; border-radius:12px; border:1px dashed rgba(148,163,184,0.4); padding:10px 12px; background:rgba(148,163,184,0.08); }
-    html[data-theme="light"] #purchase-modal .turnstile-placeholder{ border-color:rgba(71,85,105,0.25); background:rgba(148,163,184,0.12); }
-    #purchase-modal .turnstile-note{ font-size:12px; font-weight:600; color:rgba(148,163,184,0.85); }
-    html[data-theme="light"] #purchase-modal .turnstile-note{ color:rgba(71,85,105,0.75); }
-    #purchase-modal .turnstile-placeholder.active{ border:none; background:transparent; padding:0; min-height:auto; }
-    #purchase-modal .turnstile-placeholder.active .turnstile-note{ display:none; }
 
     /* عند فتح المودال أخفِ مظهر التحديد على الكروت (إزالة الصندوق/العلامة خلف المودال) */
     body.modal-open .offer-box.selected{ outline:none !important; border-color:transparent !important; box-shadow:none !important }
@@ -545,7 +530,7 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
 </style> 
 
 </head>
- <body>
+<body data-game="jawakermanwal">
   <div id="headerContainer"></div>
   <div id="sidebarContainer"></div>
 
@@ -599,21 +584,14 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
             <button type="button" id="pm-cancel" class="btn btn-outline">إلغاء</button>
             <button type="button" id="pm-buy" class="btn btn-primary">شراء</button>
           </div>
-          <div class="pm-note">الخدمة تلقائية وتعمل على مدار ال24 ساعة</div>
-          <div class="turnstile-wrap">
-            <div id="cf-turnstile-modal" class="turnstile-placeholder" aria-live="polite">
-              <span class="turnstile-note">محمية بواسطة Cloudflare Turnstile</span>
-            </div>
-          </div>
-
-
+          
         </div>
       </div>
 
       
 
       
-      <!-- شريط البحث (مطابق لـ jawakerinbut) -->
+      <!-- شريط البحث (مطابق لـ jawaker) -->
       <div class="search-container">
         <input type="text" id="ffSearchInput" placeholder="ابحث عن الباقات..." aria-label="بحث" />
       </div>
@@ -643,60 +621,28 @@ body.dark-mode .offer-box.loading{ background:#0d0e1d !important; }
     }
   }catch(e){}
 })();
-  function compact(value) {
-    const num = Number(value);
-    if (!Number.isFinite(num)) return String(value ?? "");
-    try {
-      const formatted = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(num);
-      return formatted.replace(/\.0(?=[^\d]|$)/, '');
-    } catch (err) {
-      const abs = Math.abs(num);
-      let scaled = num;
-      let suffix = "";
-      if (abs >= 1e12) {
-        scaled = num / 1e12; suffix = "T";
-      } else if (abs >= 1e9) {
-        scaled = num / 1e9; suffix = "B";
-      } else if (abs >= 1e6) {
-        scaled = num / 1e6; suffix = "M";
-      } else if (abs >= 1e3) {
-        scaled = num / 1e3; suffix = "K";
-      } else {
-        return num.toLocaleString('en');
-      }
-      const rounded = Number.isInteger(scaled) ? scaled : Number(scaled.toFixed(1));
-      return `${rounded}${suffix}`;
-    }
-  }
   // ===== بطاقات العروض =====
-  function createOfferBox({ type, tokens, offer, imgSrc, imgAlt }, pricesMap) {
+  function createOfferBox({ type, jewels, offer, imgSrc, imgAlt }, pricesObj) {
       const div = document.createElement("div");
       div.className = "offer-box card";
       div.dataset.type = type;
-      if (tokens) div.dataset.tokens = tokens;
+      if (jewels) div.dataset.jewels = jewels;
       if (offer) div.dataset.offer = offer;
       div.onclick = function () { openPurchaseModal(this); };
       const img = document.createElement("img");
       img.src = imgSrc; img.alt = imgAlt;
       img.loading = 'lazy'; img.decoding = 'async'; img.setAttribute('fetchpriority','low');
       div.appendChild(img);
-const h2 = document.createElement("h2");
-h2.textContent = tokens ? `${compact(tokens)} توكنز` : offer;
-div.appendChild(h2);
+      const h2 = document.createElement("h2"); h2.textContent = jewels ? `${jewels} جوهرة` : offer; div.appendChild(h2);
       // إضافة السعر أسفل الاسم
       const priceDiv = document.createElement("div");
       priceDiv.className = "offer-price";
-      const map = (pricesMap && typeof pricesMap === 'object') ? pricesMap : {};
-      const key = tokens ? `${tokens}_tokens` : offer;
-      const rawPrice = map[key];
-      let displayPrice = "—";
-      if (rawPrice !== undefined && rawPrice !== null) {
-        const numeric = Number(rawPrice);
-        if (Number.isFinite(numeric)) {
-          displayPrice = `${numeric.toFixed(2)} $`;
-        }
+      let price = null;
+      if (pricesObj) {
+        const key = jewels ? `${jewels}_jewels` : offer;
+        price = pricesObj[key] !== undefined ? pricesObj[key] : null;
       }
-      priceDiv.textContent = displayPrice;
+      priceDiv.textContent = price !== null ? `${Number(price).toFixed(2)} $` : "—";
       div.appendChild(priceDiv);
       return div;
   }
@@ -716,40 +662,17 @@ div.appendChild(h2);
     { tokens: 400000, imgSrc: "IMGS/tokens.jpg", imgAlt: "20000 توكنز" },
     { tokens: 500000, imgSrc: "IMGS/tokens.jpg", imgAlt: "20000 توكنز" },
     { tokens: 1000000, imgSrc: "IMGS/tokens.jpg", imgAlt: "20000 توكنز" }
-
   ];
-  function parsePricesPayload(payload){
-    let raw = payload;
-    try{
-      if (typeof raw === 'string'){
-        raw = raw.trim() ? JSON.parse(raw) : {};
-      }
-    }catch(_){
-      raw = {};
-    }
-    if (!raw || typeof raw !== 'object') return {};
-    const prices = raw.prices && typeof raw.prices === 'object' ? raw.prices : raw;
-    return (prices && typeof prices === 'object') ? prices : {};
-  }
-
-  function getCachedPrices(){
-    try{
-      return parsePricesPayload(localStorage.getItem("offersPrices"));
-    }catch(_){
-      return {};
-    }
-  }
   // حفظ آخر حالة للعروض
   let _lastOffersState = null;
   function renderOffers(pricesObj) {
-    const prices = (pricesObj && typeof pricesObj === 'object') ? pricesObj : getCachedPrices();
     grid.innerHTML = "";
-    topupOffers.forEach(offer => { grid.appendChild(createOfferBox({ type: "topup", tokens: offer.tokens, imgSrc: offer.imgSrc, imgAlt: offer.imgAlt }, prices)); });
-    membershipOffers.forEach(offer => { grid.appendChild(createOfferBox({ type: "membership", offer: offer.offer, imgSrc: offer.imgSrc, imgAlt: offer.imgAlt }, prices)); });
+    topupOffers.forEach(offer => { grid.appendChild(createOfferBox({ type: "topup", jewels: offer.jewels, imgSrc: offer.imgSrc, imgAlt: offer.imgAlt }, pricesObj)); });
+    membershipOffers.forEach(offer => { grid.appendChild(createOfferBox({ type: "membership", offer: offer.offer, imgSrc: offer.imgSrc, imgAlt: offer.imgAlt }, pricesObj)); });
     // بعد رسم البطاقات، أعد تطبيق حالة الإغلاق إذا كانت متوفرة
     if (_lastOffersState) {
-      Object.entries(_lastOffersState.topup || {}).forEach(([tokens, status]) => {
-        const card = grid.querySelector(`.offer-box[data-type="topup"][data-tokens="${tokens}"]`);
+      Object.entries(_lastOffersState.topup || {}).forEach(([jewels, status]) => {
+        const card = grid.querySelector(`.offer-box[data-type="topup"][data-jewels="${jewels}"]`);
         if (card) {
           card.classList.toggle('disabled', status === 'off');
           card.style.opacity = status === 'off' ? '0.4' : '1';
@@ -787,16 +710,40 @@ div.appendChild(h2);
     }
   }
   const membershipOffers = [
+
   ];
 
-  // اعرض العروض فورًا مع الأسعار المخزّنة (إن وجدت) ثم حدّثها عند وصول بيانات أحدث
-  renderOffers(getCachedPrices());
-  try { if (typeof updatePurchaseModalPriceIfOpen === 'function') updatePurchaseModalPriceIfOpen(); } catch(_){}
+  // عند تحميل الصفحة، انتظر تحميل الأسعار ثم اعرض البطاقات
+  function waitAndRenderOffers() {
+    let tries = 0;
+    function tryRender() {
+      let pricesObj = null;
+      try {
+        const raw = JSON.parse(localStorage.getItem("offersPrices") || "{}") || {};
+        pricesObj = raw.prices || raw;
+      } catch {}
+      if (pricesObj && Object.keys(pricesObj).length > 0) {
+        renderOffers(pricesObj);
+        try { if (typeof updatePurchaseModalPriceIfOpen === 'function') updatePurchaseModalPriceIfOpen(); } catch(_){}
+      } else if (tries < 20) {
+        tries++;
+        setTimeout(tryRender, 200);
+      } else {
+        setTimeout(tryRender, 250);
+      }
+    }
+    tryRender();
+  }
+  waitAndRenderOffers();
 
   // إعادة تحميل البطاقات تلقائياً عند تحديث الأسعار في localStorage
   window.addEventListener('storage', function(e){
     if (e.key === 'offersPrices') {
-      const pricesObj = parsePricesPayload(e.newValue);
+      let pricesObj = null;
+      try {
+        const raw = JSON.parse(e.newValue || "{}") || {};
+        pricesObj = raw.prices || raw;
+      } catch {}
       renderOffers(pricesObj);
       try { if (typeof updatePurchaseModalPriceIfOpen === 'function') updatePurchaseModalPriceIfOpen(); } catch(_){}
     }
@@ -808,7 +755,11 @@ div.appendChild(h2);
     localStorage.setItem = function(key, val){
       origSetItem.apply(this, arguments);
       if(key === 'offersPrices'){
-        const pricesObj = parsePricesPayload(val);
+        let pricesObj = null;
+        try {
+          const raw = JSON.parse(val || "{}") || {};
+          pricesObj = raw.prices || raw;
+        } catch {}
         renderOffers(pricesObj);
         try { if (typeof updatePurchaseModalPriceIfOpen === 'function') updatePurchaseModalPriceIfOpen(); } catch(_){}
       }
@@ -827,7 +778,7 @@ div.appendChild(h2);
       input.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(apply,150); });
     }
   });
-// فلترة البحث بنفس أسلوب jawakerinbut + إظهار رسالة لا نتائج كالرئيسية
+// فلترة البحث بنفس أسلوب jawaker + إظهار رسالة لا نتائج كالرئيسية
 function filterCardsBySearch(ev){
   const raw = (ev.target.value || '').toString();
   const norm = s => s.toLowerCase()
@@ -842,9 +793,9 @@ function filterCardsBySearch(ev){
   let shown = 0;
   if (!q){ cards.forEach(c => {c.style.display=''; shown++;}); } else {
     cards.forEach(c => {
-      const tokens = (c.dataset.tokens || '').toString();
+      const jewels = (c.dataset.jewels || '').toString();
       const offer  = (c.dataset.offer  || '');
-      const text   = norm(`${tokens} ${offer}`);
+      const text   = norm(`${jewels} ${offer}`);
       const ok = text.includes(q);
       c.style.display = ok ? '' : 'none';
       if (ok) shown++;
@@ -857,11 +808,12 @@ function filterCardsBySearch(ev){
 // ===== نافذة الشراء =====
 window._pm_currentCard = null;
 function _readOfferPriceForElement(el){
-  const prices = getCachedPrices();
-  const key = el.dataset.tokens ? `${el.dataset.tokens}_tokens` : el.dataset.offer;
+  const raw = JSON.parse(localStorage.getItem("offersPrices") || "{}");
+  const prices = raw.prices || raw || {};
+  const key = el.dataset.jewels ? `${el.dataset.jewels}_jewels` : el.dataset.offer;
   const p = prices[key];
   const num = p !== undefined ? Number(p) : NaN;
-  return { key, price: p, priceText: Number.isFinite(num)? `${num.toFixed(3)} $` : '—' };
+  return { key, price: p, priceText: isNaN(num)? '—' : `${num.toFixed(3)} $` };
 }
 
   // تحديث سعر المودال لحظياً إن كان مفتوحاً عند وصول الأسعار
@@ -888,7 +840,7 @@ function _readOfferPriceForElement(el){
     document.querySelectorAll('.offer-box.selected').forEach(x => x.classList.remove('selected'));
     el.classList.add('selected');
     window._pm_currentCard = el;
-const title = el.dataset.tokens ? `${compact(el.dataset.tokens)} توكنز` : (el.dataset.offer || '—');
+    const title = el.dataset.jewels ? `${el.dataset.jewels} جوهرة` : (el.dataset.offer || '—');
     const { priceText } = _readOfferPriceForElement(el);
     document.getElementById('pm-title').textContent = title;
     document.getElementById('pm-price').textContent = priceText;
@@ -927,8 +879,6 @@ const title = el.dataset.tokens ? `${compact(el.dataset.tokens)} توكنز` : (
     try {
       const holder = document.getElementById('cf-turnstile-container');
       if (holder) holder.remove();
-      const placeholderHost = document.getElementById('cf-turnstile-modal');
-      if (placeholderHost) placeholderHost.classList.remove('active');
       if (window.turnstile && typeof _tsWidgetId !== 'undefined' && _tsWidgetId != null) {
         try { window.turnstile.remove(_tsWidgetId); } catch(_) { try { window.turnstile.reset(_tsWidgetId); } catch(_){} }
       }
@@ -952,8 +902,8 @@ window.addEventListener('DOMContentLoaded', () => {
   buyBtn && buyBtn.addEventListener('click', async () => {
     // انقل الايدي
     const mpid = document.getElementById('modal-player-id');
-    const pidEl = document.getElementById('player-id');
-    if (pidEl && mpid) pidEl.value = (mpid.value || '').trim();
+    const pid = document.getElementById('player-id');
+    if (pid && mpid) pid.value = mpid.value.trim();
     if (!_pm_currentCard){ showToast('الرجاء اختيار عرض', 'warning'); return; }
     // أرسل الطلب
     try { if (typeof sendOrder === 'function') await sendOrder(); }
@@ -1013,8 +963,8 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         // احفظ آخر حالة للعروض
         _lastOffersState = stateData;
-        Object.entries(stateData.topup || {}).forEach(([tokens, status]) => {
-          const card = document.querySelector(`.offer-box[data-type=\"topup\"][data-tokens=\"${tokens}\"]`);
+        Object.entries(stateData.topup || {}).forEach(([jewels, status]) => {
+          const card = document.querySelector(`.offer-box[data-type=\"topup\"][data-jewels=\"${jewels}\"]`);
           if (card) {
             card.classList.toggle('disabled', status === 'off');
             card.style.opacity = status === 'off' ? '0.4' : '1';
@@ -1199,29 +1149,4 @@ window.addEventListener('DOMContentLoaded', () => {
   
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
