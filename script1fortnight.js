@@ -364,7 +364,7 @@ async function sendOrder() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`,
         "X-SessionKey": sessionKey,
-        "X-Game": "fortnight"
+        "X-Game": "fortnite"
       },
       body: JSON.stringify({
         playerId: pid,
