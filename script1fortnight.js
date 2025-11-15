@@ -224,7 +224,7 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
     const url = new URL('https://z3em-manwal.laithqarqaz1.workers.dev/');
     url.searchParams.set('mode', 'all');
     url.searchParams.set('useruid', useruid);
-    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store', headers: { 'X-Game': 'fortnight' } });
+    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store', headers: { 'X-Game': 'fortnite' } });
     const data = await res.json();
     if (!data || data.success === false) throw new Error(data?.error || 'فشل جلب الأسعار');
     persistOffers(data);
