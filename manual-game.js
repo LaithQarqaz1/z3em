@@ -205,84 +205,17 @@
   }
 
   function ensureTurnstileScript() {
-    if (window.turnstile) return Promise.resolve();
-    if (state.turnstileReady) return state.turnstileReady;
-    state.turnstileReady = new Promise((resolve) => {
-      const s = document.createElement("script");
-      s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-      s.async = true;
-      s.defer = true;
-      s.onload = resolve;
-      s.onerror = resolve;
-      document.head.appendChild(s);
-    });
-    return state.turnstileReady;
+    return Promise.resolve();
   }
 
   async function getTurnstileTokenInteractive() {
     await ensureTurnstileScript().catch(() => {});
-    try {
-      if (!dom.modalTurnstileHolder) return "";
-      state.turnstileToken = "";
-      state.turnstileWidgetId = null;
-      dom.modalTurnstileHolder.innerHTML = "";
-      dom.modalTurnstileHolder.style.marginTop = "12px";
-      const holder = document.createElement("div");
-      holder.id = "cf-turnstile-container";
-      dom.modalTurnstileHolder.appendChild(holder);
-
-      const opts = {
-        sitekey: TURNSTILE_SITE_KEY,
-        theme: (document.body.classList.contains("dark-mode") ||
-          (document.documentElement.getAttribute("data-theme") || "").toLowerCase() === "dark")
-          ? "dark"
-          : "light",
-        callback: (token) => {
-          state.turnstileToken = token || "";
-        },
-        "expired-callback": () => {
-          resetTurnstileWidget();
-        }
-      };
-
-      if (window.turnstile && window.turnstile.render) {
-        state.turnstileWidgetId = window.turnstile.render(holder, opts);
-      }
-
-      const started = Date.now();
-      while (!state.turnstileToken && Date.now() - started < 15000) {
-        await new Promise((r) => setTimeout(r, 180));
-        try {
-          if (window.turnstile && state.turnstileWidgetId != null) {
-            const current = window.turnstile.getResponse(state.turnstileWidgetId);
-            if (current) {
-              state.turnstileToken = current;
-              break;
-            }
-          }
-        } catch (_) {}
-      }
-      if (!state.turnstileToken) throw new Error("turnstile_token_missing");
-      return state.turnstileToken;
-    } catch (err) {
-      console.warn("turnstile init error:", err?.message);
-      throw err;
-    }
+    state.turnstileToken = generateGuardToken("manual");
+    return state.turnstileToken;
   }
 
   function resetTurnstileWidget({ remove = false } = {}) {
     state.turnstileToken = "";
-    try {
-      if (window.turnstile && state.turnstileWidgetId != null) {
-        if (!remove && typeof window.turnstile.reset === "function") {
-          window.turnstile.reset(state.turnstileWidgetId);
-          return;
-        }
-        if (typeof window.turnstile.remove === "function") {
-          window.turnstile.remove(state.turnstileWidgetId);
-        }
-      }
-    } catch (_) {}
     state.turnstileWidgetId = null;
     if (remove && dom.modalTurnstileHolder) {
       try { dom.modalTurnstileHolder.innerHTML = ""; } catch (_) {}
@@ -290,19 +223,12 @@
   }
 
   async function getTurnstileTokenWithRetry(maxAttempts = 2) {
-    let attempt = 0;
-    let lastError = null;
-    const totalTries = Math.max(1, maxAttempts | 0);
-    while (attempt < totalTries) {
-      attempt++;
-      try {
-        return await getTurnstileTokenInteractive();
-      } catch (err) {
-        lastError = err;
-        resetTurnstileWidget({ remove: true });
-      }
+    try {
+      return await getTurnstileTokenInteractive();
+    } catch (err) {
+      resetTurnstileWidget({ remove: true });
+      throw err;
     }
-    throw lastError || new Error("turnstile_token_missing");
   }
 
   function showSuccessOverlay(orderCode) {
@@ -598,8 +524,8 @@
       try {
         turnstileToken = await getTurnstileTokenWithRetry(3);
       } catch (err) {
-        console.warn("Turnstile error:", err?.message);
-        showToast("فشل التحقق الأمني، حاول مجددًا.", "error");
+        console.warn("guard token error:", err?.message);
+        showToast("تعذر إنشاء رمز الحماية، حاول مجددًا.", "error");
         return;
       }
     }

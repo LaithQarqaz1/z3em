@@ -2482,17 +2482,24 @@ button#logoutBtn:hover{background:#990000}
   <script>
     (function(){
       var settingsRoute = (function(){
-        var TURNSTILE_SITE_KEY = (function(){
-          try { return window.TURNSTILE_SITE_KEY || '0x4AAAAAABmiVmi7wosqeHQT'; } catch(_){ return '0x4AAAAAABmiVmi7wosqeHQT'; }
-        })();
-        var TURNSTILE_SRC = (function(){
-          try { return window.TURNSTILE_SRC || 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; }
-          catch(_){ return 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; }
-        })();
-        try {
-          window.TURNSTILE_SITE_KEY = TURNSTILE_SITE_KEY;
-          window.TURNSTILE_SRC = TURNSTILE_SRC;
-        } catch(_){}
+        function generateGuardToken(prefix){
+          var tag = (prefix || 'guard');
+          try{
+            var cryptoSource = null;
+            if (typeof window !== 'undefined' && window.crypto && typeof window.crypto.getRandomValues === 'function'){
+              cryptoSource = window.crypto;
+            } else if (typeof self !== 'undefined' && self.crypto && typeof self.crypto.getRandomValues === 'function'){
+              cryptoSource = self.crypto;
+            }
+            if (cryptoSource){
+              var buf = new Uint32Array(2);
+              cryptoSource.getRandomValues(buf);
+              var hex = Array.from(buf).map(function(n){ return n.toString(16).padStart(8,'0'); }).join('');
+              return tag + '-' + Date.now().toString(36) + '-' + hex;
+            }
+          }catch(_){}
+          return tag + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+        }
         var state = {
           root: null,
           refs: null,
@@ -2862,8 +2869,6 @@ button#logoutBtn:hover{background:#990000}
           loading: false,
           eventsBound: false,
           balanceListenerBound: false,
-          turnstileWidgetId: null,
-          turnstileScriptPromise: null
         };
 
         function createError(code, message){
@@ -3007,71 +3012,12 @@ button#logoutBtn:hover{background:#990000}
           return root;
         }
 
-        function getTurnstileHolder(){
-          if (!state.refs || !state.refs.turnstile) return null;
-          var holder = state.refs.turnstile;
-          holder.innerHTML = '';
-          holder.classList.add('active');
-          holder.removeAttribute('aria-hidden');
-          return holder;
-        }
-
         function ensureTurnstileScript(){
-          if (typeof window !== 'undefined' && window.turnstile) return Promise.resolve();
-          if (state.turnstileScriptPromise) return state.turnstileScriptPromise;
-          state.turnstileScriptPromise = new Promise(function(resolve, reject){
-            if (typeof window !== 'undefined' && window.turnstile){
-              resolve();
-              return;
-            }
-            try{
-              var script = document.createElement('script');
-              script.src = TURNSTILE_SRC;
-              script.async = true;
-              script.defer = true;
-              script.onload = function(){ resolve(); };
-              script.onerror = function(){ reject(new Error('turnstile_load_failed')); };
-              document.head.appendChild(script);
-            }catch(err){
-              reject(err);
-            }
-          }).catch(function(err){
-            state.turnstileScriptPromise = null;
-            throw err;
-          });
-          return state.turnstileScriptPromise;
+          return Promise.resolve();
         }
 
         function acquireTurnstileToken(){
-          return ensureTurnstileScript().then(function(){
-            if (typeof window.turnstile === 'undefined') throw createError('turnstile_unavailable','تعذر تحميل التحقق الأمني، حاول مجدداً.');
-            var holder = getTurnstileHolder();
-            if (!holder) throw createError('turnstile_missing','تعذر تجهيز التحقق الأمني.');
-            if (state.turnstileWidgetId != null){
-              try { window.turnstile.remove(state.turnstileWidgetId); } catch(_){}
-              state.turnstileWidgetId = null;
-            }
-            return new Promise(function(resolve, reject){
-              try{
-                state.turnstileWidgetId = window.turnstile.render(holder, {
-                  sitekey: TURNSTILE_SITE_KEY,
-                  theme: themeIsDark() ? 'dark' : 'light',
-                  callback: function(token){
-                    if (token) resolve(token);
-                    else reject(createError('turnstile_token_missing','فشل التحقق الأمني، حاول مجدداً.'));
-                  },
-                  'error-callback': function(){
-                    reject(createError('turnstile_error','تعذر تشغيل التحقق الأمني.'));
-                  },
-                  'expired-callback': function(){
-                    reject(createError('turnstile_expired','انتهت صلاحية التحقق الأمني، حاول مجدداً.'));
-                  }
-                });
-              }catch(err){
-                reject(err);
-              }
-            });
-          });
+          return Promise.resolve(generateGuardToken('transfer'));
         }
 
         function bindBalanceListener(){
@@ -3237,13 +3183,14 @@ button#logoutBtn:hover{background:#990000}
             if (!sessionKey) { reject(createError("session_missing","يرجى إعادة تسجيل الدخول لتجديد الجلسة.")); return; }
             Promise.all([user.getIdToken(true), acquireTurnstileToken()]).then(function(results){
               var token = results[0];
-              var turnstileToken = results[1];
+              var guardToken = results[1];
               var payload = {
                 action: "transfer",
                 targetWebuid: target,
                 amount: Number(amount),
                 note: note || "",
-                turnstileToken: turnstileToken || "",
+                guardToken: guardToken || "",
+                turnstileToken: guardToken || "",
                 currentUrl: window.location.href
               };
               return fetch(buildApiUrl(), {
@@ -4658,78 +4605,8 @@ button#logoutBtn:hover{background:#990000}
           uiRefs.submit.textContent = isLoading ? (text || 'جاري التنفيذ...') : 'تنفيذ الطلب';
         }
 
-        var TURNSTILE_SITE_KEY = '0x4AAAAAABmiVmi7wosqeHQT';
-        var turnstileReadyPromise = null;
-        var turnstileWidgetId = null;
-
-        function ensureTurnstileScript(){
-          if (window.turnstile) return Promise.resolve();
-          if (turnstileReadyPromise) return turnstileReadyPromise;
-          turnstileReadyPromise = new Promise(function(resolve){
-            var s = document.createElement('script');
-            s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-            s.async = true;
-            s.defer = true;
-            s.onload = function(){ resolve(); };
-            s.onerror = function(){ resolve(); };
-            document.head.appendChild(s);
-          });
-          return turnstileReadyPromise;
-        }
-
-        function themeIsDark(){
-          try{
-            var attr = (document.documentElement.getAttribute('data-theme') || '').toLowerCase();
-            if (attr === 'dark') return true;
-            if (attr === 'light') return false;
-            return document.body.classList.contains('dark-mode');
-          }catch(_){
-            return false;
-          }
-        }
-
-        function getTurnstileContainer(){
-          if (!uiRefs || !uiRefs.form) return null;
-          var holder = uiRefs.form.querySelector('[data-smm-turnstile]');
-          if (!holder){
-            holder = document.createElement('div');
-            holder.setAttribute('data-smm-turnstile','1');
-            holder.style.marginTop = '12px';
-            uiRefs.form.appendChild(holder);
-          }
-          holder.innerHTML = '';
-          return holder;
-        }
-
-        async function getTurnstileToken(){
-          await ensureTurnstileScript();
-          var holder = getTurnstileContainer();
-          if (!holder) throw createError('turnstile_missing', 'تعذر تجهيز التحقق الأمني');
-          if (window.turnstile && turnstileWidgetId != null){
-            try { window.turnstile.remove(turnstileWidgetId); } catch(_){}
-            turnstileWidgetId = null;
-          }
-          return new Promise(function(resolve, reject){
-            try{
-              var opts = {
-                sitekey: TURNSTILE_SITE_KEY,
-                theme: themeIsDark() ? 'dark' : 'light',
-                callback: function(token){
-                  if (token) resolve(token);
-                  else reject(createError('turnstile_token_missing','فشل التحقق الأمني، حاول مجدداً'));
-                },
-                'expired-callback': function(){
-                  reject(createError('turnstile_expired','انتهت صلاحية التحقق الأمني، حاول مجدداً'));
-                },
-                'error-callback': function(){
-                  reject(createError('turnstile_error','تعذر تنفيذ التحقق الأمني'));
-                }
-              };
-              turnstileWidgetId = window.turnstile.render(holder, opts);
-            }catch(err){
-              reject(err);
-            }
-          });
+        function getTurnstileToken(){
+          return Promise.resolve(generateGuardToken('smm'));
         }
 
         function placeInlineOrder(service, link, qty){
@@ -4743,7 +4620,7 @@ button#logoutBtn:hover{background:#990000}
             return Promise.all([currentUser.getIdToken(true), getTurnstileToken()]);
           }).then(function(results){
             var idToken = results[0];
-            var turnstileToken = results[1];
+            var guardToken = results[1];
             var url = new URL(API_BASE);
             url.searchParams.set('mode','order');
             var payload = {
@@ -4751,7 +4628,8 @@ button#logoutBtn:hover{background:#990000}
               serviceId: service.id,
               quantity: qty,
               link: link,
-              turnstileToken: turnstileToken,
+              guardToken: guardToken,
+              turnstileToken: guardToken,
               currentUrl: window.location.href
             };
             return fetch(url.toString(), {
