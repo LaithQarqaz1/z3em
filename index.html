@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -1465,6 +1466,7 @@ button#logoutBtn:hover{background:#990000}
           <div class="hero-slide"><img draggable="false" src="IMGS/in1.jpg" alt="بانر ترحيبي" loading="eager" decoding="async" fetchpriority="high"></div>
           <div class="hero-slide"><img draggable="false" src="IMGS/in2.jpg" alt="عرض 1"  decoding="async"></div>
           <div class="hero-slide"><img draggable="false" src="IMGS/in3.jpg" alt="عرض 2"  decoding="async"></div>
+
         </div>
       </div>
     </div>
@@ -3502,6 +3504,7 @@ button#logoutBtn:hover{background:#990000}
       })();
 
       var manualGamesInline = (function(){
+        var DISABLED = true;
         var cache = null;
         var lastFetched = 0;
         var inflight = null;
@@ -3535,6 +3538,7 @@ button#logoutBtn:hover{background:#990000}
         }
 
         function fetchList(force){
+          if (DISABLED) return Promise.resolve([]);
           var now = Date.now();
           if (!force && cache && (now - lastFetched) < FETCH_TTL) return Promise.resolve(cache);
           if (inflight) return inflight;
@@ -3628,6 +3632,8 @@ button#logoutBtn:hover{background:#990000}
             anchor.style.display = "none";
             section.appendChild(anchor);
           }
+
+
 
           fetchList(options.force === true).then(function(games){
             removeOldCards(section);

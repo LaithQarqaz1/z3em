@@ -19,6 +19,7 @@ const TURNSTILE_SITE_KEY = "0x4AAAAAABmiVmi7wosqeHQT";
 let _tsWidgetId = null;
 let _tsReadyPromise = null;
 let _tsToken = "";
+let _orderInFlight = false;
 function ensureTurnstileScript() {
   if (window.turnstile) return Promise.resolve();
   if (_tsReadyPromise) return _tsReadyPromise;
@@ -50,6 +51,8 @@ async function getTurnstileTokenInteractive() {
     holder.id = 'cf-turnstile-container';
     holder.style.cssText = 'margin-top:10px; display:block;';
     modalCard.appendChild(holder);
+  } else {
+    try { holder.innerHTML = ''; } catch(_){}
   }
   const opts = {
     sitekey: TURNSTILE_SITE_KEY,
@@ -58,12 +61,13 @@ async function getTurnstileTokenInteractive() {
     'expired-callback': () => resetTurnstileWidget(),
   };
   _tsToken = '';
-  if (!_tsWidgetId && window.turnstile && window.turnstile.render) {
-    _tsWidgetId = window.turnstile.render(holder, opts);
-  } else if (window.turnstile && _tsWidgetId != null) {
-    resetTurnstileWidget();
+  if (window.turnstile && _tsWidgetId != null) {
+    resetTurnstileWidget({ remove: true });
   }
-  // انتظر حتى يتوفر التوكن
+  if (!window.turnstile || typeof window.turnstile.render !== 'function') {
+    throw new Error('turnstile_unavailable');
+  }
+  _tsWidgetId = window.turnstile.render(holder, opts);
   const started = Date.now();
   while (Date.now() - started < 15000) {
     try {
@@ -80,6 +84,7 @@ async function getTurnstileTokenInteractive() {
   _tsToken = '';
   return freshToken;
 }
+
 
 
 function resetTurnstileWidget({ remove = false } = {}) {
@@ -303,137 +308,144 @@ async function sendOrder() {
     return;
   }
 
-  // التحقق من Turnstile قبل الإرسال
-  let turnstileToken = '';
-  try {
-    turnstileToken = await getTurnstileTokenWithRetry(3);
-  } catch(_) {
-    showToast('فشل التحقق الأمني، حاول مجدداً', 'error');
+    if (_orderInFlight) {
+    showToast("⏳ يوجد طلب آخر قيد المعالجة، يرجى الانتظار...", "warning");
     return;
   }
+  _orderInFlight = true;
 
-  const user = firebase.auth().currentUser;
-  if (!user) {
-    showToast("❌ يجب تسجيل الدخول أولاً", "error");
-    showSessionExpiredModal();
-    return;
-  }
-
-  // مفتاح الجلسة المحلي
-  const sessionKey = getLocalSessionKey();
-  if (!sessionKey) {
-    showSessionExpiredModal();
-    return;
-  }
-
-  // authkey من Firestore (كما هو)
-  let authkey = null;
-  try {
-    const userDoc = await firebase.firestore().collection("users").doc(user.uid).get();
-    if (userDoc.exists) authkey = userDoc.data().authkey || null;
-  } catch (e) {
-    showToast("❌ فشل في جلب بيانات المستخدم", "error");
-    return;
-  }
-
-  // JWT
-  let idToken;
-  try { idToken = await user.getIdToken(true); }
-  catch (e) {
-    showToast("❌ فشل في التحقق من تسجيل الدخول", "error");
-    return;
-  }
-
-  // Quote
-  let total, breakdown;
-  try {
-    const priceRes = await fetch("https://z3em-freefireauto.laithqarqaz1.workers.dev/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
-    });
-    const priceData = await priceRes.json();
-    if (priceData?.success === false) throw new Error(priceData.error || "فشل في حساب السعر");
-    total = priceData.total;
-    breakdown = priceData.breakdown;
-  } catch (e) {
-    showToast("❌ فشل في حساب السعر", "error");
-    console.error("Quote error:", e);
-    return;
-  }
-
-  const currentUrl = window.location.href;
-
-  // ====== Purchase (مع اللودر وتعطيل الزر) ======
   const submitBtn = document.querySelector('.send-button');
+  showPreloader();
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.dataset._oldText = submitBtn.textContent;
+    submitBtn.textContent = 'جاري المعالجة...';
+    submitBtn.style.opacity = '0.7';
+    submitBtn.style.pointerEvents = 'none';
+  }
+
   try {
-    // إظهار اللودر وتعطيل الزر
-    showPreloader();
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.dataset._oldText = submitBtn.textContent;
-      submitBtn.textContent = 'جاري المعالجة...';
-      submitBtn.style.opacity = '0.7';
-      submitBtn.style.pointerEvents = 'none';
-    }
-
-    const response = await fetch("https://z3em-freefireauto.laithqarqaz1.workers.dev/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${idToken}`,
-        "X-SessionKey": sessionKey
-      },
-      body: JSON.stringify({
-        playerId: pid,
-        offers: selectedOffers,
-        currency: "دأ",
-        currentUrl,
-        authkey,
-        turnstileToken
-      })
-    });
-
-    // إن كانت 401 نتحقق من كود الخطأ ونُظهر النافذة المطلوبة
-    if (response.status === 401) {
-      let errJson = {};
-      try { errJson = await response.json(); } catch {}
-      const code = (errJson?.code || "").toLowerCase();
-      const sessionFail =
-        code === "session_missing" ||
-        code === "session_invalid" ||
-        code === "session_mismatch" ||
-        code === "session_expired";
-
-      if (sessionFail) {
-        showSessionModal("فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى");
-        return;
-      }
-      // إن لم يكن خطأ جلسة، عالج كالعادة
-      showToast("❌ فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
+  // التحقق من Turnstile قبل الإرسال
+    let turnstileToken = '';
+    try {
+      turnstileToken = await getTurnstileTokenWithRetry(3);
+    } catch(_) {
+      showToast('فشل التحقق الأمني، حاول مجدداً', 'error');
       return;
     }
 
-    const result = await response.json();
+    const user = firebase.auth().currentUser;
+    if (!user) {
+      showToast("❌ يجب تسجيل الدخول أولاً", "error");
+      showSessionExpiredModal();
+      return;
+    }
 
-    if (result.success) {
-      showConfirmation(result.orderCode);
-      // تدوير sessionKey بعد نجاح الطلب
-      try { await rotateSessionKeyAfterOrder(user.uid); } catch {}
-    } else {
-      // أيضًا إن أعاد الخادم كود جلسة مع 200 (احتمال ضعيف) نتعامل معه
-      const code = (result?.code || "").toLowerCase();
-      if (code.startsWith("session_")) {
-        showSessionModal("فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى");
+    // مفتاح الجلسة المحلي
+    const sessionKey = getLocalSessionKey();
+    if (!sessionKey) {
+      showSessionExpiredModal();
+      return;
+    }
+
+    // authkey من Firestore (كما هو)
+    let authkey = null;
+    try {
+      const userDoc = await firebase.firestore().collection("users").doc(user.uid).get();
+      if (userDoc.exists) authkey = userDoc.data().authkey || null;
+    } catch (e) {
+      showToast("❌ فشل في جلب بيانات المستخدم", "error");
+      return;
+    }
+
+    // JWT
+    let idToken;
+    try { idToken = await user.getIdToken(true); }
+    catch (e) {
+      showToast("❌ فشل في التحقق من تسجيل الدخول", "error");
+      return;
+    }
+
+    // Quote
+    let total, breakdown;
+    try {
+      const priceRes = await fetch("https://z3em-freefireauto.laithqarqaz1.workers.dev/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
+      });
+      const priceData = await priceRes.json();
+      if (priceData?.success === false) throw new Error(priceData.error || "فشل في حساب السعر");
+      total = priceData.total;
+      breakdown = priceData.breakdown;
+    } catch (e) {
+      showToast("❌ فشل في حساب السعر", "error");
+      console.error("Quote error:", e);
+      return;
+    }
+
+    const currentUrl = window.location.href;
+
+    // ====== Purchase ======
+  // ====== Purchase ======
+  try {
+      const response = await fetch("https://z3em-freefireauto.laithqarqaz1.workers.dev/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`,
+          "X-SessionKey": sessionKey
+        },
+        body: JSON.stringify({
+          playerId: pid,
+          offers: selectedOffers,
+          currency: "دأ",
+          currentUrl,
+          authkey,
+          turnstileToken
+        })
+      });
+
+      // إن كانت 401 نتحقق من كود الخطأ ونُظهر النافذة المطلوبة
+      if (response.status === 401) {
+        let errJson = {};
+        try { errJson = await response.json(); } catch {}
+        const code = (errJson?.code || "").toLowerCase();
+        const sessionFail =
+          code === "session_missing" ||
+          code === "session_invalid" ||
+          code === "session_mismatch" ||
+          code === "session_expired";
+
+        if (sessionFail) {
+          showSessionModal("فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى");
+          return;
+        }
+        // إن لم يكن خطأ جلسة، عالج كالعادة
+        showToast("❌ فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
         return;
       }
-      showToast("❌ فشل الشراء: " + (result.error || "خطأ غير معروف"), "error");
-    }
+
+      const result = await response.json();
+
+      if (result.success) {
+        showConfirmation(result.orderCode);
+        // تدوير sessionKey بعد نجاح الطلب
+        try { await rotateSessionKeyAfterOrder(user.uid); } catch {}
+      } else {
+        // أيضًا إن أعاد الخادم كود جلسة مع 200 (احتمال ضعيف) نتعامل معه
+        const code = (result?.code || "").toLowerCase();
+        if (code.startsWith("session_")) {
+          showSessionModal("فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى");
+          return;
+        }
+        showToast("❌ فشل الشراء: " + (result.error || "خطأ غير معروف"), "error");
+      }
   } catch (err) {
-    console.error("Worker Error:", err);
-    showToast("❌ حدث خطأ أثناء الشراء", "error");
+      console.error("Worker Error:", err);
+      showToast("❌ حدث خطأ أثناء الشراء", "error");
+  }
   } finally {
-    // إخفاء اللودر وإرجاع حالة الزر مهما حصل
     hidePreloader();
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -441,7 +453,9 @@ async function sendOrder() {
       submitBtn.style.opacity = '';
       submitBtn.style.pointerEvents = '';
     }
+    _orderInFlight = false;
   }
+
 }
 
 /* ================== نافذة التأكيد كما هي ================== */

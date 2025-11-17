@@ -241,12 +241,7 @@
           state.turnstileToken = token || "";
         },
         "expired-callback": () => {
-          state.turnstileToken = "";
-          try {
-            if (window.turnstile && state.turnstileWidgetId != null) {
-              window.turnstile.reset(state.turnstileWidgetId);
-            }
-          } catch (_) {}
+          resetTurnstileWidget();
         }
       };
 
@@ -273,6 +268,41 @@
       console.warn("turnstile init error:", err?.message);
       throw err;
     }
+  }
+
+  function resetTurnstileWidget({ remove = false } = {}) {
+    state.turnstileToken = "";
+    try {
+      if (window.turnstile && state.turnstileWidgetId != null) {
+        if (!remove && typeof window.turnstile.reset === "function") {
+          window.turnstile.reset(state.turnstileWidgetId);
+          return;
+        }
+        if (typeof window.turnstile.remove === "function") {
+          window.turnstile.remove(state.turnstileWidgetId);
+        }
+      }
+    } catch (_) {}
+    state.turnstileWidgetId = null;
+    if (remove && dom.modalTurnstileHolder) {
+      try { dom.modalTurnstileHolder.innerHTML = ""; } catch (_) {}
+    }
+  }
+
+  async function getTurnstileTokenWithRetry(maxAttempts = 2) {
+    let attempt = 0;
+    let lastError = null;
+    const totalTries = Math.max(1, maxAttempts | 0);
+    while (attempt < totalTries) {
+      attempt++;
+      try {
+        return await getTurnstileTokenInteractive();
+      } catch (err) {
+        lastError = err;
+        resetTurnstileWidget({ remove: true });
+      }
+    }
+    throw lastError || new Error("turnstile_token_missing");
   }
 
   function showSuccessOverlay(orderCode) {
@@ -487,8 +517,7 @@
     dom.modalQty.value = state.selected.quantity || 1;
     dom.modalPlayerId.value = dom.playerInput?.value?.trim() || "";
     updateModalPrice();
-    state.turnstileToken = "";
-    state.turnstileWidgetId = null;
+    resetTurnstileWidget({ remove: true });
     try { document.body.classList.add("modal-open"); } catch (_) {}
     dom.modal.classList.add("show");
   }
@@ -496,12 +525,7 @@
   function closeModal() {
     dom.modal.classList.remove("show");
     try { document.body.classList.remove("modal-open"); } catch (_) {}
-    state.turnstileToken = "";
-    if (state.turnstileWidgetId != null && window.turnstile) {
-      try { window.turnstile.remove(state.turnstileWidgetId); } catch (_) {}
-    }
-    state.turnstileWidgetId = null;
-    if (dom.modalTurnstileHolder) dom.modalTurnstileHolder.innerHTML = "";
+    resetTurnstileWidget({ remove: true });
   }
 
   function updateModalPrice() {
@@ -572,7 +596,7 @@
     let turnstileToken = state.turnstileToken;
     if (!turnstileToken) {
       try {
-        turnstileToken = await getTurnstileTokenInteractive();
+        turnstileToken = await getTurnstileTokenWithRetry(3);
       } catch (err) {
         console.warn("Turnstile error:", err?.message);
         showToast("فشل التحقق الأمني، حاول مجددًا.", "error");
@@ -622,16 +646,7 @@
       const json = await response.json().catch(() => ({}));
       if (!response.ok || json?.success === false) {
         showToast(json?.error || "فشل تنفيذ الطلب.", "error");
-        state.turnstileToken = "";
-        try {
-          if (window.turnstile && state.turnstileWidgetId != null) {
-            window.turnstile.reset(state.turnstileWidgetId);
-          } else {
-            state.turnstileWidgetId = null;
-          }
-        } catch (_) {
-          state.turnstileWidgetId = null;
-        }
+        resetTurnstileWidget();
         return;
       }
       showToast("تم إنشاء الطلب بنجاح.", "success");
@@ -641,16 +656,7 @@
     } catch (err) {
       console.error("Order error:", err);
       showToast("حدث خطأ غير متوقع أثناء إرسال الطلب.", "error");
-      state.turnstileToken = "";
-      try {
-        if (window.turnstile && state.turnstileWidgetId != null) {
-          window.turnstile.reset(state.turnstileWidgetId);
-        } else {
-          state.turnstileWidgetId = null;
-        }
-      } catch (_) {
-        state.turnstileWidgetId = null;
-      }
+      resetTurnstileWidget();
     } finally {
       dom.modalBuy.disabled = false;
       showLoader(false);

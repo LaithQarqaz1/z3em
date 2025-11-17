@@ -892,16 +892,28 @@ window.addEventListener('DOMContentLoaded', () => {
   pm.addEventListener('click', (e)=>{ if(e.target === pm) closePurchaseModal(); });
   const cancelBtn = document.getElementById('pm-cancel');
   const buyBtn = document.getElementById('pm-buy');
+  let buyBtnBusy = false;
   cancelBtn && cancelBtn.addEventListener('click', closePurchaseModal);
   buyBtn && buyBtn.addEventListener('click', async () => {
-    // انقل الايدي
-    const mpid = document.getElementById('modal-player-id');
-    const pid = document.getElementById('player-id');
-    if (pid && mpid) pid.value = mpid.value.trim();
-    if (!_pm_currentCard){ showToast('الرجاء اختيار عرض', 'warning'); return; }
-    // أرسل الطلب
-    try { if (typeof sendOrder === 'function') await sendOrder(); }
-    finally { closePurchaseModal(); }
+    if (buyBtnBusy) return;
+    buyBtnBusy = true;
+    const originalText = buyBtn.textContent;
+    buyBtn.disabled = true;
+    buyBtn.textContent = 'جاري الإرسال...';
+    try {
+      // انقل الايدي
+      const mpid = document.getElementById('modal-player-id');
+      const pid = document.getElementById('player-id');
+      if (pid && mpid) pid.value = mpid.value.trim();
+      if (!_pm_currentCard){ showToast('الرجاء اختيار عرض', 'warning'); return; }
+      // أرسل الطلب
+      try { if (typeof sendOrder === 'function') await sendOrder(); }
+      finally { closePurchaseModal(); }
+    } finally {
+      buyBtn.disabled = false;
+      buyBtn.textContent = originalText;
+      buyBtnBusy = false;
+    }
   });
 });
 

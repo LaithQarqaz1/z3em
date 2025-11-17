@@ -1273,9 +1273,22 @@
   const generateExtraKey   = (len = 40) => rand(ALPHA + SYMBOLS, len);
   const generateSessionKey = (len = 64) => rand(ALPHA + SYMBOLS, len);
   const generateWebUID     = () => Math.floor(100000000000000 + Math.random() * 900000000000000).toString();
+  const DEVICE_ID_STORAGE_KEY = "session:device:id";
+  function ensureDeviceId(){
+    return "";
+  }
+  function getDeviceId(){
+    return "";
+  }
+  try {
+    if (!window.getDeviceFingerprint) window.getDeviceFingerprint = getDeviceId;
+  } catch (_) {}
 
   /***** تخزين sessionKey محليًا لاستخدامه بالطلبات (localStorage) *****/
-  const saveSessionLocal   = (obj) => localStorage.setItem("sessionKeyInfo", JSON.stringify(obj));
+  const saveSessionLocal   = (obj = {}) => {
+    const payload = { ...obj };
+    localStorage.setItem("sessionKeyInfo", JSON.stringify(payload));
+  };
   const getSessionLocal    = () => JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
   const POST_LOGIN_STORAGE_KEY = "postLoginPayload";
   const savePostLoginPayload = (payload = {}) => {
@@ -1620,7 +1633,8 @@
       { sessionKey, createdAt: serverTimestamp(), ttlSeconds },
       { merge: true }
     );
-    saveSessionLocal({ uid, sessionKey, ts: Date.now(), ttlSeconds });
+    const payload = { uid, sessionKey, ts: Date.now(), ttlSeconds };
+    saveSessionLocal(payload);
     return sessionKey;
   }
 
@@ -1700,15 +1714,13 @@
       const sessionKey = await rotateSessionKey(user.uid);
       const idToken = await getIdToken(user);
 
-      const params = new URLSearchParams({
+      savePostLoginPayload({
         uid: user.uid,
         email: user.email,
         token: idToken,
-        sessionKey: sessionKey
+        sessionKey
       });
-
-      // التوجيه للصفحة الرئيسية مع بيانات الجلسة
-      window.location.href = "index.html?" + params.toString();
+      window.location.href = "index.html";
     } catch (err) {
       loginError.textContent = translateFirebaseError(err.code);
     }

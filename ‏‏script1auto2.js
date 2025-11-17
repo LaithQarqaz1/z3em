@@ -1,4 +1,4 @@
-﻿// ================== إعدادات Firebase (كما هي) ==================
+// ================== إعدادات Firebase (كما هي) ==================
 const firebaseConfig = {
           apiKey:"AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
           authDomain:"z3em-d9b11.firebaseapp.com",
@@ -364,7 +364,7 @@ async function sendOrder() {
 
   const currentUrl = window.location.href;
 
-  // ====== Purchase (مع اللودر وتعطيل الزر) ======
+  // ====== Purchase ======
   const submitBtn = document.querySelector('.send-button');
   try {
     // إظهار اللودر وتعطيل الزر
