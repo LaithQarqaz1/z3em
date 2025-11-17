@@ -164,9 +164,6 @@
     if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyStatesToPage); else try{ applyStatesToPage(); }catch(_){ }
   })();
   </script>
-
-  <!-- Turnstile (Client) -->
-
   <!-- ملفات الهيدر لديك (اختياري) -->
   <link rel="stylesheet" href="header.css"/>
   <script src="header.js" defer></script>
@@ -682,6 +679,9 @@ body.dark-mode .btn-primary { background:linear-gradient(135deg,#7a7cd0,#3b3e8c)
 .actions { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
 .btn { border-radius:14px; padding:12px 16px; font-weight:800; cursor:pointer; border:1px solid transparent }
 .btn-outline { background:#05050b; color:#f0f1ff; border-color:#2b2d52; display:inline-flex; align-items:center; gap:8px; justify-content:center }
+.btn-outline.loading{ opacity:.85; cursor:wait; }
+.btn-outline .spinner{ width:16px; height:16px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:999px; animation:proofSpin .8s linear infinite; }
+@keyframes proofSpin{ to { transform:rotate(360deg); } }
 .btn-outline:hover{ border-color:#475569 }
 .btn-primary { background:#7a7cd0; color:#fff; }
 .btn-primary:hover { filter:brightness(.95); }
@@ -879,15 +879,6 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
         <button id="closeModal" class="btn btn-outline">اغلاق</button>
       </div>
 
-      <!-- Turnstile: رندر ضمني (Implicit) -->
-      <div class="turnstile-wrap">
-        <div class="cf-turnstile"
-             data-sitekey="0x4AAAAAAB6SSL-8W0hsAOMn"
-             data-callback="onTurnstileSuccess"
-             data-expired-callback="onTurnstileExpired">
-        </div>
-      </div>
-
       <div class="hint">مراجعة الطلبات يدوية وقد تستغرق من دقيقة إلى ساعتين في أوقات العمل.</div>
       <div id="proofPreview" class="preview"></div>
     </div>
@@ -937,7 +928,24 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     /* ========================= إعداد عام ========================= */
   const WORKER_BASE = "https://edaaandsahb.laithqarqaz66.workers.dev/";
   const WORKER = (WORKER_BASE || '').replace(/\/+$/, '');
-  const IMGBB_API_KEY = "491f01510f766147819e077c95c497a5";
+  function generateGuardToken(prefix){
+    var tag = prefix || 'guard';
+    try{
+      var cryptoSource = null;
+      if (typeof window !== 'undefined' && window.crypto && typeof window.crypto.getRandomValues === 'function'){
+        cryptoSource = window.crypto;
+      } else if (typeof self !== 'undefined' && self.crypto && typeof self.crypto.getRandomValues === 'function'){
+        cryptoSource = self.crypto;
+      }
+      if (cryptoSource){
+        var buf = new Uint32Array(2);
+        cryptoSource.getRandomValues(buf);
+        var hex = Array.from(buf).map(function(n){ return n.toString(16).padStart(8,'0'); }).join('');
+        return tag + '-' + Date.now().toString(36) + '-' + hex;
+      }
+    }catch(_){}
+    return tag + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+  }
 
     // Firebase (كما هو)
     const firebaseConfig = {
@@ -953,19 +961,7 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    /* ========================= Turnstile ========================= */
-    window.turnstileToken = null;
-    window.onTurnstileSuccess = function(token){
-      window.turnstileToken = token;
-      if (currentProofFile && !uploadedProofUrl) autoUploadProof().catch(console.error);
-      updateSubmitState();
-    };
-    window.onTurnstileExpired = function(){
-      window.turnstileToken = null;
-      uploadedProofUrl = null;
-      updateSubmitState();
-      try { updateProofUI(); } catch(_){ }
-    };
+    /* ========================= حارس داخلي (Guard Token) ========================= */
 
     /* ========================= عناصر DOM ========================= */
     const grid = document.getElementById('grid');
@@ -979,7 +975,6 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     const modalTitle = document.getElementById('modalTitle');
     const methodInfo = document.getElementById('methodInfo');
 
-    const proofFile = document.getElementById('proofFile');
     const proofTrigger = document.getElementById('proofTrigger');
     const submitDepositBtn = document.getElementById('submitDepositBtn');
     const proofPreview = document.getElementById('proofPreview');
@@ -1115,7 +1110,6 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       if (proofFileEl) proofFileEl.value = '';
       proofPreview.textContent = '';
       updateSubmitState();
-      try { if (window.turnstile) turnstile.reset(); } catch(_){}
       try { updateProofUI(); } catch(_){ }
     }
 
@@ -1602,59 +1596,112 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     /* ========================= اختيار ملف + رفع تلقائي (بدون تسجيل) ========================= */
     const proofFileEl = document.getElementById('proofFile');
 
+    let proofUploadPending = false;
+
     function updateProofUI(){
       try{
         if (!proofTrigger) return;
-        if (uploadedProofUrl){
+        if (proofUploadPending){
+          proofTrigger.classList.add('loading');
+          proofTrigger.classList.remove('success');
+          proofTrigger.innerHTML = '<span class="spinner" aria-hidden="true"></span><span>جاري الرفع...</span>';
+        } else if (uploadedProofUrl){
           proofTrigger.classList.add('success');
+          proofTrigger.classList.remove('loading');
           proofTrigger.innerHTML = '<i class="fa-solid fa-check"></i>';
         } else {
+          proofTrigger.classList.remove('loading');
           proofTrigger.classList.remove('success');
           proofTrigger.innerHTML = 'اثبات الدفع <i class="fa-solid fa-paperclip"></i>';
         }
       }catch(_){ }
     }
 
-    proofFileEl.addEventListener('change', async ()=>{
+    if (proofFileEl) proofFileEl.addEventListener('change', ()=>{
       currentProofFile = proofFileEl.files && proofFileEl.files[0] ? proofFileEl.files[0] : null;
       uploadedProofUrl = null;
-      proofPreview.textContent = currentProofFile ? `جاري رفع: ${currentProofFile.name}` : '';
-      updateProofUI();
-      if (currentProofFile) {
-        if (window.turnstileToken) {
-          try { await autoUploadProof(); } catch(e){ console.error(e); }
-        }
+      if (!currentProofFile) {
+        proofPreview.textContent = '';
+        updateProofUI();
+        updateSubmitState();
+        return;
       }
-      updateSubmitState();
+      if (!currentCountry || !currentMethod) {
+        proofPreview.textContent = 'اختر الدولة والطريقة قبل رفع الإثبات.';
+        updateProofUI();
+        updateSubmitState();
+        return;
+      }
+      if (!proofUploadPending) {
+        triggerProofUpload().catch(console.error);
+      }
     });
+
+    async function triggerProofUpload(){
+      if (!currentProofFile) return;
+      if (proofUploadPending) return;
+      proofUploadPending = true;
+      proofPreview.textContent = `جاري رفع: ${currentProofFile.name}`;
+      updateProofUI();
+      updateSubmitState();
+      try {
+        await autoUploadProof();
+      } catch (err) {
+        uploadedProofUrl = null;
+        proofPreview.textContent = (err && err.message) ? err.message : 'فشل رفع الإثبات.';
+        updateProofUI();
+        throw err;
+      } finally {
+        proofUploadPending = false;
+        updateProofUI();
+        updateSubmitState();
+      }
+    }
 
     async function autoUploadProof(){
       if(!currentProofFile) throw new Error('اختر صورة أولاً.');
-      if(!window.turnstileToken) throw new Error('تحقق الأمان مطلوب — أكمل Turnstile.');
-
+      if(!currentCountry || !currentCountry.id) throw new Error('اختر الدولة قبل رفع الإثبات.');
+      if(!currentMethod || !currentMethod.id) throw new Error('اختر الطريقة قبل رفع الإثبات.');
+      const idToken = await getIdTokenOrThrow();
       const fd = new FormData();
       fd.append('image', currentProofFile);
+      fd.append('countryId', currentCountry.id);
+      fd.append('countryName', currentCountry?.data?.name || '');
+      fd.append('methodId', currentMethod.id);
+      fd.append('methodName', currentMethod?.data?.name || '');
+      const guardToken = generateGuardToken('edaa-upload');
+      fd.append('guardToken', guardToken);
+      fd.append('turnstileToken', guardToken);
+      fd.append('cf-turnstile-response', guardToken);
 
-      const res = await fetch(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(IMGBB_API_KEY)}`, {
-        method: 'POST', body: fd
+      const res = await fetch(`${WORKER}/deposit/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + idToken
+        },
+        body: fd
       });
-      const data = await res.json();
-      if(!res.ok || !data?.success) throw new Error(data?.error?.message || 'فشل رفع الإثبات');
+      let data = {};
+      try { data = await res.json(); } catch(_){ data = {}; }
+      if(!res.ok || !data?.success) throw new Error((data && data.error) || 'فشل رفع الإثبات');
 
-      uploadedProofUrl = data.data?.url || data.data?.display_url;
-      if(!uploadedProofUrl) throw new Error('ImgBB لم يُرجع رابطًا صالحًا.');
+      uploadedProofUrl =
+        data.url ||
+        data.display_url ||
+        data.displayUrl ||
+        (data.data ? (data.data.url || data.data.display_url) : null) ||
+        null;
+      if(!uploadedProofUrl) throw new Error('الخادم لم يرجع رابطًا صالحًا للملف.');
 
       proofPreview.innerHTML = `تم الرفع: <a href="${uploadedProofUrl}" target="_blank" rel="noopener">فتح الرابط</a>`;
       updateProofUI();
-      updateSubmitState();
     }
 
     function updateSubmitState(){
       const okPay   = amountsValid();
       const okProof = !!uploadedProofUrl;
-      const okToken = !!window.turnstileToken;
       const okMeta  = !!currentMethod && !!currentCountry;
-      submitDepositBtn.disabled = !(okPay && okProof && okToken && okMeta);
+      submitDepositBtn.disabled = !(okPay && okProof && okMeta);
     }
 
     /* ========================= تقديم طلب الإيداع — يتطلب تسجيل دخول ========================= */
@@ -1667,10 +1714,9 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     async function handleSubmitDeposit(country, method){
       if(!amountsValid()) return alert('أدخل المبلغ أولاً.');
       if(!uploadedProofUrl) return alert('من فضلك ارفع الإثبات أولاً.');
-      if(!window.turnstileToken) return alert('تحقق الأمان مطلوب — أكمل Turnstile.');
-
       try{
         const idToken = await getIdTokenOrThrow(); // الإرسال ما زال يتطلب تسجيل الدخول
+        const guardToken = generateGuardToken('edaa-submit');
 
         const payAmount = Number(sendJOD.value); // ما سيدفعه العميل بعملة الطريقة
         const body = {
@@ -1680,7 +1726,8 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
           methodName: method?.data?.name || method?.name || "",
           payAmount,                       // السيرفر يحسب الباقي
           proofUrl: uploadedProofUrl,
-          turnstileToken: window.turnstileToken
+          guardToken,
+          turnstileToken: guardToken
         };
 
         const res = await fetch(`${WORKER}/deposit/submit`, {
