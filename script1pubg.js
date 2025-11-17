@@ -327,7 +327,6 @@ async function sendOrder() {
   _orderInFlight = true;
 
   const submitBtn = document.querySelector('.send-button');
-  showPreloader();
   if (submitBtn) {
     submitBtn.disabled = true;
     submitBtn.dataset._oldText = submitBtn.textContent;
@@ -341,6 +340,8 @@ async function sendOrder() {
     let turnstileToken = '';
     try { turnstileToken = await getTurnstileTokenWithRetry(3); }
     catch(_) { showToast('فشل التحقق الأمني، حاول مجدداً', 'error'); return; }
+
+    showPreloader();
 
     const user = firebase.auth().currentUser;
     if (!user) {
