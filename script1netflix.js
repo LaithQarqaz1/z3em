@@ -55,13 +55,13 @@ async function getTurnstileTokenInteractive() {
     sitekey: TURNSTILE_SITE_KEY,
     theme: themeIsDark()? 'dark' : 'light',
     callback: (t) => { _tsToken = t || ''; },
-    'expired-callback': () => { _tsToken = ''; try{ window.turnstile && _tsWidgetId!=null && window.turnstile.reset(_tsWidgetId); }catch(_){} },
+    'expired-callback': () => resetTurnstileWidget(),
   };
   _tsToken = '';
   if (!_tsWidgetId && window.turnstile && window.turnstile.render) {
     _tsWidgetId = window.turnstile.render(holder, opts);
-  } else if (window.turnstile && window.turnstile.reset && _tsWidgetId != null) {
-    try { window.turnstile.reset(_tsWidgetId); } catch {}
+  } else if (window.turnstile && _tsWidgetId != null) {
+    resetTurnstileWidget();
   }
   const started = Date.now();
   while (Date.now() - started < 15000) {
@@ -78,6 +78,43 @@ async function getTurnstileTokenInteractive() {
   const freshToken = _tsToken;
   _tsToken = '';
   return freshToken;
+}
+
+
+function resetTurnstileWidget({ remove = false } = {}) {
+  try {
+    if (window.turnstile && _tsWidgetId != null) {
+      if (!remove && typeof window.turnstile.reset === 'function') {
+        window.turnstile.reset(_tsWidgetId);
+      } else if (typeof window.turnstile.remove === 'function') {
+        window.turnstile.remove(_tsWidgetId);
+        _tsWidgetId = null;
+      } else {
+        _tsWidgetId = null;
+      }
+    } else {
+      _tsWidgetId = null;
+    }
+  } catch (_) {
+    _tsWidgetId = null;
+  }
+  _tsToken = '';
+}
+
+async function getTurnstileTokenWithRetry(maxAttempts = 2) {
+  let attempt = 0;
+  let lastError = null;
+  const totalTries = Math.max(1, maxAttempts | 0);
+  while (attempt < totalTries) {
+    attempt++;
+    try {
+      return await getTurnstileTokenInteractive();
+    } catch (err) {
+      lastError = err;
+      resetTurnstileWidget({ remove: true });
+    }
+  }
+  throw lastError || new Error('turnstile_token_missing');
 }
 
 /* ================== أدوات محلية للجلسة ================== */
@@ -269,7 +306,7 @@ async function sendOrder() {
 
   // التحقق من Turnstile قبل الإرسال
   let turnstileToken = '';
-  try { turnstileToken = await getTurnstileTokenInteractive(); }
+  try { turnstileToken = await getTurnstileTokenWithRetry(3); }
   catch(_) { showToast('فشل التحقق الأمني، حاول مجدداً', 'error'); return; }
 
   const user = firebase.auth().currentUser;
