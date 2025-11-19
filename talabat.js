@@ -185,6 +185,45 @@ function getMinDateStr(monthsBack){ const d=new Date(); d.setHours(0,0,0,0); d.s
 function formatArDateStr(str){ try{ const [y,m,da]=str.split('-').map(Number); const d=new Date(y, (m||1)-1, da||1); return d.toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'}); }catch{ return str; } }
 function isSameDayMs(ms, ymd){ if(!ms||!ymd) return false; try{ const d=new Date(ms); const s=`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; return s===ymd; }catch{ return false; } }
 
+function escapeHtml(value){
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function safeJsonParse(str, fallback = null){
+  if (!str) return fallback;
+  try { return JSON.parse(str); } catch { return fallback; }
+}
+
+function formatLinkDisplay(raw){
+  const trimmed = String(raw || "").trim();
+  if (!trimmed) return "";
+  const lowered = trimmed.toLowerCase();
+  if (lowered.startsWith("javascript:") || lowered.startsWith("data:")) {
+    return `<span>${escapeHtml(trimmed)}</span>`;
+  }
+  let href = trimmed;
+  if (!/^https?:\/\//i.test(trimmed)) {
+    if (trimmed.includes(".")) href = `https://${trimmed}`;
+    else return `<span>${escapeHtml(trimmed)}</span>`;
+  }
+  return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(trimmed)}</a>`;
+}
+
+function formatAmountDisplay(totalStr, total, currency){
+  let amount = totalStr;
+  if (!amount) {
+    if (typeof total === "number" && Number.isFinite(total)) amount = total.toFixed(2);
+    else amount = total ? String(total) : "-";
+  }
+  if (currency) amount = `${amount} ${currency}`.trim();
+  return amount;
+}
+
 // نص زر التاريخ: إن كان الاختيار يدويًا لا نعرض "اليوم" حتى لو كان نفس يوم اليوم
 function getDateChipText(){
   if (DATE_MODE === 'range'){
@@ -198,9 +237,44 @@ function getDateChipText(){
 
 function normOrderStatus(s){
   const v = String(s || '').toLowerCase();
-  if (v.includes('تم_الشحن') || v.includes('تم الشحن') || v.includes('shipped') || v.includes('تم-الشحن')) return 'approved';
-  if (v.includes('reject') || v.includes('رفض') || v.includes('مرفوض')) return 'rejected';
+  if (
+    v.includes('تم_الشحن') ||
+    v.includes('تم الشحن') ||
+    v.includes('shipped') ||
+    v.includes('تم-الشحن') ||
+    v.includes('completed') ||
+    v.includes('success') ||
+    v.includes('partial') ||
+    v.includes('مكتمل') ||
+    v.includes('مكتمل جزئ')
+  ) return 'approved';
+  if (
+    v.includes('reject') ||
+    v.includes('رفض') ||
+    v.includes('مرفوض') ||
+    v.includes('cancel') ||
+    v.includes('ملغي') ||
+    v.includes('fail')
+  ) return 'rejected';
   return 'pending';
+}
+
+function formatStatusLabel(value){
+  const raw = String(value || '').trim();
+  if (!raw) return 'قيد المعالجة';
+  if (raw === 'تم_الشحن') return 'تم الشحن';
+  const normalized = raw.toLowerCase();
+  if (normalized.includes('مكتمل') || normalized === 'completed' || normalized === 'success') return 'مكتمل';
+  if (normalized === 'partial') return 'مكتمل جزئياً';
+  if (normalized.includes('ملغي') || normalized === 'canceled' || normalized === 'cancelled') return 'ملغي';
+  if (normalized.includes('مرفوض') || normalized.startsWith('reject') || normalized === 'failed' || normalized === 'fail') return 'مرفوض';
+  if (
+    normalized.includes('pending') ||
+    normalized.includes('processing') ||
+    normalized.includes('progress') ||
+    normalized.includes('running')
+  ) return 'قيد التنفيذ';
+  return raw;
 }
 
 function getOrderTimeMs(o){
@@ -560,7 +634,25 @@ function drawOrdersPage() {
   const slice = PAGINATION.orders.slice(start, end);
 
   slice.forEach(order => {
-    const { code, playerId, total, country, payment, العروض: offers, timestamp, status, proof } = order;
+    const {
+      code,
+      playerId,
+      total,
+      totalStr,
+      currency,
+      title,
+      quantity,
+      provider,
+      game,
+      providerOrderId,
+      providerStatus,
+      timestamp,
+      status,
+      proof
+    } = order || {};
+    if (!code) return;
+
+    const offers = order?.["العروض"];
     const existing = document.getElementById(`order-${code}`);
     if (existing) existing.remove();
 
@@ -579,14 +671,89 @@ function drawOrdersPage() {
       offersFormatted = offers
         .split("•")
         .filter(item => item.trim())
-        .map(item => `<li>${item.trim()}</li>`)
+        .map(item => `<li>${escapeHtml(item.trim())}</li>`)
         .join("");
       offersFormatted = `<ul style="padding-right:20px;">${offersFormatted}</ul>`;
     }
 
+    const priv = order?.__priv || {};
+    const providerKey = String(provider || game || "").toLowerCase();
+    const isSmm = providerKey === "smm";
+    const serviceSnapshot = isSmm ? safeJsonParse(priv.serviceSnapshot, null) : null;
+    const providerPayload = isSmm ? safeJsonParse(priv.providerPayload, null) : null;
+    const smmServiceName = title || priv.serviceName || serviceSnapshot?.name || "";
+    const smmQuantity = quantity ?? priv.quantity ?? providerPayload?.quantity ?? null;
+    const smmLink = (priv.link || providerPayload?.link || "").trim();
+    const smmRuns = priv.runs ?? providerPayload?.runs ?? null;
+    const smmInterval = priv.interval ?? providerPayload?.interval ?? null;
+    const smmProviderOrderId = providerOrderId || priv.providerOrderId || "";
+    const smmProviderStatus = providerStatus || priv.providerStatus || "";
+
+    const playerHeaderValue = playerId || smmServiceName || "-";
+    const amountDisplay = formatAmountDisplay(totalStr, total, currency || priv.currency);
+    const statusSource = status || smmProviderStatus;
+    const normalizedStatus = normOrderStatus(statusSource);
+    const statusText = formatStatusLabel(statusSource);
+    const safeCode = escapeHtml(code);
+    const safeHeaderPlayer = escapeHtml(playerHeaderValue);
+    const safeAmountDisplay = escapeHtml(amountDisplay);
+    const safeStatusText = escapeHtml(statusText);
+    const safeDateText = escapeHtml(formattedDate);
+    const safePlayerDetail = playerId ? escapeHtml(playerId) : (isSmm ? "غير مطلوب" : "غير متوفر");
+    const safeProofSrc = proof ? escapeHtml(proof) : "";
+    const showPlayerLine = !(isSmm && safePlayerDetail === "غير مطلوب");
+    const showOffersLine = !isSmm || !!offersFormatted;
+    const playerLineHtml = showPlayerLine ? `<p><strong>🆔 معرف اللاعب:</strong> ${safePlayerDetail}</p>` : "";
+    const offersLineHtml = showOffersLine ? `<p><strong>🎁 العروض:</strong> ${offersFormatted || "-"}</p>` : "";
+    const refundAmountCandidate = priv.refundAmount ?? order?.refundAmount;
+    let refundAmountNumber = null;
+    if (refundAmountCandidate !== undefined && refundAmountCandidate !== null && refundAmountCandidate !== "") {
+      const parsedRefund = typeof refundAmountCandidate === "number" ? refundAmountCandidate : Number(refundAmountCandidate);
+      if (Number.isFinite(parsedRefund)) refundAmountNumber = parsedRefund;
+    }
+    const refundAmountHasValue = refundAmountNumber !== null;
+    const refundAmountStr = priv.refundAmountStr || order?.refundAmountStr || "";
+    const refundAmountDisplay = (refundAmountStr || refundAmountHasValue)
+      ? formatAmountDisplay(refundAmountStr || null, refundAmountHasValue ? refundAmountNumber : null, currency || priv.currency)
+      : "";
+    const isRejectedStatus = normalizedStatus === "rejected";
+    const refundIssuedFlag = priv.refunded === true || priv.refundIssued === true || order?.refunded === true || order?.refundIssued === true;
+    let refundLineHtml = "";
+    if (isRejectedStatus) {
+      const refundText = refundIssuedFlag
+        ? (refundAmountDisplay ? `تمت إعادة ${refundAmountDisplay}` : "تمت إعادة المبلغ")
+        : "لم يتم إرجاع المبلغ بعد";
+      refundLineHtml = `<p><strong>💰 حالة الاسترداد:</strong> ${escapeHtml(refundText)}</p>`;
+    }
+
     let statusClass = "";
-    if (status === "مرفوض") statusClass = "مرفوض";
-    else if (status === "تم_الشحن") statusClass = "تم_الشحن";
+    if (normalizedStatus === "rejected") statusClass = "مرفوض";
+    else if (normalizedStatus === "approved") statusClass = "تم_الشحن";
+
+    const smmDetailsParts = [];
+    if (isSmm && smmServiceName) {
+      smmDetailsParts.push(`<p><strong>🎯 الخدمة:</strong> ${escapeHtml(smmServiceName)}</p>`);
+    }
+    if (isSmm && smmQuantity !== null && smmQuantity !== undefined && smmQuantity !== "") {
+      smmDetailsParts.push(`<p><strong>📦 الكمية:</strong> ${escapeHtml(smmQuantity)}</p>`);
+    }
+    if (isSmm && smmLink) {
+      const linkMarkup = formatLinkDisplay(smmLink) || escapeHtml(smmLink);
+      smmDetailsParts.push(`<p><strong>🔗 الرابط:</strong> ${linkMarkup}</p>`);
+    }
+    if (isSmm && smmProviderOrderId) {
+      smmDetailsParts.push(`<p><strong>🆔 رقم الطلب:</strong> ${escapeHtml(smmProviderOrderId)}</p>`);
+    }
+    if (isSmm && smmProviderStatus) {
+      smmDetailsParts.push(`<p><strong>⚙️ حالة الطلب:</strong> ${escapeHtml(formatStatusLabel(smmProviderStatus))}</p>`);
+    }
+    if (isSmm && (smmRuns || smmInterval)) {
+      const bits = [];
+      if (smmRuns) bits.push(`عدد الدفعات: ${escapeHtml(smmRuns)}`);
+      if (smmInterval) bits.push(`الفاصل: ${escapeHtml(smmInterval)}`);
+      smmDetailsParts.push(`<p><strong>⏱️ التكرار:</strong> ${bits.join(" / ")}</p>`);
+    }
+    const smmDetailsBlock = smmDetailsParts.join("");
 
     const card = document.createElement("div");
     card.className = "order-card";
@@ -595,25 +762,27 @@ function drawOrdersPage() {
     card.innerHTML = `
       <div class="order-header" onclick="toggleDetails('${code}')">
         <div>
-          <strong>كود الطلب:</strong> ${code}<br>
-          🎮 <strong>${playerId || "-"}</strong> | 💵 <strong>${total || "-"}</strong>
+          <strong>كود الطلب:</strong> ${safeCode}<br>
+          🎮 <strong>${safeHeaderPlayer}</strong> | 💵 <strong>${safeAmountDisplay}</strong>
         </div>
         <div class="order-status ${statusClass}">
-          ${status === "تم_الشحن" ? "تم الشحن" : (status || "قيد المعالجة")}
+          ${safeStatusText}
         </div>
         <i class="fas fa-chevron-down"></i>
       </div>
-      <div class="order-details" id="details-${code}" style="display:none;">
-        <p><strong>🆔 معرف اللاعب:</strong> ${playerId || "غير متوفر"}</p>
-        <p><strong>🎁 العروض:</strong> ${offersFormatted || "-"}</p>
-        <p><strong>💵 المجموع:</strong> ${total || "-"}</p>
-        <p><strong>📅 تاريخ الإرسال:</strong> ${formattedDate}</p>
+      <div class="order-details" id="details-${safeCode}" style="display:none;">
+        ${playerLineHtml}
+        ${smmDetailsBlock}
+        ${offersLineHtml}
+        ${refundLineHtml}
+        <p><strong>💵 المجموع:</strong> ${safeAmountDisplay}</p>
+        <p><strong>📅 تاريخ الإرسال:</strong> ${safeDateText}</p>
         ${
           proof
             ? `<p>
                  <strong>📸 إثبات التحويل:</strong>
-                 <button class="btn-show-proof" data-code="${code}">عرض الصورة</button><br>
-                 <img id="proof-img-${code}" src="${proof}" alt="إثبات التحويل" style="display:none; max-width:100%; margin-top:10px;">
+                 <button class="btn-show-proof" data-code="${safeCode}">عرض الصورة</button><br>
+                 <img id="proof-img-${safeCode}" src="${safeProofSrc}" alt="إثبات التحويل" style="display:none; max-width:100%; margin-top:10px;">
                </p>`
             : ``
         }
