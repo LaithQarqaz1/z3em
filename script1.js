@@ -32,16 +32,16 @@ const GAME_ALIASES = {
 
 const GAME_CONFIGS = {
   freefire: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "freefiremanwal", offerKey: "jewels", cacheTag: "freefire" },
-  freefireauto: { apiBase: "https://z3em-freefireauto.laithqarqaz1.workers.dev/", xGame: "freefireauto", offerKey: "jewels", cacheTag: "freefireauto" },
-  freefireauto2: { apiBase: "https://z3em-freefireauto2.laithqarqaz1.workers.dev/", xGame: "freefireauto2", offerKey: "jewels", cacheTag: "freefireauto2" },
-  jawaker: { apiBase: "https://z3em-jawaker.laithqarqaz1.workers.dev/", xGame: "jawaker", offerKey: "tokens", cacheTag: "jawaker" },
+  freefireauto: { apiBase: "https://z3em-freefireauto.laithqarqaz1.workers.dev/", offerKey: "jewels", cacheTag: "freefireauto" },
+  freefireauto2: { apiBase: "https://z3em-freefireauto2.laithqarqaz1.workers.dev/", offerKey: "jewels", cacheTag: "freefireauto2" },
+  jawaker: { apiBase: "https://z3em-jawaker.laithqarqaz1.workers.dev/", offerKey: "tokens", cacheTag: "jawaker" },
   pubg: { apiBase: "https://z3em-pubg.laithqarqaz1.workers.dev/", xGame: "pubg", offerKey: "uc", cacheTag: "pubg" },
   canva: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "canva", offerKey: "jewels", cacheTag: "canva" },
   chatgpt: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "chatgpt", offerKey: "jewels", cacheTag: "chatgpt" },
   netflix: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "netflix", offerKey: "jewels", cacheTag: "netflix" },
   fortnight: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "fortnite", offerKey: "jewels", cacheTag: "fortnite" },
   roblox: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "roblox", offerKey: "jewels", cacheTag: "roblox" },
-  bylyardo: { apiBase: "https://8ball.laithqarqaz1.workers.dev", xGame: "bylyardo", offerKey: "jewels", cacheTag: "bylyardo" },
+  bylyardo: { apiBase: "https://8ball.laithqarqaz1.workers.dev", offerKey: "jewels", cacheTag: "bylyardo" },
   capcut: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "capcut", offerKey: "jewels", cacheTag: "capcut" },
   default: DEFAULT_GAME_CONFIG,
 };
