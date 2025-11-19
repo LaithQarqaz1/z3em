@@ -35,7 +35,7 @@ const GAME_CONFIGS = {
   freefireauto: { apiBase: "https://z3em-freefireauto.laithqarqaz1.workers.dev/", offerKey: "jewels", cacheTag: "freefireauto" },
   freefireauto2: { apiBase: "https://z3em-freefireauto2.laithqarqaz1.workers.dev/", offerKey: "jewels", cacheTag: "freefireauto2" },
   jawaker: { apiBase: "https://z3em-jawaker.laithqarqaz1.workers.dev/", offerKey: "tokens", cacheTag: "jawaker" },
-  pubg: { apiBase: "https://z3em-pubg.laithqarqaz1.workers.dev/", xGame: "pubg", offerKey: "uc", cacheTag: "pubg" },
+  pubg: { apiBase: "https://z3em-pubg.laithqarqaz1.workers.dev/", offerKey: "uc", cacheTag: "pubg" },
   canva: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "canva", offerKey: "jewels", cacheTag: "canva" },
   chatgpt: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "chatgpt", offerKey: "jewels", cacheTag: "chatgpt" },
   netflix: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "netflix", offerKey: "jewels", cacheTag: "netflix" },
