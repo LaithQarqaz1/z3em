@@ -3629,6 +3629,16 @@ button#logoutBtn:hover{background:#990000}
         var stylesInjected = false;
         var authReadyPromise = null;
 
+        function themeIsDark(){
+          try{
+            var attr = document.documentElement.getAttribute('data-theme');
+            if (attr) return attr !== 'light';
+            var stored = localStorage.getItem('theme');
+            if (stored) return stored !== 'light';
+          }catch(_){}
+          return true;
+        }
+
         function ensureStyles(){
           if (stylesInjected) return;
           stylesInjected = true;
@@ -4605,8 +4615,26 @@ button#logoutBtn:hover{background:#990000}
           uiRefs.submit.textContent = isLoading ? (text || 'جاري التنفيذ...') : 'تنفيذ الطلب';
         }
 
+        function createSmmGuardToken(prefix){
+          var tag = prefix || 'smm';
+          try {
+            var source = (typeof window !== 'undefined' && window.crypto && typeof window.crypto.getRandomValues === 'function')
+              ? window.crypto
+              : (typeof self !== 'undefined' && self.crypto && typeof self.crypto.getRandomValues === 'function'
+                ? self.crypto
+                : null);
+            if (source){
+              var buf = new Uint32Array(2);
+              source.getRandomValues(buf);
+              var hex = Array.from(buf).map(function(n){ return n.toString(16).padStart(8,'0'); }).join('');
+              return tag + '-' + Date.now().toString(36) + '-' + hex;
+            }
+          } catch(_){}
+          return tag + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+        }
+
         function getTurnstileToken(){
-          return Promise.resolve(generateGuardToken('smm'));
+          return Promise.resolve(createSmmGuardToken('smm'));
         }
 
         function placeInlineOrder(service, link, qty){
@@ -4823,7 +4851,7 @@ button#logoutBtn:hover{background:#990000}
                 : 'يمكنك متابعة حالة الطلب من صفحة الطلبات.',
               details: manual
                 ? 'يُرجى متابعة إشعاراتك، وسيتم تنفيذ الطلب خلال وقت قصير.'
-                : 'لا تنسَ نسخ كود الطلب للاطلاع على حالته في أي وقت.'
+                : ''
             });
             if (result && result.estimatedCharge != null){
               var chargeVal = Number(result.estimatedCharge);
