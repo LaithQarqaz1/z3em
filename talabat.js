@@ -5,13 +5,6 @@ function openCalendar(){
   if (!SELECTED_DATE_STR || SELECTED_DATE_STR < minDateStr) {
     SELECTED_DATE_STR = minDateStr;
     SELECTED_DATE_MANUAL = false; // تم تعيينه تلقائيًا كحد أدنى
-    try{
-      const uid=(auth.currentUser||firebase.auth().currentUser)?.uid;
-      if(uid){
-        localStorage.setItem(`orders:date:${uid}`, SELECTED_DATE_STR);
-        localStorage.setItem(`orders:date:manual:${uid}`, '0');
-      }
-    }catch{}
   }
   const base = (SELECTED_DATE_STR || getTodayStr()).split('-').map(Number);
   CAL.year = base[0] || (new Date()).getFullYear();
@@ -47,14 +40,12 @@ function openCalendar(){
     const btnRange = panel.querySelector('#calModeRange');
     if (btnSingle) btnSingle.onclick = () => {
       DATE_MODE = 'single';
-      try{ const uid=(auth.currentUser||firebase.auth().currentUser)?.uid; if(uid){ localStorage.setItem(`orders:dateMode:${uid}`, DATE_MODE); } }catch{}
       renderCalendar(CAL.year, CAL.month);
     };
     if (btnRange) btnRange.onclick = () => {
       DATE_MODE = 'range';
       // إن لم يكن من/إلى محددَين، عين البداية اليوم
       if (!DATE_RANGE.from){ DATE_RANGE.from = SELECTED_DATE_STR || getTodayStr(); }
-      try{ const uid=(auth.currentUser||firebase.auth().currentUser)?.uid; if(uid){ localStorage.setItem(`orders:dateMode:${uid}`, DATE_MODE); localStorage.setItem(`orders:dateRange:${uid}`, JSON.stringify(DATE_RANGE)); } }catch{}
       renderCalendar(CAL.year, CAL.month);
     };
   }
@@ -139,13 +130,11 @@ function renderCalendar(year, month){
       if (DATE_MODE === 'range'){
         if (!DATE_RANGE.from || (DATE_RANGE.from && DATE_RANGE.to)){
           DATE_RANGE = { from: ymd, to: null };
-          try{ const uid=(auth.currentUser||firebase.auth().currentUser)?.uid; if(uid){ localStorage.setItem(`orders:dateRange:${uid}`, JSON.stringify(DATE_RANGE)); } }catch{}
           renderCalendar(year, month);
           return;
         } else if (DATE_RANGE.from && !DATE_RANGE.to){
           if (ymd < DATE_RANGE.from){ DATE_RANGE = { from: ymd, to: DATE_RANGE.from }; }
           else { DATE_RANGE.to = ymd; }
-          try{ const uid=(auth.currentUser||firebase.auth().currentUser)?.uid; if(uid){ localStorage.setItem(`orders:dateRange:${uid}`, JSON.stringify(DATE_RANGE)); } }catch{}
           closeCalendar();
           syncToolbarUI();
           recomputeAndRender();
@@ -154,13 +143,6 @@ function renderCalendar(year, month){
       } else {
         SELECTED_DATE_STR = ymd || getTodayStr();
         SELECTED_DATE_MANUAL = true; // تم اختيار التاريخ يدويًا من التقويم
-        try{
-          const uid=(auth.currentUser||firebase.auth().currentUser)?.uid;
-          if(uid){
-            localStorage.setItem(`orders:date:${uid}`, SELECTED_DATE_STR);
-            localStorage.setItem(`orders:date:manual:${uid}`, '1');
-          }
-        }catch{}
         closeCalendar();
         syncToolbarUI();
         recomputeAndRender();
@@ -286,40 +268,18 @@ firebase.auth().onAuthStateChanged(async user => {
     alert("يجب تسجيل الدخول أولاً");
     window.location.href = "index.html";
   } else {
-    // استرداد الفلاتر والفرز المحفوظة
-    try{
-      const f = localStorage.getItem(`orders:filter:${user.uid}`);
-      if (f) ORDERS_FILTER = f;
-      // وضع التاريخ: single/range
-      const savedMode = localStorage.getItem(`orders:dateMode:${user.uid}`);
-      DATE_MODE = (savedMode === 'range') ? 'range' : 'single';
-      if (DATE_MODE === 'range'){
-        try {
-          const rawRange = localStorage.getItem(`orders:dateRange:${user.uid}`);
-          const parsed = rawRange ? JSON.parse(rawRange) : null;
-          DATE_RANGE = (parsed && typeof parsed === 'object') ? { from: parsed.from || null, to: parsed.to || null } : { from: null, to: null };
-          if (!DATE_RANGE.from){ DATE_RANGE.from = getTodayStr(); }
-        } catch { DATE_RANGE = { from: getTodayStr(), to: null }; }
-      } else {
-        const savedDate = localStorage.getItem(`orders:date:${user.uid}`);
-        const savedManual = localStorage.getItem(`orders:date:manual:${user.uid}`) === '1';
-        if (savedManual && savedDate) {
-          SELECTED_DATE_STR = savedDate;
-          SELECTED_DATE_MANUAL = true; // تم حفظه يدويًا سابقًا
-        } else {
-          // افتراضيًا اعرض آخر يوم مفتوح (اليوم)
-          SELECTED_DATE_STR = getTodayStr();
-          SELECTED_DATE_MANUAL = false;
-          try { localStorage.setItem(`orders:date:${user.uid}`, SELECTED_DATE_STR); localStorage.setItem(`orders:date:manual:${user.uid}`, '0'); } catch {}
-        }
-      }
-      const chipsWrap = document.getElementById('ordersToolbar');
-      if (chipsWrap){
-        chipsWrap.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', (c.dataset.filter||'all')===ORDERS_FILTER));
-        const dc = document.getElementById('dateChip');
-        if (dc){ dc.textContent = getDateChipText(); }
-      }
-    }catch{}
+    // إعادة الضبط إلى القيم الافتراضية لكل جلسة جديدة
+    ORDERS_FILTER = 'all';
+    DATE_MODE = 'single';
+    DATE_RANGE = { from: null, to: null };
+    SELECTED_DATE_STR = getTodayStr();
+    SELECTED_DATE_MANUAL = false;
+    const chipsWrap = document.getElementById('ordersToolbar');
+    if (chipsWrap){
+      chipsWrap.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', (c.dataset.filter||'all')===ORDERS_FILTER));
+      const dc = document.getElementById('dateChip');
+      if (dc){ dc.textContent = getDateChipText(); }
+    }
     await loadOrdersCacheFirst(user.uid);   // اعرض من الكاش أو اجلب مرة واحدة إذا فاضي
     await syncOrdersMerge(user.uid);        // عند كل دخول: اجلب وادمج الطلبات الجديدة وتحديث حالاتها
     refreshRecentStatuses(user.uid);        // كتحسين: حدّث حديثة فقط (احتياطي)
@@ -328,26 +288,11 @@ firebase.auth().onAuthStateChanged(async user => {
 });
 
 /* ===================== LocalStorage Helpers ===================== */
-/**
- * نخزن الطلبات بهذا الشكل داخل localStorage:
- * key: orders_cache:<uid>
- * value: { byCode: { CODE: orderObj }, lastSync: <timestamp> }
- * ملاحظة: نضع بيانات public داخل كائن الطلب مباشرة (playerId, total, status, timestamp, العروض ...)
- * وإذا جلبنا تفاصيل pub/priv للطلب نضيفها في حقول __pub / __priv داخل نفس الطلب.
- */
-const ORDERS_KEY = (uid) => `orders_cache:${uid}`;
+const MEMORY_CACHE = new Map();
 
 const LS = {
   read(uid) {
-    try {
-      const raw = localStorage.getItem(ORDERS_KEY(uid));
-      if (!raw) return { byCode: {}, lastSync: 0 };
-      const parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed.byCode !== 'object') return { byCode: {}, lastSync: 0 };
-      return parsed;
-    } catch {
-      return { byCode: {}, lastSync: 0 };
-    }
+    return MEMORY_CACHE.get(uid) || { byCode: {}, lastSync: 0 };
   },
   replace(uid, ordersArray) {
     const byCode = {};
@@ -371,14 +316,10 @@ const LS = {
     LS._save(uid, cur);
   },
   _save(uid, obj) {
-    try {
-      localStorage.setItem(ORDERS_KEY(uid), JSON.stringify(obj));
-    } catch (e) {
-      console.warn("تعذّر الحفظ في LocalStorage (قد تكون المساحة ممتلئة).", e);
-    }
+    MEMORY_CACHE.set(uid, obj);
   },
   clear(uid) {
-    try { localStorage.removeItem(ORDERS_KEY(uid)); } catch {}
+    MEMORY_CACHE.delete(uid);
   }
 };
 
@@ -730,10 +671,6 @@ document.addEventListener('click', (e) => {
   if (!btn) return;
   if (btn.id === 'dateChip') { openCalendar(); return; }
   ORDERS_FILTER = btn.dataset.filter || 'all';
-  try{
-    const uid = (auth.currentUser || firebase.auth().currentUser)?.uid;
-    if (uid) localStorage.setItem(`orders:filter:${uid}`, ORDERS_FILTER);
-  }catch{}
   syncToolbarUI();
   recomputeAndRender();
 });
@@ -748,15 +685,6 @@ document.addEventListener('change', (e) => {
   DATE_RANGE = { from: null, to: null };
   SELECTED_DATE_STR = val || getTodayStr();
   SELECTED_DATE_MANUAL = !!val; // اختيار يدوي فقط إذا كان هناك تاريخ محدد
-  try{
-    const uid = (auth.currentUser || firebase.auth().currentUser)?.uid;
-    if (uid){
-      localStorage.setItem(`orders:dateMode:${uid}`, DATE_MODE);
-      localStorage.setItem(`orders:dateRange:${uid}`, JSON.stringify(DATE_RANGE));
-      localStorage.setItem(`orders:date:${uid}`, SELECTED_DATE_STR);
-      localStorage.setItem(`orders:date:manual:${uid}`, SELECTED_DATE_MANUAL ? '1' : '0');
-    }
-  }catch{}
   syncToolbarUI();
   recomputeAndRender();
 });
