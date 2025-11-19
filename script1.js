@@ -14,6 +14,57 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 let pricesFetchOnce = false;
 
+// ============== إعداد اللعبة (ملف واحد لكل الصفحات) ==============
+const DEFAULT_GAME_CONFIG = {
+  apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/",
+  xGame: null,
+  offerKey: "jewels",
+  cacheTag: "default",
+};
+
+const GAME_ALIASES = {
+  freefiremanwal: "freefire",
+  freefiremembership: "freefire",
+  freefiren: "freefire",
+  jawakermanwal: "jawaker",
+  fortnite: "fortnight",
+};
+
+const GAME_CONFIGS = {
+  freefire: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "freefiremanwal", offerKey: "jewels", cacheTag: "freefire" },
+  freefireauto: { apiBase: "https://z3em-freefireauto.laithqarqaz1.workers.dev/", offerKey: "jewels", cacheTag: "freefireauto" },
+  freefireauto2: { apiBase: "https://z3em-freefireauto2.laithqarqaz1.workers.dev/", offerKey: "jewels", cacheTag: "freefireauto2" },
+  jawaker: { apiBase: "https://z3em-jawaker.laithqarqaz1.workers.dev/", offerKey: "tokens", cacheTag: "jawaker" },
+  pubg: { apiBase: "https://z3em-pubg.laithqarqaz1.workers.dev/", offerKey: "uc", cacheTag: "pubg" },
+  canva: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", offerKey: "jewels", cacheTag: "canva" },
+  chatgpt: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", offerKey: "jewels", cacheTag: "chatgpt" },
+  netflix: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", offerKey: "jewels", cacheTag: "netflix" },
+  fortnight: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "fortnite", offerKey: "jewels", cacheTag: "fortnite" },
+  roblox: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "roblox", offerKey: "jewels", cacheTag: "roblox" },
+  bylyardo: { apiBase: "https://8ball.laithqarqaz1.workers.dev", offerKey: "jewels", cacheTag: "bylyardo" },
+  capcut: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", offerKey: "jewels", cacheTag: "capcut" },
+  default: DEFAULT_GAME_CONFIG,
+};
+
+function resolveGameKey() {
+  const raw = (document.body?.dataset?.game || "").trim().toLowerCase();
+  const fromPath = (location.pathname.split("/").pop() || "").replace(/\.html?$/i, "").toLowerCase();
+  const base = (raw || fromPath || "").replace(/[^\w]/g, "");
+  return GAME_ALIASES[base] || base || "freefire";
+}
+
+const ACTIVE_GAME = (() => {
+  const key = resolveGameKey();
+  const cfg = GAME_CONFIGS[key] || GAME_CONFIGS.default;
+  return { ...DEFAULT_GAME_CONFIG, ...cfg, key, cacheTag: cfg.cacheTag || key || DEFAULT_GAME_CONFIG.cacheTag };
+})();
+
+const API_BASE_URL = ACTIVE_GAME.apiBase;
+const OFFER_VALUE_KEY = ACTIVE_GAME.offerKey || "jewels";
+const OFFERS_CACHE_KEY = `offersPrices:${ACTIVE_GAME.cacheTag}`;
+const OFFERS_CACHE_KEY_LEGACY = "offersPrices";
+const COMMON_GAME_HEADERS = ACTIVE_GAME.xGame ? { "X-Game": ACTIVE_GAME.xGame } : {};
+
 // ===== حماية الطلب (بديل Turnstile) =====
 let _orderInFlight = false;
 
@@ -164,19 +215,22 @@ function persistOffers(data) {
   try {
     const prices = (data && typeof data === 'object' && data.prices) ? data.prices : data;
     if (!prices || typeof prices !== 'object') return;
-    const wrapped = Object.assign({}, prices, { prices, ts: Date.now(), source: 'freefire' });
-    localStorage.setItem('offersPrices', JSON.stringify(wrapped));
+    const wrapped = Object.assign({}, prices, { prices, ts: Date.now(), source: ACTIVE_GAME.cacheTag });
+    localStorage.setItem(OFFERS_CACHE_KEY, JSON.stringify(wrapped));
+    // توافقي مع الصفحات/الأدمن التي تقرأ المفتاح القديم
+    localStorage.setItem(OFFERS_CACHE_KEY_LEGACY, JSON.stringify(wrapped));
   } catch (e) { console.warn('persistOffers failed:', e); }
 }
 
 function primeOffersFromCache(maxAgeMs = 15 * 60 * 1000) {
   try {
-    const raw = localStorage.getItem('offersPrices');
+    const raw = localStorage.getItem(OFFERS_CACHE_KEY) || localStorage.getItem(OFFERS_CACHE_KEY_LEGACY);
     if (!raw) return false;
     const obj = JSON.parse(raw);
     const ts = obj && obj.ts ? Number(obj.ts) : 0;
     const fresh = ts && (Date.now() - ts) <= maxAgeMs;
-    localStorage.setItem('offersPrices', raw);
+    localStorage.setItem(OFFERS_CACHE_KEY, raw);
+    localStorage.setItem(OFFERS_CACHE_KEY_LEGACY, raw);
     return fresh;
   } catch { return false; }
 }
@@ -187,15 +241,22 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
   try {
     // لا نجلب أسعار عامة بدون معرف مستخدم
     if (!useruid) return;
-    const url = new URL('https://z3em-manwal.laithqarqaz1.workers.dev/');
+    const url = new URL(API_BASE_URL);
     url.searchParams.set('mode', 'all');
     url.searchParams.set('useruid', useruid);
-    const res = await fetch(url.toString(), { method: 'GET', signal: controller.signal, cache: 'no-store', headers: { 'X-Game': 'freefiremanwal' } });
+    const res = await fetch(url.toString(), {
+      method: 'GET',
+      signal: controller.signal,
+      cache: 'no-store',
+      headers: { ...COMMON_GAME_HEADERS }
+    });
     const data = await res.json();
     if (!data || data.success === false) throw new Error(data?.error || 'فشل جلب الأسعار');
     persistOffers(data);
   } catch (e) {
-    const hasCache = !!localStorage.getItem('offersPrices');
+    const hasCache =
+      !!localStorage.getItem(OFFERS_CACHE_KEY) ||
+      !!localStorage.getItem(OFFERS_CACHE_KEY_LEGACY);
     if (!(silentOnCached && hasCache)) {
       showToast('❗ فشل في تحميل الأسعار، ستتم المحاولة لاحقًا', 'error');
       console.error('Prices load error:', e);
@@ -234,19 +295,18 @@ async function sendOrder() {
   const pidInput = document.getElementById("player-id") || document.getElementById("modal-player-id");
   const pid = pidInput ? (pidInput.value || "").trim() : "";
 
+  const buildOfferFromEl = (el) => {
+    const entry = { type: el.dataset.type, offerName: el.dataset.offer || null };
+    const val = el.dataset[OFFER_VALUE_KEY];
+    entry[OFFER_VALUE_KEY] = (typeof val === "undefined") ? null : val;
+    return entry;
+  };
+
   // التقط العرض المحدد من الكلاسات، مع احتياط باستخدام _pm_currentCard إن لم توجد كلاس selected
-  let selectedOffers = Array.from(document.querySelectorAll('.offer-box.selected')).map(el => ({
-    type: el.dataset.type,
-    jewels: el.dataset.jewels || null,
-    offerName: el.dataset.offer || null
-  }));
+  let selectedOffers = Array.from(document.querySelectorAll('.offer-box.selected')).map(buildOfferFromEl);
   if (selectedOffers.length === 0 && window._pm_currentCard && window._pm_currentCard.dataset) {
     const el = window._pm_currentCard;
-    selectedOffers = [{
-      type: el.dataset.type,
-      jewels: el.dataset.jewels || null,
-      offerName: el.dataset.offer || null
-    }];
+    selectedOffers = [buildOfferFromEl(el)];
   }
 
   if (!pid || selectedOffers.length === 0) {
@@ -312,9 +372,9 @@ async function sendOrder() {
     // Quote
     let total, breakdown;
     try {
-      const priceRes = await fetch("https://z3em-manwal.laithqarqaz1.workers.dev/", {
+      const priceRes = await fetch(API_BASE_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Game": "freefiremanwal" },
+        headers: { "Content-Type": "application/json", ...COMMON_GAME_HEADERS },
         body: JSON.stringify({ offers: selectedOffers, useruid: user.uid })
       });
       const priceData = await priceRes.json();
@@ -331,13 +391,13 @@ async function sendOrder() {
 
     // ====== Purchase ======
     try {
-      const response = await fetch("https://z3em-manwal.laithqarqaz1.workers.dev/", {
+      const response = await fetch(API_BASE_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${idToken}`,
           "X-SessionKey": sessionKey,
-          "X-Game": "freefiremanwal"
+          ...COMMON_GAME_HEADERS
         },
         body: JSON.stringify({
           playerId: pid,
