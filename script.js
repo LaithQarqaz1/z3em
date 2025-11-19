@@ -13,8 +13,11 @@ let showingBanner1 = true;
 
 const banner1 = document.getElementById("banner1");
 const banner2 = document.getElementById("banner2");
+const hasTopBanner = banner1 && banner2 && bannerBackgrounds.length > 0;
 
 function updateTopBanner() {
+  if (!hasTopBanner) return;
+
   const nextImage = bannerBackgrounds[currentIndex];
 
   if (showingBanner1) {
@@ -31,10 +34,11 @@ function updateTopBanner() {
   currentIndex = (currentIndex + 1) % bannerBackgrounds.length;
 }
 
-banner1.style.backgroundImage = `url('${bannerBackgrounds[0]}')`;
-banner1.classList.add("active");
-
-setInterval(updateTopBanner, 10000);
+if (hasTopBanner) {
+  banner1.style.backgroundImage = `url('${bannerBackgrounds[0]}')`;
+  banner1.classList.add("active");
+  setInterval(updateTopBanner, 10000);
+}
 
 
 
