@@ -1543,6 +1543,8 @@
     try { closeModal(GOOGLE_USERNAME_MODAL); } catch (_) {}
     try { closeModal(GOOGLE_PHONE_MODAL); } catch (_) {}
     try {
+      const allowed = await assertNotBanned(googleFlowState.user.uid, loginError);
+      if (!allowed) { resetGoogleFlow(); return; }
       const sessionKey = await rotateSessionKey(googleFlowState.user.uid);
       const idToken = await getIdToken(googleFlowState.user);
       savePostLoginPayload({
@@ -1638,6 +1640,30 @@
     return sessionKey;
   }
 
+  // منع الحسابات المحظورة من إكمال الدخول قبل الانتقال للرئيسية
+  async function assertNotBanned(uid, targetErrorEl) {
+    try {
+      const snap = await getDoc(doc(db, "users", uid));
+      const data = snap.exists() ? (snap.data() || {}) : {};
+      if (data.isBanned === true) {
+        if (targetErrorEl) {
+          targetErrorEl.style.color = "var(--danger, #ef4444)";
+          targetErrorEl.textContent = "🚫 لا يمكن الدخول لهذا الحساب.";
+        }
+        try { await signOut(auth); } catch (_) {}
+        try { localStorage.removeItem("sessionKeyInfo"); } catch (_) {}
+        return false;
+      }
+    } catch (_) {
+      if (targetErrorEl) {
+        targetErrorEl.style.color = "var(--danger, #ef4444)";
+        targetErrorEl.textContent = "تعذر التحقق من حالة الحساب. حاول لاحقًا.";
+      }
+      return false;
+    }
+    return true;
+  }
+
   /***** الدخول بالبريد/كلمة مرور *****/
   if (submitLogin) {
     submitLogin.addEventListener('click', async () => {
@@ -1658,22 +1684,25 @@
         const networkReady = await ensureNetworkHealthy(loginError);
         if (!networkReady) return;
 
-        const userCred = await withNetworkRetry(
-          () => signInWithEmailAndPassword(auth, email, password),
-          1
-        );
-        const user = userCred.user;
+      const userCred = await withNetworkRetry(
+        () => signInWithEmailAndPassword(auth, email, password),
+        1
+      );
+      const user = userCred.user;
 
-        if (!user.emailVerified) {
-          document.getElementById('unverifiedEmailModal').classList.remove('hidden');
-          return;
-        }
+      if (!user.emailVerified) {
+        document.getElementById('unverifiedEmailModal').classList.remove('hidden');
+        return;
+      }
 
-        const sessionKey = await rotateSessionKey(user.uid);
-        const idToken = await getIdToken(user);
-        savePostLoginPayload({
-          uid: user.uid,
-          email: user.email,
+      const allowed = await assertNotBanned(user.uid, loginError);
+      if (!allowed) return;
+
+      const sessionKey = await rotateSessionKey(user.uid);
+      const idToken = await getIdToken(user);
+      savePostLoginPayload({
+        uid: user.uid,
+        email: user.email,
           token: idToken,
           sessionKey
         });
@@ -1711,6 +1740,8 @@
     // هنا يجب التأكد أن الجلسة فعالة قبل التوجيه
     try {
       // لا تقم بأي signOut هنا
+      const allowed = await assertNotBanned(user.uid, loginError);
+      if (!allowed) return;
       const sessionKey = await rotateSessionKey(user.uid);
       const idToken = await getIdToken(user);
 
