@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الصفحة غير موجودة</title>
+  <style>
+    :root{
+      --bg1:#0f172a;
+      --bg2:#111827;
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --accent:#a78bfa;
+      --accent2:#4f46e5;
+    }
+    *{box-sizing:border-box;font-family:'Cairo',sans-serif}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:radial-gradient(1200px 600px at 20% 0%,rgba(167,139,250,.18),transparent 55%),
+                 radial-gradient(1200px 600px at 80% 100%,rgba(79,70,229,.22),transparent 55%),
+                 linear-gradient(135deg,var(--bg1),var(--bg2));
+      color:var(--text);
+      padding:24px;
+    }
+    .card{
+      width:min(520px,100%);
+      background:rgba(17,24,39,.75);
+      border:1px solid rgba(99,102,241,.25);
+      border-radius:20px;
+      padding:24px;
+      box-shadow:0 16px 60px rgba(0,0,0,.35);
+      backdrop-filter:blur(8px);
+    }
+    h1{margin:0 0 6px;font-size:1.6rem}
+    p{margin:0 0 10px;color:var(--muted);line-height:1.7}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 12px;border-radius:999px;
+      background:rgba(167,139,250,.12);
+      border:1px solid rgba(167,139,250,.35);
+      color:#ede9fe;
+      font-weight:700;
+      margin-bottom:10px;
+    }
+    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+    a.button{
+      color:#fff;text-decoration:none;
+      padding:12px 14px;
+      border-radius:12px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      font-weight:800;
+      box-shadow:0 10px 30px rgba(79,70,229,.35);
+      transition:transform .08s ease;
+    }
+    a.button:active{transform:translateY(1px)}
+    code{
+      display:inline-block;
+      padding:6px 10px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:10px;
+      color:#f8fafc;
+      direction:ltr;
+    }
+  </style>
+  <script>
+    (function handleRedirect(){
+      try{
+        var search = window.location.search || '';
+        var path = (window.location.pathname || '').toLowerCase();
+        var hasCode = /[?&]oobcode=/i.test(search);
+        var hasMode = /[?&]mode=/i.test(search);
+        var isActionPath = path.indexOf('/__/auth/action') !== -1;
+        if (isActionPath || (hasCode && hasMode)){
+          var target = window.location.origin + '/__/auth/action/' + search;
+          window.location.replace(target);
+        }
+      }catch(_){}
+    })();
+  </script>
+</head>
+<body>
+  <div class="card">
+    <div class="pill">الصفحة غير موجودة · 404</div>
+    <h1>يبدو أن الرابط غير صحيح</h1>
+    <p>إذا كنت تحاول فتح رابط إعادة تعيين كلمة المرور أو تأكيد البريد، سنحاول تحويلك تلقائيًا. يمكنك أيضًا العودة يدويًا.</p>
+    <p>رابط المعالجة المخصص:</p>
+    <code>https://z3em.shop/__/auth/action/</code>
+    <div class="actions">
+      <a class="button" href="https://z3em.shop/__/auth/action/">الانتقال لصفحة الاستعادة</a>
+      <a class="button" href="https://z3em.shop/login.html">العودة لتسجيل الدخول</a>
+      <a class="button" href="https://z3em.shop/">الصفحة الرئيسية</a>
+    </div>
+  </div>
+</body>
+</html>

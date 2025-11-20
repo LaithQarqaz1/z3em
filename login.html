@@ -236,6 +236,70 @@
   .iti__flag-container{margin-left:10px !important}
   #phoneInput,#googlePhoneInput{direction:ltr;text-align:left}
 
+  /* Reset page styling */
+  .reset-hero{
+    background:linear-gradient(135deg, rgba(79,70,229,.12), rgba(124,58,237,.10));
+    border:1px solid rgba(79,70,229,.18);
+    border-radius:16px;
+    padding:14px 16px;
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:14px;
+  }
+  .reset-hero__badge{
+    width:44px;height:44px;border-radius:12px;
+    display:grid;place-items:center;
+    background:linear-gradient(135deg,#4f46e5,#7c3aed);
+    color:#fff;font-weight:800;font-size:1.05rem;
+    box-shadow:0 6px 16px rgba(79,70,229,.25);
+  }
+  .reset-hero__content h4{
+    margin:0 0 4px;font-size:1.05rem;color:var(--text);
+  }
+  .reset-hero__content p{
+    margin:0;color:var(--muted);font-size:.95rem;line-height:1.5;
+  }
+  .reset-meta{
+    display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;
+  }
+  .pill{
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:.9rem;
+    background:rgba(15,23,42,.05);
+    color:var(--text);
+    border:1px solid rgba(15,23,42,.08);
+  }
+  .pill.success{
+    background:rgba(16,185,129,.12);
+    border-color:rgba(16,185,129,.25);
+    color:#047857;
+  }
+  .pill.muted{
+    background:rgba(99,102,241,.1);
+    border-color:rgba(99,102,241,.2);
+    color:#312e81;
+  }
+  .reset-steps{
+    list-style:none;
+    margin:0 0 14px;
+    padding:0;
+    display:grid;
+    gap:8px;
+  }
+  .reset-steps li{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border:1px solid rgba(15,23,42,.06);
+    border-radius:12px;
+    background:#f8fafc;
+    color:var(--text);
+  }
+  .reset-steps i{color:var(--primary)}
+
 </style>
 
 <style id="polish-overrides">
@@ -984,13 +1048,32 @@
       <!-- Reset Form -->
       <div class="login-box hidden" id="resetForm">
         <h3 style="margin-top:0">استعادة كلمة المرور</h3>
-        <p class="subtitle">أدخل بريدك الإلكتروني لإرسال رابط الاستعادة</p>
+        <p class="subtitle">روابط إعادة التعيين تُرسَل مباشرة من Firebase لضمان الأمان.</p>
+
+        <div class="reset-hero">
+          <div class="reset-hero__badge"><i class="fa-solid fa-shield-halved"></i></div>
+          <div class="reset-hero__content">
+            <h4>استعادة آمنة</h4>
+            <p>أدخل بريدك المسجّل، وسنرسل رابطًا فوريًا صالحًا لوقت قصير. تأكد من فحص البريد غير المرغوب.</p>
+            <div class="reset-meta">
+              <span class="pill success">مُدار عبر Firebase</span>
+              <span class="pill muted" id="resetStatus">جاهز للإرسال</span>
+            </div>
+          </div>
+        </div>
+
+        <ul class="reset-steps">
+          <li><i class="fa-regular fa-envelope-circle-check"></i><span>ضع بريدك الصحيح ثم اضغط إرسال.</span></li>
+          <li><i class="fa-solid fa-link"></i><span>افتح الرابط في البريد خلال دقائق.</span></li>
+          <li><i class="fa-solid fa-user-shield"></i><span>عيّن كلمة مرور قوية واستكمل الدخول.</span></li>
+        </ul>
+
         <div class="input-group">
           <input id="resetEmail" placeholder="أدخل بريدك الإلكتروني" type="email"/>
           <i class="fa-regular fa-envelope"></i>
         </div>
         <div class="stack">
-          <button class="btn btn-success" onclick="sendResetLink()"><i class="fa-solid fa-paper-plane"></i> إرسال رابط الاستعادة</button>
+          <button class="btn btn-success" id="resetSubmitBtn" onclick="sendResetLink()"><i class="fa-solid fa-paper-plane"></i> إرسال رابط الاستعادة</button>
           <button class="btn btn-secondary" onclick="switchForm('login')"><i class="fa-solid fa-arrow-right"></i> العودة إلى تسجيل الدخول</button>
         </div>
         <p class="error-message" id="resetMessage"></p>
@@ -1308,6 +1391,8 @@
   const registerForm  = document.getElementById("registerForm");
   const resetEmailInput = document.getElementById("resetEmail");
   const resetMessageEl  = document.getElementById("resetMessage");
+  const resetStatusEl   = document.getElementById("resetStatus");
+  const resetSubmitBtn  = document.getElementById("resetSubmitBtn");
   const verificationMessage = document.getElementById("verificationMessage");
   const resendVerificationBtn = document.getElementById("resendVerificationBtn");
   const registerPasswordInput = document.getElementById("registerPassword");
@@ -1336,7 +1421,14 @@
     resetForm.classList.add("hidden");
     registerForm.classList.add("hidden");
     if (form === "login") loginForm.classList.remove("hidden");
-    else if (form === "reset") resetForm.classList.remove("hidden");
+    else if (form === "reset") {
+      resetForm.classList.remove("hidden");
+      // Prefill email if available
+      const fallbackEmail = (emailInput?.value || '').trim() || (lastLoginEmail || '').trim();
+      if (resetEmailInput && fallbackEmail) resetEmailInput.value = fallbackEmail;
+      if (resetStatusEl) { resetStatusEl.textContent = "جاهز للإرسال"; resetStatusEl.className = "pill muted"; }
+      if (resetMessageEl) { resetMessageEl.textContent = ""; }
+    }
     else if (form === "register") registerForm.classList.remove("hidden");
   }
 
@@ -1765,22 +1857,28 @@
 
     if (!email) {
       resetMessageEl.textContent = "يرجى إدخال بريدك الإلكتروني.";
+      if (resetStatusEl) { resetStatusEl.textContent = "أدخل بريدًا صحيحًا"; resetStatusEl.className = "pill"; }
       return;
     }
     if (resetBusy) return;
     resetBusy = true;
 
     try {
+      setButtonBusy(resetSubmitBtn, true);
+      if (resetStatusEl) { resetStatusEl.textContent = "جارٍ الإرسال..."; resetStatusEl.className = "pill muted"; }
       const networkReady = await ensureNetworkHealthy(resetMessageEl);
       if (!networkReady) return;
       await withNetworkRetry(() => sendPasswordResetEmail(auth, email), 1);
       resetMessageEl.style.color = "var(--success, #22c55e)";
       resetMessageEl.textContent = "تم إرسال رابط الاستعادة إلى بريدك الإلكتروني.";
+      if (resetStatusEl) { resetStatusEl.textContent = "تم الإرسال"; resetStatusEl.className = "pill success"; }
       showModal("resetSuccessModal");
     } catch (error) {
       resetMessageEl.textContent = translateFirebaseError(error?.code);
+      if (resetStatusEl) { resetStatusEl.textContent = "تعذر الإرسال"; resetStatusEl.className = "pill"; }
     } finally {
       resetBusy = false;
+      setButtonBusy(resetSubmitBtn, false);
     }
   }
 
