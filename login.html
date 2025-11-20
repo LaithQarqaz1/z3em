@@ -1036,7 +1036,7 @@
         <div class="stack">
           
 
-          <button class="btn btn-primary" id="submitLogin"><i class="fa-solid fa-arrow-right-to-bracket"></i> دخول</button>
+          <button class="btn btn-primary" id="submitLogin" onclick="window.__manualLogin && window.__manualLogin(event)"><i class="fa-solid fa-arrow-right-to-bracket"></i> دخول</button>
           
           <button class="btn btn-info" id="showReset"><i class="fa-solid fa-unlock-keyhole"></i> نسيت كلمة المرور؟</button>
           
@@ -1048,25 +1048,6 @@
       <!-- Reset Form -->
       <div class="login-box hidden" id="resetForm">
         <h3 style="margin-top:0">استعادة كلمة المرور</h3>
-        <p class="subtitle">روابط إعادة التعيين تُرسَل مباشرة من Firebase لضمان الأمان.</p>
-
-        <div class="reset-hero">
-          <div class="reset-hero__badge"><i class="fa-solid fa-shield-halved"></i></div>
-          <div class="reset-hero__content">
-            <h4>استعادة آمنة</h4>
-            <p>أدخل بريدك المسجّل، وسنرسل رابطًا فوريًا صالحًا لوقت قصير. تأكد من فحص البريد غير المرغوب.</p>
-            <div class="reset-meta">
-              <span class="pill success">مُدار عبر Firebase</span>
-              <span class="pill muted" id="resetStatus">جاهز للإرسال</span>
-            </div>
-          </div>
-        </div>
-
-        <ul class="reset-steps">
-          <li><i class="fa-regular fa-envelope-circle-check"></i><span>ضع بريدك الصحيح ثم اضغط إرسال.</span></li>
-          <li><i class="fa-solid fa-link"></i><span>افتح الرابط في البريد خلال دقائق.</span></li>
-          <li><i class="fa-solid fa-user-shield"></i><span>عيّن كلمة مرور قوية واستكمل الدخول.</span></li>
-        </ul>
 
         <div class="input-group">
           <input id="resetEmail" placeholder="أدخل بريدك الإلكتروني" type="email"/>
@@ -1307,8 +1288,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
     getAuth,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
+    signInWithCustomToken,
     sendEmailVerification,
     sendPasswordResetEmail,
     signOut,
@@ -1320,10 +1300,10 @@
   import {
     getFirestore,
     doc,
-    setDoc,
-    serverTimestamp,
     getDoc            // نحتاجه للتحقق من وجود الحقول
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  try { console.info("manual auth module init"); } catch (_) {}
 
   /* 🔧 إعداد مشروعك */
   const firebaseConfig = {
@@ -1340,22 +1320,6 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  /***** أدوات توليد المفاتيح *****/
-  const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const SYMBOLS = "!@#$%&";
-
-  const rand = (alphabet, len) => {
-    const arr = new Uint32Array(len);
-    crypto.getRandomValues(arr);
-    let out = "";
-    for (let i = 0; i < len; i++) out += alphabet[arr[i] % alphabet.length];
-    return out;
-  };
-
-  const generateAuthKey    = (len = 20) => rand(ALPHA, len);
-  const generateExtraKey   = (len = 40) => rand(ALPHA + SYMBOLS, len);
-  const generateSessionKey = (len = 64) => rand(ALPHA + SYMBOLS, len);
-  const generateWebUID     = () => Math.floor(100000000000000 + Math.random() * 900000000000000).toString();
   const DEVICE_ID_STORAGE_KEY = "session:device:id";
   function ensureDeviceId(){
     return "";
@@ -1405,6 +1369,18 @@
     hasLower: document.getElementById("hasLower"),
     hasSymbol: document.getElementById("hasSymbol")
   };
+  if (loginForm) {
+    loginForm.addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      if (submitLogin) submitLogin.click();
+    });
+  }
+  if (registerForm) {
+    registerForm.addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      if (typeof window.register === "function") window.register();
+    });
+  }
 
   const showResetBtn = document.getElementById("showReset");
   if (showResetBtn) showResetBtn.onclick = () => switchForm("reset");
@@ -1414,22 +1390,6 @@
   if (registerPasswordInput) {
     registerPasswordInput.addEventListener('input', validatePassword);
     validatePassword();
-  }
-
-  window.switchForm = function (form) {
-    loginForm.classList.add("hidden");
-    resetForm.classList.add("hidden");
-    registerForm.classList.add("hidden");
-    if (form === "login") loginForm.classList.remove("hidden");
-    else if (form === "reset") {
-      resetForm.classList.remove("hidden");
-      // Prefill email if available
-      const fallbackEmail = (emailInput?.value || '').trim() || (lastLoginEmail || '').trim();
-      if (resetEmailInput && fallbackEmail) resetEmailInput.value = fallbackEmail;
-      if (resetStatusEl) { resetStatusEl.textContent = "جاهز للإرسال"; resetStatusEl.className = "pill muted"; }
-      if (resetMessageEl) { resetMessageEl.textContent = ""; }
-    }
-    else if (form === "register") registerForm.classList.remove("hidden");
   }
 
   /* ===== أدوات فحص الاتصال وإدارة الأزرار ===== */
@@ -1463,13 +1423,32 @@
     }
   }
 
+  window.switchForm = function (form) {
+    loginForm.classList.add("hidden");
+    resetForm.classList.add("hidden");
+    registerForm.classList.add("hidden");
+    if (form === "login") loginForm.classList.remove("hidden");
+    else if (form === "reset") {
+      resetForm.classList.remove("hidden");
+      // Prefill email if available
+      const fallbackEmail = (emailInput?.value || '').trim() || (lastLoginEmail || '').trim();
+      if (resetEmailInput && fallbackEmail) resetEmailInput.value = fallbackEmail;
+      if (resetStatusEl) { resetStatusEl.textContent = "جاهز للإرسال"; resetStatusEl.className = "pill muted"; }
+      if (resetMessageEl) { resetMessageEl.textContent = ""; }
+    }
+    else if (form === "register") registerForm.classList.remove("hidden");
+  }
+
+
+
   async function ensureNetworkHealthy(targetEl, timeoutMs) {
     const status = await pingNetwork(timeoutMs);
     if (status.ok) return true;
     if (targetEl) {
       targetEl.style.color = "var(--danger, #ef4444)";
-      targetEl.textContent = translateFirebaseError(status.code);
+      targetEl.textContent = translateFirebaseError(status.code || "network/fetch-failed");
     }
+    try { console.error("network check failed", status); } catch (_) {}
     return false;
   }
 
@@ -1499,6 +1478,115 @@
     throw lastError;
   }
 
+  /* ===== خادم المانوال للمصادقة ===== */
+  const MANUAL_ROUTER_DEFAULT = "https://z3em-manwal.laithqarqaz1.workers.dev/";
+
+  function getManualRouterBase() {
+    try {
+      const stored = localStorage.getItem("MANWAL_ROUTER_BASE");
+      if (stored) {
+        const candidate = stored.trim();
+        const normalized = /^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`;
+        let url = new URL(normalized);
+        // إن كانت الصفحة https والمخزن http، ارفع إلى https لتجنب حجب Mixed Content
+        try {
+          if (location.protocol === "https:" && url.protocol === "http:") {
+            url = new URL(url.toString().replace(/^http:/i, "https:"));
+          }
+        } catch (_) {}
+        return url.toString();
+      }
+    } catch (_) {}
+    return MANUAL_ROUTER_DEFAULT;
+  }
+
+  function buildManualAuthUrl() {
+    const base = getManualRouterBase();
+    try {
+      const url = new URL(base);
+      if (!url.searchParams.has("game")) url.searchParams.set("game", "auth");
+      return url.toString();
+    } catch (_) {
+      return MANUAL_ROUTER_DEFAULT + "?game=auth";
+    }
+  }
+
+  async function callManualAuth(action = "login", payload = {}, targetErrorEl) {
+    const manualUrl = buildManualAuthUrl();
+    if (!manualUrl || typeof manualUrl !== "string") {
+      const err = new Error("manual_url_invalid");
+      err.code = "network/url-invalid";
+      if (targetErrorEl) {
+        targetErrorEl.style.color = "var(--danger, #ef4444)";
+        targetErrorEl.textContent = "رابط الخادم غير صالح، تحقق من MANWAL_ROUTER_BASE.";
+      }
+      throw err;
+    }
+    const body = { action, ...payload };
+    try {
+      try { console.info("manualAuth ->", { action, manualUrl }); } catch (_) {}
+      const controller = (typeof AbortController !== "undefined") ? new AbortController() : null;
+      const timer = controller ? setTimeout(() => controller.abort(), 15000) : null;
+      const res = await fetch(manualUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller ? controller.signal : undefined
+      });
+      if (timer) clearTimeout(timer);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data?.success === false) {
+        const err = new Error(data?.error || "تعذر إتمام الطلب.");
+        err.code = data?.code || `auth/http-${res.status}`;
+        if (targetErrorEl) {
+          targetErrorEl.style.color = "var(--danger, #ef4444)";
+          targetErrorEl.textContent = translateFirebaseError(err.code);
+        }
+        throw err;
+      }
+      return data;
+    } catch (err) {
+      if (!err.code) err.code = "network/fetch-failed";
+      try {
+        console.error("manual auth call failed", { action, manualUrl, err });
+      } catch (_) {}
+      if (targetErrorEl) {
+        targetErrorEl.style.color = "var(--danger, #ef4444)";
+        targetErrorEl.textContent = "تعذر الاتصال بالخادم، تحقق من عنوان المانوال أو الشبكة.";
+        if (manualUrl) {
+          targetErrorEl.textContent += ` (${manualUrl})`;
+        }
+      }
+      // اربط رسالة مرئية على الشاشة إن لم يوجد target
+      try {
+        const fallbackEl = document.getElementById("loginError") || document.getElementById("registerError");
+        if (fallbackEl && fallbackEl !== targetErrorEl) {
+          fallbackEl.style.color = "var(--danger, #ef4444)";
+          fallbackEl.textContent = "تعذر الاتصال بالخادم، تحقق من عنوان المانوال أو الشبكة.";
+          if (manualUrl) {
+            fallbackEl.textContent += ` (${manualUrl})`;
+          }
+        }
+      } catch (_) {}
+      // أعد رمي الخطأ ليتم التقاطه
+      throw err;
+    }
+  }
+
+  // مسار تشخيص سريع لعرض الرابط الحالي في الأعلى
+  (function exposeManualUrl(){
+    try {
+      const el = document.getElementById("loginError");
+      if (el && !el.dataset.manualInit) {
+        el.dataset.manualInit = "1";
+        const url = buildManualAuthUrl();
+        if (url) {
+          try { console.info("manualAuth URL:", url); } catch (_) {}
+        }
+      }
+    } catch (_) {}
+  })();
+
   /* ===== تسجيل الدخول بواسطة Google ===== */
   const googleProvider = new GoogleAuthProvider();
   try { googleProvider.setCustomParameters({ prompt: 'select_account' }); } catch (_) {}
@@ -1520,6 +1608,25 @@
     user: null,
     profile: { username: '', phone: '' }
   };
+
+  async function syncGoogleSession(targetErrorEl) {
+    const user = googleFlowState.user;
+    if (!user) throw new Error("google_user_missing");
+    const idToken = await getIdToken(user, true);
+    const payload = {
+      idToken,
+      provider: 'google',
+      username: googleFlowState.profile.username || '',
+      phone: googleFlowState.profile.phone || '',
+      displayName: user.displayName || '',
+      photoURL: user.photoURL || ''
+    };
+    const result = await callManualAuth("sync", payload, targetErrorEl);
+    const sessionKey = result.sessionKey || "";
+    const ttlSeconds = Number(result.ttlSeconds) || 0;
+    if (sessionKey) saveSessionLocal({ uid: result.uid, sessionKey, ts: Date.now(), ttlSeconds });
+    return { result, idToken };
+  }
 
   let googleBusy = false;
 
@@ -1574,26 +1681,11 @@
       const user = result.user;
       googleFlowState.user = user;
 
-      const userRef = doc(db, 'users', user.uid);
-      const existingSnap = await getDoc(userRef);
-      const existingData = existingSnap.exists() ? existingSnap.data() || {} : {};
-
-      const basePatch = {
-        useruid: user.uid,
-        email: user.email || existingData.email || '',
-        displayName: user.displayName || existingData.displayName || '',
-        photoURL: user.photoURL || existingData.photoURL || '',
-        provider: 'google',
-        lastProvider: 'google',
-        lastLoginAt: serverTimestamp()
-      };
-      if (typeof existingData.balance === 'undefined') basePatch.balance = 0;
-      if (!existingData.level) basePatch.level = 'زبون';
-      if (!existingData.webuid) basePatch.webuid = generateWebUID();
-      if (!existingData.authkey) basePatch.authkey = generateAuthKey();
-
-      await setDoc(userRef, basePatch, { merge: true });
-      await createSecretsIfNeeded(user.uid);
+      let existingData = {};
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        existingData = snap.exists() ? (snap.data() || {}) : {};
+      } catch (_) {}
 
       googleFlowState.profile = {
         username: existingData.username || '',
@@ -1637,8 +1729,13 @@
     try {
       const allowed = await assertNotBanned(googleFlowState.user.uid, loginError);
       if (!allowed) { resetGoogleFlow(); return; }
-      const sessionKey = await rotateSessionKey(googleFlowState.user.uid);
-      const idToken = await getIdToken(googleFlowState.user);
+      const { result, idToken } = await syncGoogleSession(loginError);
+      const sessionKey = result.sessionKey || "";
+      const isVerified = result.emailVerified === true || googleFlowState.user.emailVerified;
+      if (!isVerified) {
+        document.getElementById('unverifiedEmailModal').classList.remove('hidden');
+        return;
+      }
       savePostLoginPayload({
         uid: googleFlowState.user.uid,
         email: googleFlowState.user.email || '',
@@ -1660,20 +1757,13 @@
       return;
     }
     if (googleUsernameError) googleUsernameError.textContent = '';
-    try {
-      await setDoc(doc(db, 'users', googleFlowState.user.uid), { username: value }, { merge: true });
-      googleFlowState.profile.username = value;
-      closeModal(GOOGLE_USERNAME_MODAL);
-      if (!googleFlowState.profile.phone) {
-        if (phoneSaveError) phoneSaveError.textContent = '';
-        showModal(GOOGLE_PHONE_MODAL);
-      } else {
-        await finalizeGoogleLogin();
-      }
-    } catch (error) {
-      if (googleUsernameError) {
-        googleUsernameError.textContent = translateFirebaseError(error?.code) || "تعذر حفظ اسم المستخدم.";
-      }
+    googleFlowState.profile.username = value;
+    closeModal(GOOGLE_USERNAME_MODAL);
+    if (!googleFlowState.profile.phone) {
+      if (phoneSaveError) phoneSaveError.textContent = '';
+      showModal(GOOGLE_PHONE_MODAL);
+    } else {
+      await finalizeGoogleLogin();
     }
   }
 
@@ -1693,43 +1783,8 @@
       return;
     }
     if (phoneSaveError) phoneSaveError.textContent = '';
-    try {
-      await setDoc(doc(db, 'users', googleFlowState.user.uid), { phone: phoneValue }, { merge: true });
-      googleFlowState.profile.phone = phoneValue;
-      await finalizeGoogleLogin();
-    } catch (error) {
-      if (phoneSaveError) {
-        phoneSaveError.textContent = translateFirebaseError(error?.code) || "تعذر حفظ رقم الهاتف.";
-      }
-    }
-  }
-
-  /***** إنشاء مفاتيح المستخدم بدون قراءات *****/
-  // أسرار دائمة: إنشاء فقط
-  async function createSecretsIfNeeded(uid) {
-    try {
-      const extraKey = generateExtraKey();
-      await setDoc(
-        doc(db, "users", uid, "keys", "secrets"),
-        { extraKey, createdAt: serverTimestamp(), version: 1 },
-        { merge: false }
-      );
-    } catch (e) {
-      // تجاهل أخطاء الوجود المسبق/منع التحديث
-    }
-  }
-
-  // جلسة متغيرة لكل دخول: كتابة في Firestore + حفظ في localStorage
-  async function rotateSessionKey(uid, ttlSeconds = 0) {
-    const sessionKey = generateSessionKey();
-    await setDoc(
-      doc(db, "users", uid, "keys", "session"),
-      { sessionKey, createdAt: serverTimestamp(), ttlSeconds },
-      { merge: true }
-    );
-    const payload = { uid, sessionKey, ts: Date.now(), ttlSeconds };
-    saveSessionLocal(payload);
-    return sessionKey;
+    googleFlowState.profile.phone = phoneValue;
+    await finalizeGoogleLogin();
   }
 
   // منع الحسابات المحظورة من إكمال الدخول قبل الانتقال للرئيسية
@@ -1757,32 +1812,41 @@
   }
 
   /***** الدخول بالبريد/كلمة مرور *****/
-  if (submitLogin) {
-    submitLogin.addEventListener('click', async () => {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-      loginError.textContent = "";
+  async function performManualLogin(event) {
+    if (event && typeof event.preventDefault === "function") event.preventDefault();
+    if (!submitLogin) return;
+    try { console.info("performManualLogin start"); } catch (_) {}
+    try {
+      const url = buildManualAuthUrl();
+      console.info("manualAuth URL (login):", url);
+    } catch (_) {}
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    loginError.textContent = "";
 
-      if (!email || !password) {
-        loginError.textContent = "يرجى إدخال البريد الإلكتروني وكلمة المرور.";
-        return;
-      }
+    if (!email || !password) {
+      loginError.textContent = "يرجى إدخال البريد الإلكتروني وكلمة المرور.";
+      return;
+    }
 
-      lastLoginEmail = email;
-      lastLoginPassword = password;
-      setButtonBusy(submitLogin, true);
+    lastLoginEmail = email;
+    lastLoginPassword = password;
+    setButtonBusy(submitLogin, true);
 
-      try {
-        const networkReady = await ensureNetworkHealthy(loginError);
-        if (!networkReady) return;
+    try {
+      const networkReady = await ensureNetworkHealthy(loginError);
+      if (!networkReady) return;
 
-      const userCred = await withNetworkRetry(
-        () => signInWithEmailAndPassword(auth, email, password),
-        1
-      );
-      const user = userCred.user;
+      const loginResult = await callManualAuth("login", { email, password }, loginError);
+      const sessionKey = loginResult.sessionKey || "";
+      const ttlSeconds = Number(loginResult.ttlSeconds) || 0;
+      if (sessionKey) saveSessionLocal({ uid: loginResult.uid, sessionKey, ts: Date.now(), ttlSeconds });
 
-      if (!user.emailVerified) {
+      await signInWithCustomToken(auth, loginResult.customToken);
+      const user = auth.currentUser;
+      const isVerified = loginResult.emailVerified === true || (user && user.emailVerified);
+
+      if (!isVerified) {
         document.getElementById('unverifiedEmailModal').classList.remove('hidden');
         return;
       }
@@ -1790,52 +1854,46 @@
       const allowed = await assertNotBanned(user.uid, loginError);
       if (!allowed) return;
 
-      const sessionKey = await rotateSessionKey(user.uid);
-      const idToken = await getIdToken(user);
+      const idToken = await getIdToken(user, true);
       savePostLoginPayload({
         uid: user.uid,
         email: user.email,
-          token: idToken,
-          sessionKey
-        });
-        window.location.href = "index.html";
-      } catch (err) {
-        console.log("خطأ Firebase:", err.code, err.message);
-        loginError.textContent = translateFirebaseError(err.code);
-      } finally {
-        setButtonBusy(submitLogin, false);
-      }
-    });
+        token: idToken,
+        sessionKey
+      });
+      window.location.href = "index.html";
+    } catch (err) {
+      try { console.error("performManualLogin error", err); } catch (_) {}
+      loginError.textContent = translateFirebaseError(err.code || err.message || "");
+    } finally {
+      setButtonBusy(submitLogin, false);
+    }
   }
+
+  if (submitLogin) {
+    try { submitLogin.type = "button"; } catch (_) {}
+    submitLogin.addEventListener('click', performManualLogin);
+  }
+  try { window.__manualLogin = performManualLogin; } catch (_) {}
 
   // تعديل دالة تأكيد الدخول مع بريد غير موثق
   window.confirmUnverifiedLogin = async function() {
-    let user = auth.currentUser;
-    // إذا لم يكن هناك مستخدم حالي، أعد محاولة تسجيل الدخول بنفس البيانات
-    if (!user && lastLoginEmail && lastLoginPassword) {
-      try {
-        const networkReady = await ensureNetworkHealthy(loginError);
-        if (!networkReady) return;
-        const userCred = await withNetworkRetry(
-          () => signInWithEmailAndPassword(auth, lastLoginEmail, lastLoginPassword),
-          1
-        );
-        user = userCred.user;
-      } catch (err) {
-        loginError.textContent = translateFirebaseError(err.code);
-        return;
-      }
+    const user = auth.currentUser;
+    if (!user) {
+      loginError.textContent = "يرجى تسجيل الدخول أولًا لإكمال العملية.";
+      return;
     }
-    // إذا بقي المستخدم غير موجود، لا تكمل
-    if (!user) return;
 
-    // هنا يجب التأكد أن الجلسة فعالة قبل التوجيه
     try {
-      // لا تقم بأي signOut هنا
       const allowed = await assertNotBanned(user.uid, loginError);
       if (!allowed) return;
-      const sessionKey = await rotateSessionKey(user.uid);
-      const idToken = await getIdToken(user);
+      const sessionInfo = getSessionLocal() || {};
+      const sessionKey = sessionInfo.sessionKey || "";
+      if (!sessionKey) {
+        loginError.textContent = "رمز الجلسة غير متوفر. أعد تسجيل الدخول.";
+        return;
+      }
+      const idToken = await getIdToken(user, true);
 
       savePostLoginPayload({
         uid: user.uid,
@@ -1888,23 +1946,7 @@
       verificationMessage.textContent = "";
     }
 
-    let user = auth.currentUser;
-    if (!user && lastLoginEmail && lastLoginPassword) {
-      try {
-        const networkReady = await ensureNetworkHealthy(verificationMessage);
-        if (!networkReady) return;
-        const cred = await withNetworkRetry(
-          () => signInWithEmailAndPassword(auth, lastLoginEmail, lastLoginPassword),
-          1
-        );
-        user = cred.user;
-      } catch (error) {
-        if (verificationMessage) {
-          verificationMessage.textContent = translateFirebaseError(error?.code);
-        }
-        return;
-      }
-    }
+    const user = auth.currentUser;
 
     if (!user) {
       if (verificationMessage) {
@@ -1959,36 +2001,60 @@
     }
 
     const phone   = window.iti?.getNumber?.() || "";
-    const webuid  = generateWebUID();
-    const authkey = generateAuthKey();
 
     try {
       const networkReady = await ensureNetworkHealthy(msg);
       if (!networkReady) return;
 
-      const userCred = await withNetworkRetry(
-        () => createUserWithEmailAndPassword(auth, email, password),
-        1
-      );
-      const uid = userCred.user.uid;
+      const registerResult = await callManualAuth("register", { username, email, password, phone }, msg);
+      const sessionKey = registerResult.sessionKey || "";
+      const ttlSeconds = Number(registerResult.ttlSeconds) || 0;
+      if (sessionKey && registerResult.uid) {
+        saveSessionLocal({ uid: registerResult.uid, sessionKey, ts: Date.now(), ttlSeconds });
+      }
 
-      await setDoc(doc(db, "users", uid), {
-        balance: 0,
-        username,
-        phone,
-        useruid: uid,
-        webuid,
-        authkey,
-        level: 'زبون'
-      }, { merge: true });
+      // حاول الدخول مباشرة باستخدام customToken القادم من الخادم
+      let user = null;
+      if (registerResult.customToken) {
+        try {
+          await signInWithCustomToken(auth, registerResult.customToken);
+          user = auth.currentUser;
+        } catch (_) {
+          user = null;
+        }
+      }
 
-      await createSecretsIfNeeded(uid);
-      await withNetworkRetry(() => sendEmailVerification(userCred.user), 1);
+      if (user) {
+        const allowed = await assertNotBanned(user.uid, msg);
+        if (!allowed) {
+          await signOut(auth).catch(() => {});
+          return;
+        }
+        const isVerified = registerResult.emailVerified === true || user.emailVerified;
+        if (!isVerified && registerResult.verificationSent) {
+          msg.style.color = "var(--success, #22c55e)";
+          msg.textContent = "تم إرسال رسالة تأكيد إلى بريدك الإلكتروني.";
+          showModal("emailVerificationModal");
+          await signOut(auth).catch(() => {});
+          return;
+        }
+        const idToken = await getIdToken(user, true);
+        savePostLoginPayload({
+          uid: user.uid,
+          email: user.email,
+          token: idToken,
+          sessionKey
+        });
+        window.location.href = "index.html";
+        return;
+      }
+
+      // fallback في حال لم يتم تسجيل الدخول تلقائياً
       msg.style.color = "var(--success, #22c55e)";
-      msg.textContent = "تم إرسال رسالة تأكيد إلى بريدك الإلكتروني.";
+      msg.textContent = registerResult.verificationSent
+        ? "تم إرسال رسالة تأكيد إلى بريدك الإلكتروني."
+        : "تم إنشاء الحساب بنجاح.";
       showModal("emailVerificationModal");
-      // فقط سجل خروج بعد التسجيل وليس عند ظهور نافذة التحذير
-      await signOut(auth);
     } catch (err) {
       msg.style.color = "var(--danger, #ef4444)";
       msg.textContent = translateFirebaseError(err.code) || "تعذر إكمال العملية، حاول مرة أخرى.";
@@ -2059,16 +2125,24 @@
   const firebaseErrorMessages = {
     "auth/invalid-email": "صيغة البريد الإلكتروني غير صحيحة.",
     "auth/missing-email": "يرجى إدخال البريد الإلكتروني.",
+    "auth/missing-credentials": "يرجى إدخال البريد وكلمة المرور.",
+    "auth/missing-fields": "يرجى إدخال جميع الحقول المطلوبة.",
     "auth/user-not-found": "لا يوجد حساب مرتبط بهذا البريد.",
     "auth/wrong-password": "كلمة المرور غير صحيحة.",
     "auth/invalid-credential": "بيانات تسجيل الدخول غير صحيحة، تأكد من البريد وكلمة المرور.",
     "auth/invalid-login-credentials": "بيانات تسجيل الدخول غير صحيحة، تأكد من البريد وكلمة المرور.",
+    "auth/invalid-credentials": "بيانات تسجيل الدخول غير صحيحة، تأكد من البريد وكلمة المرور.",
+    "auth/invalid_credentials": "بيانات تسجيل الدخول غير صحيحة، تأكد من البريد وكلمة المرور.",
     "auth/too-many-requests": "تم حظر المحاولات مؤقتًا بسبب العديد من الطلبات. حاول لاحقًا.",
     "auth/email-already-in-use": "هذا البريد مستخدم بالفعل.",
     "auth/weak-password": "كلمة المرور ضعيفة، يرجى استخدام كلمة أقوى.",
     "auth/network-request-failed": "فشل الاتصال بالخادم، تحقق من الشبكة.",
     "auth/operation-not-allowed": "تم تعطيل هذا النوع من التسجيل في الوقت الحالي.",
     "auth/requires-recent-login": "يرجى تسجيل الدخول من جديد لإكمال العملية.",
+    "auth/banned": "🚫 تم حظر حسابك.",
+    "network/url-invalid": "رابط خادم المانوال غير صالح.",
+    "network/fetch-failed": "تعذر الاتصال بالخادم، تحقق من عنوان المانوال أو الشبكة.",
+    "network/blocked": "يبدو أن المتصفح يمنع الاتصال (Mixed Content/VPN). استخدم HTTPS لخادم المانوال.",
     "network/offline": "لا يوجد اتصال بالإنترنت حاليًا. فعّل البيانات أو اتصل بشبكة Wi-Fi أخرى ثم أعد المحاولة.",
     "network/timeout": "الاتصال بطيء أو غير مستقر، تعذر الوصول إلى الخادم. أعد المحاولة بعد لحظات أو غيّر الشبكة.",
     "network/ping-blocked": "يبدو أن جدار الحماية أو خدمة VPN تمنع الاتصال بخوادم زعيم. عطّل الحجب مؤقتًا ثم أعد المحاولة."
@@ -2076,15 +2150,15 @@
 
   function translateFirebaseError(code) {
     const normalized = typeof code === "string" ? code : "";
+    const key = normalized.replace(/_/g, "-");
     if (!normalized) return "حدث خطأ غير متوقع، حاول مرة أخرى.";
-    if (firebaseErrorMessages[normalized]) return firebaseErrorMessages[normalized];
-    if (normalized.includes("too-many-requests")) return firebaseErrorMessages["auth/too-many-requests"];
-    if (normalized.startsWith("auth/")) {
-      return "تعذر إتمام الطلب (" + normalized.replace("auth/", "").replace(/-/g, " ") + ").";
+    if (firebaseErrorMessages[key]) return firebaseErrorMessages[key];
+    if (key.includes("too-many-requests")) return firebaseErrorMessages["auth/too-many-requests"];
+    if (key.startsWith("auth/http-") || key.startsWith("network/")) return firebaseErrorMessages["network/fetch-failed"];
+    if (key.startsWith("auth/")) {
+      return "تعذر إتمام الطلب (" + key.replace("auth/", "").replace(/-/g, " ") + ").";
     }
-    if (normalized.startsWith("network/")) {
-      return firebaseErrorMessages["network/timeout"];
-    }
+    if (key.startsWith("network/")) return firebaseErrorMessages["network/timeout"];
     return "حدث خطأ غير متوقع، حاول مرة أخرى.";
   }
 
@@ -2166,23 +2240,6 @@
 </script>
 
 
-  <!-- App Check disabled -->
-  <script>
-    (function(){
-      try{
-        var h = (location.hostname||'');
-        var isLocal = h === 'localhost' || h === '127.0.0.1' || /^0\.0\.0\.0$/.test(h) || /^192\.168\./.test(h) || /^10\./.test(h) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(h);
-        var isSecure = (typeof window.isSecureContext === 'boolean' ? window.isSecureContext : false) || location.protocol === 'https:' || isLocal;
-        if ('serviceWorker' in navigator && isSecure) {
-          navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(){});
-          if (!navigator.serviceWorker.controller) {
-            navigator.serviceWorker.addEventListener('controllerchange', function(){ try { window.location.reload(); } catch(e){} });
-          }
-        }
-      }catch(_){}
-    })();
-  </script>
-
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // تأكد أن window.register موجود
@@ -2195,6 +2252,7 @@
     // اربط الزر بشكل صريح
     var btn = document.querySelector('#registerForm .btn-primary[onclick]');
     if (btn) {
+      try { btn.type = "button"; } catch (_) {}
       btn.onclick = function(e) {
         e.preventDefault();
         window.register();
