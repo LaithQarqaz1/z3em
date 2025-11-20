@@ -3291,34 +3291,41 @@ button#logoutBtn:hover{background:#990000}
                 action: "wallet-transfer",
                 theme: themeIsDark() ? "dark" : "light",
                 callback: function(token){
-                  state.turnstileToken = token || "";
-                  if (state.turnstileResolver) state.turnstileResolver(state.turnstileToken);
-                  state.turnstileResolver = null;
-                  state.turnstileRejecter = null;
-                },
-                "error-callback": function(){
-                  var err = createError("turnstile_failed","تعذر التحقق الأمني، جرّب مجدداً.");
-                  if (state.turnstileRejecter) state.turnstileRejecter(err);
-                  state.turnstileResolver = null;
-                  state.turnstileRejecter = null;
-                },
-                "expired-callback": function(){
-                  state.turnstileToken = "";
-                }
-              });
+              state.turnstileToken = token || "";
+              if (state.turnstileResolver) state.turnstileResolver(state.turnstileToken);
+              state.turnstileResolver = null;
+              state.turnstileRejecter = null;
+            },
+            "error-callback": function(){
+              var err = createError("turnstile_failed","تعذر التحقق الأمني، جرّب مجدداً.");
+              if (state.turnstileRejecter) state.turnstileRejecter(err);
+              state.turnstileResolver = null;
+              state.turnstileRejecter = null;
+            },
+            "expired-callback": function(){
+              state.turnstileToken = "";
+              if (state.turnstileRejecter) state.turnstileRejecter(createError("turnstile_timeout","انتهى وقت الحماية، حاول مجدداً."));
+              state.turnstileResolver = null;
+              state.turnstileRejecter = null;
             }
-            return new Promise(function(resolve, reject){
-              state.turnstileResolver = function(tok){
-                if (state.turnstileTimer) clearTimeout(state.turnstileTimer);
-                state.turnstileTimer = null;
-                state.turnstileResolver = null;
-                state.turnstileRejecter = null;
-                resolve(tok || generateGuardToken("transfer"));
-              };
-              state.turnstileRejecter = function(err){
-                if (state.turnstileTimer) clearTimeout(state.turnstileTimer);
-                state.turnstileTimer = null;
-                state.turnstileResolver = null;
+          });
+        }
+        return new Promise(function(resolve, reject){
+          state.turnstileResolver = function(tok){
+            if (state.turnstileTimer) clearTimeout(state.turnstileTimer);
+            state.turnstileTimer = null;
+            state.turnstileResolver = null;
+            state.turnstileRejecter = null;
+            if (!tok) {
+              reject(createError("turnstile_failed","تعذر الحصول على رمز الحماية."));
+              return;
+            }
+            resolve(tok);
+          };
+          state.turnstileRejecter = function(err){
+            if (state.turnstileTimer) clearTimeout(state.turnstileTimer);
+            state.turnstileTimer = null;
+            state.turnstileResolver = null;
                 state.turnstileRejecter = null;
                 reject(err || createError("turnstile_failed","فشل الحصول على رمز الحماية."));
               };
@@ -3681,18 +3688,15 @@ button#logoutBtn:hover{background:#990000}
             if (!user) { reject(createError("auth_required","سجّل الدخول أولاً.")); return; }
             var sessionKey = readSessionKey();
             if (!sessionKey) { reject(createError("session_missing","يرجى إعادة تسجيل الدخول لتجديد الجلسة.")); return; }
-            Promise.all([user.getIdToken(true), acquireTurnstileToken()]).then(function(results){
+            Promise.all([user.getIdToken(true)]).then(function(results){
               var token = results[0];
-              var turnstileToken = results[1];
-              if (!turnstileToken){
-                throw createError("turnstile_failed","فشل التحقق من الحماية، حاول مجدداً.");
-              }
+              var guardToken = generateGuardToken("transfer");
               var payload = {
                 action: "transfer",
                 targetWebuid: target,
                 amount: Number(amount),
-                guardToken: "",
-                turnstileToken: turnstileToken,
+                guardToken: guardToken,
+                turnstileToken: guardToken,
                 currentUrl: window.location.href
               };
               return fetch(buildApiUrl(), {
@@ -3701,8 +3705,7 @@ button#logoutBtn:hover{background:#990000}
                   "Content-Type": "application/json",
                   "Authorization": "Bearer " + token,
                   "X-SessionKey": sessionKey,
-                  "X-Guard-Token": "",
-                  "CF-Turnstile-Token": turnstileToken
+                  "X-Guard-Token": guardToken
                 },
                 body: JSON.stringify(payload)
               });
