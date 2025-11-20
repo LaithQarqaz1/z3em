@@ -1031,6 +1031,7 @@ header.appendChild(logoLink);
 
 // Balance helpers
 let unsubscribeBalance = null;
+let bannedSessionHandled = false;
 const BAL_KEY = (uid) => `balance:cache:${uid}`;
 const LAST_UID_KEY = 'auth:lastUid';
 const LAST_LOGGED_KEY = 'auth:lastLoggedIn';
@@ -1096,6 +1097,66 @@ function seedHeaderFromCache(){
   } catch {}
 }
 seedHeaderFromCache();
+
+// Gracefully block banned accounts across the site
+function showBannedOverlay(){
+  try {
+    let overlay = document.getElementById('ban-block-overlay');
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.id = 'ban-block-overlay';
+    overlay.setAttribute('role','alertdialog');
+    overlay.setAttribute('aria-label','تم حظر الحساب');
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.padding = '18px';
+    overlay.style.background = 'rgba(5,8,20,0.68)';
+    overlay.style.backdropFilter = 'blur(6px)';
+    overlay.style.zIndex = '15000';
+    const card = document.createElement('div');
+    card.style.maxWidth = '480px';
+    card.style.width = '100%';
+    card.style.background = 'linear-gradient(145deg,#0f172a,#111827)';
+    card.style.color = '#f8fafc';
+    card.style.borderRadius = '18px';
+    card.style.padding = '22px';
+    card.style.boxShadow = '0 24px 70px rgba(0,0,0,0.45)';
+    card.style.border = '1px solid rgba(148,163,184,0.25)';
+    card.innerHTML = `
+      <h2 style="margin:0 0 12px;font-size:1.2rem;">🚫 الحساب محظور</h2>
+      <p style="margin:0 0 18px;line-height:1.7;font-size:1rem;">تم حظر حسابك ولا يمكن متابعة الاستخدام. يُرجى التواصل مع الدعم إذا كنت تعتقد أن هذا خطأ.</p>
+      <button id="banLogoutBtn" type="button" style="width:100%;padding:12px 14px;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800;font-size:1rem;cursor:pointer;">تسجيل الخروج</button>
+    `;
+    overlay.appendChild(card);
+    (document.body || document.documentElement).appendChild(overlay);
+    return overlay;
+  } catch { return null; }
+}
+function handleBannedAccount(){
+  if (bannedSessionHandled) return;
+  bannedSessionHandled = true;
+  clearSessionDocWatcher();
+  if (typeof unsubscribeBalance === 'function') { try { unsubscribeBalance(); } catch {} unsubscribeBalance = null; }
+  const overlay = showBannedOverlay();
+  const logoutBtn = overlay ? overlay.querySelector('#banLogoutBtn') : null;
+  let logoutTriggered = false;
+  const forceLogout = () => {
+    if (logoutTriggered) return;
+    logoutTriggered = true;
+    try { localStorage.removeItem('sessionKeyInfo'); } catch {}
+    try { firebase.auth().signOut().catch(()=>{}); } catch {}
+    try {
+      const path = (location.pathname || '').toLowerCase();
+      if (path.includes('login')) { window.location.reload(); }
+      else { window.location.href = 'login.html?banned=1'; }
+    } catch { window.location.href = 'login.html?banned=1'; }
+  };
+  if (logoutBtn) logoutBtn.addEventListener('click', forceLogout);
+  setTimeout(forceLogout, 800);
+}
 
 // Update header balance text when currency changes
 try {
@@ -1288,6 +1349,7 @@ try {
     firebase.auth().onAuthStateChanged(user => {
     clearSessionDocWatcher();
     sessionConflictHandled = false;
+    bannedSessionHandled = false;
     if (typeof unsubscribeBalance === 'function') { try { unsubscribeBalance(); } catch (err) { console.warn('unsubscribeBalance error:', err); } unsubscribeBalance = null; }
     const loginBtn = document.getElementById('loginSidebarBtn');
     const depositBtn = document.getElementById('depositBtn');
@@ -1310,7 +1372,9 @@ try {
       const docRef = firebase.firestore().collection('users').doc(user.uid);
       unsubscribeBalance = docRef.onSnapshot(snap => {
         if (snap.exists) {
-          const raw = snap.data().balance ?? 0; const num = Number(raw); const val = Number.isFinite(num) ? num : 0;
+          const data = snap.data() || {};
+          if (data.isBanned === true) { handleBannedAccount(); return; }
+          const raw = data.balance ?? 0; const num = Number(raw); const val = Number.isFinite(num) ? num : 0;
           try { window.__BAL_BASE__ = val; } catch {}
           setHeaderBalance((typeof window.formatCurrencyFromJOD === 'function') ? window.formatCurrencyFromJOD(val) : (Number(val).toFixed(2) + ' $'));
           writeCachedBalance(user.uid, val); broadcastBalance(val);
