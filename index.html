@@ -3295,11 +3295,15 @@ button#logoutBtn:hover{background:#990000}
             }
             return new Promise(function(resolve, reject){
               state.turnstileResolver = function(tok){
+                if (state.turnstileTimer) clearTimeout(state.turnstileTimer);
+                state.turnstileTimer = null;
                 state.turnstileResolver = null;
                 state.turnstileRejecter = null;
                 resolve(tok || generateGuardToken("transfer"));
               };
               state.turnstileRejecter = function(err){
+                if (state.turnstileTimer) clearTimeout(state.turnstileTimer);
+                state.turnstileTimer = null;
                 state.turnstileResolver = null;
                 state.turnstileRejecter = null;
                 reject(err || createError("turnstile_failed","فشل الحصول على رمز الحماية."));
@@ -3311,11 +3315,11 @@ button#logoutBtn:hover{background:#990000}
               }catch(err){
                 state.turnstileRejecter(err);
               }
-              setTimeout(function(){
+              state.turnstileTimer = setTimeout(function(){
                 if (!state.turnstileToken && state.turnstileRejecter){
                   state.turnstileRejecter(createError("turnstile_timeout","انتهى وقت الحماية، حاول مجدداً."));
                 }
-              }, 10000);
+              }, 25000);
             });
           });
         }
