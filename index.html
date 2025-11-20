@@ -3768,22 +3768,15 @@ button#logoutBtn:hover{background:#990000}
             showStatus("error","القيمة تتجاوز رصيدك الحالي.");
             return;
           }
-          showStatus("info","جارٍ التحقق من المستلم...");
+          showStatus("info","جارٍ تجهيز التحويل...");
           try{
-            var recipientInfo = state.recipientInfo;
-            if (!recipientInfo || recipientInfo.webuid !== target){
-              recipientInfo = await lookupRecipient(target);
-            }
-            if (!recipientInfo){
-              showStatus("error","تعذر العثور على المستخدم تحقق من الايدي وأعد المحاولة.");
-              return;
-            }
+            var recipientInfo = (state.recipientInfo && state.recipientInfo.webuid === target) ? state.recipientInfo : null;
             var receiverLabel = recipientInfo && recipientInfo.username
               ? recipientInfo.username + " (" + (recipientInfo.webuid || target) + ")"
               : target;
             var approved = await showConfirmModal({
-              receiver: recipientInfo.username || "مستخدم",
-              webuid: recipientInfo.webuid || target,
+              receiver: (recipientInfo && recipientInfo.username) ? recipientInfo.username : "مستخدم",
+              webuid: (recipientInfo && recipientInfo.webuid) ? recipientInfo.webuid : target,
               amount: amount
             });
             if (!approved){
