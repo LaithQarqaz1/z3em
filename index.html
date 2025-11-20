@@ -150,7 +150,7 @@
     :root { color-scheme: light; }
     html[data-theme="dark"]  { background: #05050b; color:#f0f1ff; }
     html[data-theme="light"] { background: #f8f9fa; color:#1b1d3b; }
-    html, body { margin:0; padding:0; }
+    html, body { margin:0; padding:0; overflow-x:hidden; }
     body { background: inherit; color: inherit; }
   </style>
   
@@ -624,138 +624,256 @@
     body.dark-mode .wallet-page .txn-footer i{color:#a5b4fc;}
     body.dark-mode .wallet-page .txn-proof a{color:#c4b5fd;}
     body.dark-mode .wallet-page .empty{background:#121c33;border-color:#1f2a44;color:#d1d9f5;}
-    .transfer-page{padding:0 16px 70px;}
+    .transfer-page{
+      --t-bg:#060917;
+      --t-card:#0d1025;
+      --t-panel:#0f1634;
+      --t-border:rgba(124,131,255,.26);
+      --t-glow:rgba(99,102,241,.45);
+      --t-text:#f7f8ff;
+      --t-muted:rgba(226,232,240,.8);
+      --t-accent:#6dd3ff;
+      --t-primary:#8b5cf6;
+      --t-success:#34d399;
+      --t-danger:#f87171;
+      padding:0 18px 86px;
+      background:radial-gradient(circle at 12% -10%, rgba(109,211,255,.12), transparent 28%), radial-gradient(circle at 88% -8%, rgba(139,92,246,.14), transparent 32%);
+    }
     .transfer-page .transfer-spacer{height:72px;}
     @media(max-width:720px){.transfer-page .transfer-spacer{height:54px;}}
     .transfer-page main{
-      max-width:760px;
+      max-width:940px;
+      width:100%;
       margin:32px auto;
-      background:linear-gradient(135deg,#0a1024,#151f44 65%,#1d2b58);
+      background:linear-gradient(150deg,#0a0f25 0%,#0d1432 40%,#0b1029 100%);
       border-radius:32px;
-      border:1px solid rgba(99,102,241,.28);
-      padding:36px;
-      box-shadow:0 38px 80px rgba(5,8,20,.65);
-      color:#f5f6ff;
+      border:1px solid var(--t-border);
+      padding:40px 42px 46px;
+      box-shadow:0 36px 80px rgba(0,0,0,.62), 0 0 0 1px rgba(255,255,255,.02);
+      color:var(--t-text);
       position:relative;
-      overflow:hidden;
+      overflow:visible;
+      isolation:isolate;
     }
+    .transfer-page main::before,
     .transfer-page main::after{
       content:'';
       position:absolute;
-      inset:-80px auto auto 50%;
-      width:420px;
-      height:420px;
-      background:radial-gradient(circle,rgba(99,102,241,.18),transparent 60%);
-      transform:translateX(-50%);
-      pointer-events:none;
+      inset:auto;
+      width:320px;
+      height:320px;
+      border-radius:50%;
+      filter:blur(60px);
+      opacity:.6;
       z-index:0;
+      pointer-events:none;
     }
+    .transfer-page main::before{right:-120px;top:-140px;background:radial-gradient(circle,rgba(109,211,255,.32),transparent 60%);}
+    .transfer-page main::after{left:-140px;bottom:-180px;background:radial-gradient(circle,rgba(139,92,246,.26),transparent 60%);}
     .transfer-page main > *{position:relative;z-index:1;}
-    @media(max-width:720px){.transfer-page main{margin:22px 12px;padding:22px;}}
+    @media(max-width:720px){
+      .transfer-page main{
+        margin:22px 8px;
+        padding:22px;
+        border-radius:32px;
+        max-width:100%;
+        width:100%;
+        background:linear-gradient(150deg,#0a0f25 0%,#0d1432 40%,#0b1029 100%);
+      }
+    }
     html[data-theme="light"] .transfer-page main,
     body.light-mode .transfer-page main{
-      background:#ffffff;
+      background:#f5f7ff;
       border-color:rgba(148,163,184,.28);
       color:#0f172a;
-      box-shadow:0 28px 65px rgba(15,23,42,.14);
+      box-shadow:0 28px 70px rgba(15,23,42,.12);
     }
-    html[data-theme="light"] .transfer-page main::after{background:radial-gradient(circle,rgba(99,102,241,.12),transparent 65%);}
+    html[data-theme="light"] .transfer-page{--t-text:#0f172a;--t-muted:#475569;--t-card:#f8fafc;--t-panel:#eef2ff;--t-border:rgba(148,163,184,.4);}
     .transfer-page h2{
-      margin:0 0 8px;
-      font-size:1.75rem;
+      margin:0 0 6px;
+      font-size:1.95rem;
       display:flex;
       align-items:center;
       gap:10px;
       color:inherit;
+      letter-spacing:.01em;
+    }
+    .transfer-page .transfer-subtitle{
+      margin:0 0 16px;
+      color:var(--t-muted);
+      font-weight:600;
+      letter-spacing:.01em;
     }
     .transfer-page .transfer-headline{
       display:flex;
       align-items:center;
       gap:12px;
-      margin-bottom:20px;
+      margin-bottom:18px;
       flex-wrap:wrap;
     }
     .transfer-page .transfer-badge{
       display:inline-flex;
       align-items:center;
-      gap:6px;
-      padding:6px 14px;
-      border-radius:999px;
+      gap:8px;
+      padding:10px 16px;
+      border-radius:18px;
       font-weight:800;
-      font-size:.92rem;
-      background:rgba(34,197,94,.18);
-      color:#86efac;
+      font-size:.94rem;
+      background:rgba(52,211,153,.14);
+      color:var(--t-success);
+      box-shadow:0 12px 28px rgba(52,211,153,.16);
+      border:1px solid rgba(52,211,153,.22);
     }
-    html[data-theme="light"] .transfer-page .transfer-badge{background:rgba(34,197,94,.16);color:#15803d;}
+    .transfer-page .transfer-badge.soft{
+      background:rgba(139,92,246,.18);
+      color:#d6ccff;
+      border-color:rgba(139,92,246,.28);
+      box-shadow:0 10px 24px rgba(139,92,246,.18);
+    }
     .transfer-page .transfer-hint{
       margin:0;
       font-size:1rem;
-      color:rgba(255,255,255,.82);
+      color:var(--t-muted);
       line-height:1.7;
       flex:1;
     }
-    html[data-theme="light"] .transfer-page .transfer-hint{color:#475569;}
     .transfer-page .transfer-meta{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-      gap:14px;
-      margin-bottom:20px;
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+      gap:18px;
+      margin:14px 0 18px;
     }
-    .transfer-page .transfer-meta div{
-      background:rgba(15,23,42,.45);
-      border:1px solid rgba(99,102,241,.32);
-      border-radius:16px;
-      padding:16px 18px;
+    .transfer-page .transfer-meta .card{
       position:relative;
       overflow:hidden;
-    }
-    .transfer-page .transfer-meta div::after{
-      content:'';
-      position:absolute;
-      inset:0;
-      background:linear-gradient(120deg,transparent,rgba(255,255,255,.08));
-      opacity:0;
-      transition:opacity .3s ease;
-    }
-    .transfer-page .transfer-meta div:hover::after{opacity:1;}
-    html[data-theme="light"] .transfer-page .transfer-meta div{
-      background:#f8fafc;
-      border-color:rgba(148,163,184,.6);
-    }
-    .transfer-page .transfer-meta .transfer-label{
-      display:block;
-      font-size:.9rem;
-      color:rgba(255,255,255,.7);
-      margin-bottom:6px;
-    }
-    html[data-theme="light"] .transfer-page .transfer-meta .transfer-label{color:#64748b;}
-    .transfer-page .transfer-meta strong{
-      font-size:1.2rem;
-      font-weight:800;
-      color:#fefefe;
-    }
-    html[data-theme="light"] .transfer-page .transfer-meta strong{color:#0f172a;}
-    .transfer-guidelines{
-      list-style:none;
-      margin:0 0 26px;
-      padding:0;
+      border-radius:22px;
+      padding:18px 16px 20px;
+      background:var(--t-panel);
+      border:1px solid rgba(109,211,255,.2);
+      box-shadow:0 18px 40px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.06);
       display:flex;
       flex-direction:column;
+      gap:12px;
+      transition:transform .2s ease, box-shadow .2s ease;
+      min-height:118px;
+    }
+    .transfer-page .transfer-meta .card:hover{transform:translateY(-6px);box-shadow:0 24px 52px rgba(0,0,0,.55);}
+    .transfer-page .transfer-meta .card .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 16px;
+      border-radius:14px;
+      border:1px solid rgba(109,211,255,.2);
+      background:rgba(255,255,255,.03);
+      backdrop-filter:blur(4px);
+    }
+    .transfer-page .transfer-meta .card .title{
+      font-size:1rem;
+      color:var(--t-muted);
+      font-weight:800;
+      letter-spacing:.04em;
+    }
+    .transfer-page .transfer-meta .card .value{
+      font-size:1.42rem;
+      font-weight:900;
+      color:var(--t-text);
+      text-align:center;
+      letter-spacing:.025em;
+      padding:12px 12px 8px;
+    }
+    .transfer-page .transfer-meta .card .code{font-family:monospace;letter-spacing:.04em;}
+    .transfer-page .copy-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:8px 12px;
+      border-radius:12px;
+      background:rgba(109,211,255,.14);
+      color:var(--t-text);
+      border:1px solid rgba(109,211,255,.35);
+      font-weight:800;
+      font-size:.85rem;
+      cursor:pointer;
+      transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+    }
+    .transfer-page .copy-chip:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(109,211,255,.32);}
+    .transfer-page .copy-chip:active{transform:translateY(0);}
+    .transfer-recipient{
+      display:flex;
+      align-items:flex-start;
+      gap:14px;
+      background:var(--t-panel);
+      border:1px solid rgba(109,211,255,.32);
+      border-radius:20px;
+      padding:14px 16px;
+      margin:14px 0 10px;
+      box-shadow:0 22px 45px rgba(4,7,18,.58);
+    }
+    html[data-theme="light"] .transfer-recipient{background:#eef2ff;border-color:rgba(109,123,255,.32);box-shadow:0 18px 40px rgba(15,23,42,.08);}
+    .transfer-recipient .recipient-badge{
+      background:rgba(52,211,153,.18);
+      color:var(--t-success);
+      padding:6px 10px;
+      border-radius:10px;
+      font-weight:800;
+      font-size:.85rem;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      white-space:nowrap;
+    }
+    .transfer-recipient .recipient-body{flex:1;min-width:0;}
+    .transfer-recipient .recipient-name{
+      margin:0 0 6px;
+      font-weight:800;
+      font-size:1.05rem;
+      color:var(--t-text);
+    }
+    .transfer-recipient .recipient-hint{
+      margin:0;
+      font-weight:600;
+      color:var(--t-muted);
+    }
+    .transfer-recipient[data-state="loading"] .recipient-name{color:#cbd5f5;}
+    .transfer-recipient[data-state="error"]{border-color:rgba(248,113,113,.45);background:rgba(127,29,29,.28);}
+    html[data-theme="light"] .transfer-recipient[data-state="error"]{background:#fef2f2;border-color:rgba(248,113,113,.55);}
+    .transfer-recipient .recipient-refresh{
+      border:none;
+      background:rgba(109,211,255,.16);
+      color:var(--t-text);
+      border-radius:12px;
+      padding:10px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 8px 22px rgba(5,8,20,.4);
+    }
+    .transfer-recipient .recipient-refresh:disabled{opacity:.6;cursor:not-allowed;}
+    .transfer-guidelines{
+      list-style:none;
+      margin:6px 0 22px;
+      padding:0;
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
       gap:12px;
     }
     .transfer-guidelines li{
       display:flex;
       gap:12px;
       align-items:flex-start;
-      background:rgba(15,23,42,.35);
-      border:1px solid rgba(99,102,241,.22);
+      background:var(--t-panel);
+      border:1px solid var(--t-border);
       border-radius:18px;
       padding:14px 18px;
       font-weight:600;
-      color:rgba(255,255,255,.85);
+      color:var(--t-text);
+      box-shadow:0 14px 28px rgba(5,8,20,.5);
     }
     .transfer-guidelines i{
-      color:#8b5cf6;
+      color:var(--t-primary);
       font-size:1.1rem;
       margin-top:4px;
     }
@@ -763,45 +881,46 @@
       background:#f8fafc;
       border-color:rgba(148,163,184,.4);
       color:#1f2937;
+      box-shadow:0 12px 22px rgba(15,23,42,.08);
     }
     .transfer-form{display:flex;flex-direction:column;gap:22px;}
     .transfer-field{
       display:flex;
       flex-direction:column;
-      gap:12px;
-      padding:20px 22px;
-      border-radius:28px;
-      background:rgba(7,12,30,.85);
-      border:1px solid rgba(120,133,255,.2);
-      box-shadow:0 26px 45px rgba(4,7,18,.65), inset 0 1px 0 rgba(255,255,255,.05);
+      gap:10px;
+      padding:18px 20px;
+      border-radius:22px;
+      background:linear-gradient(140deg,rgba(13,18,40,.9),rgba(13,18,40,.7));
+      border:1px solid var(--t-border);
+      box-shadow:0 26px 45px rgba(4,7,18,.65), inset 0 1px 0 rgba(255,255,255,.03);
       backdrop-filter:blur(18px);
     }
     html[data-theme="light"] .transfer-field{
       background:rgba(255,255,255,.96);
       border-color:rgba(148,163,184,.38);
-      box-shadow:0 26px 38px rgba(15,23,42,.14), inset 0 1px 0 rgba(255,255,255,.9);
+      box-shadow:0 26px 38px rgba(15,23,42,.12), inset 0 1px 0 rgba(255,255,255,.8);
     }
     .transfer-field span{
       font-weight:800;
-      color:inherit;
-      font-size:.9rem;
+      color:var(--t-muted);
+      font-size:.88rem;
       letter-spacing:.08em;
       text-transform:uppercase;
-      opacity:.8;
+      opacity:.9;
     }
     .transfer-field input,
     .transfer-field textarea{
       border:1.5px solid rgba(126,132,255,.32);
-      background:linear-gradient(140deg,rgba(17,25,54,.95),rgba(10,16,35,.88));
-      border-radius:20px;
-      padding:16px 22px;
-      color:#f8fafc;
-      font-size:1.08rem;
+      background:linear-gradient(140deg,rgba(17,25,54,.9),rgba(10,14,32,.9));
+      border-radius:16px;
+      padding:16px 18px;
+      color:var(--t-text);
+      font-size:1.05rem;
       font-weight:700;
       outline:none;
       transition:border-color .25s ease, box-shadow .25s ease, transform .18s ease;
       resize:none;
-      min-height:58px;
+      min-height:56px;
       width:100%;
       box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
     }
@@ -814,7 +933,7 @@
     }
     .transfer-field input:focus,
     .transfer-field textarea:focus{
-      border-color:#8b5cf6;
+      border-color:var(--t-primary);
       box-shadow:0 0 0 3px rgba(99,102,241,.32), inset 0 1px 0 rgba(255,255,255,.12);
       transform:translateY(-2px);
     }
@@ -826,50 +945,71 @@
     .transfer-helper{
       font-size:.95rem;
       font-weight:600;
-      color:rgba(255,255,255,.75);
+      color:var(--t-muted);
     }
-    html[data-theme="light"] .transfer-helper{color:#475569;}
-    .transfer-helper.warn{color:#f87171;}
+    .transfer-helper.warn{color:var(--t-danger);}
     .transfer-status{
-      min-height:32px;
+      min-height:34px;
       border-radius:14px;
       padding:12px 16px;
       font-weight:700;
       display:none;
     }
     .transfer-status.show{display:block;}
-    .transfer-status.success{background:rgba(34,197,94,.18);color:#86efac;}
+    .transfer-status.success{background:rgba(52,211,153,.18);color:var(--t-success);}
     .transfer-status.error{background:rgba(248,113,113,.18);color:#fecaca;}
     .transfer-status.info{background:rgba(99,102,241,.15);color:#c7d2fe;}
-    .transfer-actions{display:flex;justify-content:flex-end;margin-top:8px;}
+    .transfer-actions{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:12px;flex-wrap:wrap;}
+    .transfer-actions .transfer-footnote{margin:0;font-size:.9rem;color:var(--t-muted);}
     .transfer-actions button{
       border:none;
-      border-radius:18px;
+      border-radius:16px;
       padding:14px 24px;
       font-size:1rem;
       font-weight:800;
-      background:linear-gradient(135deg,#6366f1,#8b5cf6);
+      background:linear-gradient(135deg,#22d3ee,#8b5cf6);
       color:#fff;
       cursor:pointer;
       display:inline-flex;
       align-items:center;
       gap:8px;
-      transition:opacity .2s ease, transform .2s ease;
+      transition:opacity .2s ease, transform .2s ease, box-shadow .2s ease;
+      box-shadow:0 18px 38px rgba(99,102,241,.3);
     }
-    .transfer-actions button:disabled{opacity:.6;cursor:not-allowed;}
+    .transfer-actions button:disabled{opacity:.6;cursor:not-allowed;box-shadow:none;}
     .transfer-actions button:not(:disabled):hover{transform:translateY(-2px);}
     .transfer-turnstile{display:none;margin-top:10px;}
     .transfer-turnstile.active{display:block;}
-    .transfer-footnote{
-      margin-top:18px;
-      font-size:.9rem;
-      color:rgba(255,255,255,.65);
+    body.transfer-modal-open, html.transfer-modal-open{overflow:hidden;}
+    .transfer-modal-backdrop{
+      position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+      background:rgba(6,10,26,.78);backdrop-filter:blur(10px);z-index:9999;padding:16px;
     }
-    html[data-theme="light"] .transfer-footnote{color:#64748b;}
+    .transfer-modal-backdrop.show{display:flex;}
+    .transfer-modal{
+      width:100%;max-width:520px;background:#0d142e;border:1px solid rgba(120,133,255,.25);
+      border-radius:22px;box-shadow:0 35px 80px rgba(0,0,0,.55);padding:22px;position:relative;
+      color:#f8fafc;
+    }
+    html[data-theme="light"] .transfer-modal{background:#ffffff;color:#0f172a;box-shadow:0 30px 70px rgba(15,23,42,.14);border-color:rgba(148,163,184,.35);}
+    .transfer-modal h3{margin:0 0 10px;font-size:1.35rem;display:flex;align-items:center;gap:8px;}
+    .transfer-modal .confirm-body{display:flex;flex-direction:column;gap:12px;}
+    .transfer-modal .confirm-row{display:flex;justify-content:space-between;gap:12px;border:1px dashed rgba(99,102,241,.3);padding:12px 14px;border-radius:12px;}
+    html[data-theme="light"] .transfer-modal .confirm-row{border-color:rgba(148,163,184,.5);}
+    .transfer-modal .confirm-label{font-weight:800;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.05em;font-size:.82rem;}
+    html[data-theme="light"] .transfer-modal .confirm-label{color:#475569;}
+    .transfer-modal .confirm-value{font-weight:800;font-size:1.05rem;}
+    .transfer-modal .confirm-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+    .transfer-modal button{border:none;border-radius:12px;padding:12px 16px;font-weight:800;cursor:pointer;}
+    .transfer-modal .btn-ghost{background:transparent;color:#cbd5f5;border:1px solid rgba(148,163,184,.35);}
+    html[data-theme="light"] .transfer-modal .btn-ghost{color:#475569;}
+    .transfer-modal .btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 18px 38px rgba(99,102,241,.28);}
     @media(max-width:540px){
       .transfer-page .transfer-meta{grid-template-columns:1fr;}
-      .transfer-actions{flex-direction:column;}
+      .transfer-actions{flex-direction:column;align-items:stretch;}
       .transfer-actions button{width:100%;justify-content:center;}
+      .transfer-recipient{flex-direction:column;}
+      .transfer-recipient .recipient-refresh{width:100%;}
     }
   </style>
   <!-- Settings page inline styles -->
@@ -2869,7 +3009,56 @@ button#logoutBtn:hover{background:#990000}
           loading: false,
           eventsBound: false,
           balanceListenerBound: false,
+          turnstileSiteKey: "0x4AAAAAABmiVmi7wosqeHQT",
+          turnstileReady: null,
+          turnstileWidgetId: null,
+          turnstileToken: "",
+          turnstileResolver: null,
+          turnstileRejecter: null,
+          recipientInfo: null,
+          lookupTimer: null
         };
+
+        function generateGuardToken(prefix){
+          var tag = (prefix || "guard");
+          try{
+            var cryptoSource = null;
+            if (typeof window !== "undefined" && window.crypto && typeof window.crypto.getRandomValues === "function"){
+              cryptoSource = window.crypto;
+            } else if (typeof self !== "undefined" && self.crypto && typeof self.crypto.getRandomValues === "function"){
+              cryptoSource = self.crypto;
+            }
+            if (cryptoSource){
+              var buf = new Uint32Array(2);
+              cryptoSource.getRandomValues(buf);
+              var hex = Array.from(buf).map(function(n){ return n.toString(16).padStart(8,"0"); }).join("");
+              return tag + "-" + Date.now().toString(36) + "-" + hex;
+            }
+          }catch(_){}
+          return tag + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
+        }
+
+        function copyText(value){
+          var text = (value || "").toString();
+          if (!text.trim()) return Promise.reject(new Error("empty"));
+          if (navigator.clipboard && navigator.clipboard.writeText){
+            return navigator.clipboard.writeText(text);
+          }
+          return new Promise(function(resolve, reject){
+            try{
+              var ta = document.createElement("textarea");
+              ta.value = text;
+              ta.style.position = "fixed";
+              ta.style.opacity = "0";
+              document.body.appendChild(ta);
+              ta.focus();
+              ta.select();
+              var ok = document.execCommand("copy");
+              document.body.removeChild(ta);
+              if (ok) resolve(); else reject(new Error("copy_failed"));
+            }catch(err){ reject(err); }
+          });
+        }
 
         function createError(code, message){
           var err = new Error(message || code || "transfer_error");
@@ -2886,6 +3075,10 @@ button#logoutBtn:hover{background:#990000}
             return Number.isFinite(num) ? num : 0;
           }
           return 0;
+        }
+
+        function normalizeWebuid(value){
+          return (value || "").toString().trim();
         }
 
         function formatBalance(value){
@@ -2959,17 +3152,26 @@ button#logoutBtn:hover{background:#990000}
             '<div class="transfer-spacer" aria-hidden="true"></div>',
             "<main>",
             '  <h2><span><i class="fa-solid fa-right-left"></i> تحويل رصيد</span></h2>',
-            '  <div class="transfer-headline">',
-            '    <span class="transfer-badge"><i class="fa-solid fa-bolt"></i> فوري</span>',
-            '  </div>',
+            '  <p class="transfer-subtitle">حوّل بأمان مع تأكيد اسم المستلم قبل الإرسال.</p>',
+            '  <div class="transfer-headline"></div>',
             '  <div class="transfer-meta">',
-            '    <div><span class="transfer-label">رصيدك الحالي</span><strong data-transfer-balance>--</strong></div>',
-            '    <div><span class="transfer-label">الايدي الخاص بك</span><strong data-transfer-my-webuid>--</strong></div>',
+            '    <div class="card">',
+            '      <div class="top">',
+            '        <span class="title">رصيدك الحالي</span>',
+            '      </div>',
+            '      <div class="value" data-transfer-balance>--</div>',
+            "    </div>",
+            '    <div class="card">',
+            '      <div class="top">',
+            '        <span class="title">الايدي الخاص بك</span>',
+            '        <button id="copyMyWebuid" type="button" class="copy-chip"><i class="fa-regular fa-copy"></i><span>نسخ</span></button>',
+            '      </div>',
+            '      <div class="value code" data-transfer-my-webuid>--</div>',
+            "    </div>",
             "  </div>",
             '  <ul class="transfer-guidelines">',
             '    <li><i class="fa-solid fa-scale-balanced"></i><span>يمكنك مراجعة كل تحويل من سجل <strong>محفظتي</strong> مباشرة بعد التنفيذ.</span></li>',
-            '    <li><i class="fa-solid fa-circle-info"></i><span>التحويل غير قابل للإلغاء بعد الإرسال، فتأكد من الايدي قبل التأكيد.</span></li>',
-            '    <li><i class="fa-solid fa-hand-holding-dollar"></i><span>لا رسوم على عمليات التحويل، الرصيد ينتقل بالكامل للمستلم.</span></li>',
+            '    <li><i class="fa-solid fa-circle-info"></i><span>نتحقق من الاسم والمعرف قبل الإرسال، فالتحويل غير قابل للإلغاء.</span></li>',
             "  </ul>",
             '  <form id="transferForm" class="transfer-form" novalidate>',
             '    <label class="transfer-field">',
@@ -2980,17 +3182,28 @@ button#logoutBtn:hover{background:#990000}
             '      <span>المبلغ بالدولار</span>',
             '      <input id="transferAmount" type="number" step="0.001" min="0.001" placeholder="0.000" required />',
             "    </label>",
-            '    <label class="transfer-field">',
-            '      <span>ملاحظة (اختياري)</span>',
-            '      <textarea id="transferNote" rows="2" maxlength="180" placeholder="تظهر في سجل التحويل (اختياري)"></textarea>',
-            "    </label>",
             '    <div id="transferHelper" class="transfer-helper"></div>',
             '    <div id="transferStatus" class="transfer-status" role="status" aria-live="polite"></div>',
             '    <div id="transferTurnstile" class="transfer-turnstile" aria-hidden="true"></div>',
             '    <div class="transfer-actions">',
+            '      <p class="transfer-footnote">لا يمكن التراجع عن التحويل نهائيا.</p>',
             '      <button id="transferSubmit" type="submit"><i class="fa-solid fa-paper-plane"></i> تأكيد التحويل</button>',
             "    </div>",
             "  </form>",
+            '  <div id="transferConfirmBackdrop" class="transfer-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="transferConfirmTitle">',
+            '    <div class="transfer-modal">',
+            '      <h3 id="transferConfirmTitle"><i class="fa-solid fa-shield-halved"></i> تأكيد التحويل</h3>',
+            '      <div class="confirm-body">',
+            '        <div class="confirm-row"><span class="confirm-label">المستلم</span><span class="confirm-value" id="confirmReceiver"></span></div>',
+            '        <div class="confirm-row"><span class="confirm-label">المعرف</span><span class="confirm-value" id="confirmWebuid"></span></div>',
+            '        <div class="confirm-row"><span class="confirm-label">المبلغ</span><span class="confirm-value" id="confirmAmount"></span></div>',
+            '      </div>',
+            '      <div class="confirm-footer">',
+            '        <button type="button" class="btn-ghost" id="confirmCancel">إلغاء</button>',
+            '        <button type="button" class="btn-primary" id="confirmApprove"><i class="fa-solid fa-check"></i> تأكيد</button>',
+            '      </div>',
+            '    </div>',
+            '  </div>',
             "</main>"
           ].join("");
           state.root = root;
@@ -3003,21 +3216,108 @@ button#logoutBtn:hover{background:#990000}
             form: root.querySelector("#transferForm"),
             target: root.querySelector("#transferTarget"),
             amount: root.querySelector("#transferAmount"),
-            note: root.querySelector("#transferNote"),
-            submit: root.querySelector("#transferSubmit")
+            submit: root.querySelector("#transferSubmit"),
+            copyWebuid: root.querySelector("#copyMyWebuid"),
+            confirmModal: root.querySelector("#transferConfirmBackdrop"),
+            confirmReceiver: root.querySelector("#confirmReceiver"),
+            confirmWebuid: root.querySelector("#confirmWebuid"),
+            confirmAmount: root.querySelector("#confirmAmount"),
+            confirmApprove: root.querySelector("#confirmApprove"),
+            confirmCancel: root.querySelector("#confirmCancel")
           };
+          mountConfirmModalPortal();
           bindFormEvents();
           bindBalanceListener();
+          updateRecipientPreview("idle");
           updateHelperText();
           return root;
         }
 
         function ensureTurnstileScript(){
-          return Promise.resolve();
+          if (window.turnstile) return Promise.resolve(window.turnstile);
+          if (state.turnstileReady) return state.turnstileReady;
+          state.turnstileReady = new Promise(function(resolve){
+            var existing = document.querySelector('script[data-transfer-turnstile]');
+            var resolved = false;
+            var finish = function(val){
+              if (resolved) return;
+              resolved = true;
+              resolve(val || window.turnstile || null);
+            };
+            if (existing){
+              existing.addEventListener("load", function(){ finish(window.turnstile || null); }, { once: true });
+              existing.addEventListener("error", function(){ finish(null); }, { once: true });
+            } else {
+              var script = document.createElement("script");
+              script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__transferTurnstileInit&render=explicit";
+              script.async = true;
+              script.defer = true;
+              script.dataset.transferTurnstile = "1";
+              script.onload = function(){ finish(window.turnstile || null); };
+              script.onerror = function(){ finish(null); };
+              window.__transferTurnstileInit = function(){ finish(window.turnstile || null); };
+              document.head.appendChild(script);
+            }
+            setTimeout(function(){ finish(window.turnstile || null); }, 8000);
+          });
+          return state.turnstileReady;
         }
 
         function acquireTurnstileToken(){
-          return Promise.resolve(generateGuardToken('transfer'));
+          return ensureTurnstileScript().then(function(turnstile){
+            if (!turnstile || !state.refs || !state.refs.turnstile){
+              throw createError("turnstile_unavailable","تعذر تحميل التحقق البشري، حاول تحديث الصفحة.");
+            }
+            var holder = state.refs.turnstile;
+            holder.classList.add("active");
+            if (!state.turnstileWidgetId){
+              state.turnstileWidgetId = turnstile.render(holder, {
+                sitekey: state.turnstileSiteKey,
+                size: "invisible",
+                action: "wallet-transfer",
+                theme: themeIsDark() ? "dark" : "light",
+                callback: function(token){
+                  state.turnstileToken = token || "";
+                  if (state.turnstileResolver) state.turnstileResolver(state.turnstileToken);
+                  state.turnstileResolver = null;
+                  state.turnstileRejecter = null;
+                },
+                "error-callback": function(){
+                  var err = createError("turnstile_failed","تعذر التحقق الأمني، جرّب مجدداً.");
+                  if (state.turnstileRejecter) state.turnstileRejecter(err);
+                  state.turnstileResolver = null;
+                  state.turnstileRejecter = null;
+                },
+                "expired-callback": function(){
+                  state.turnstileToken = "";
+                }
+              });
+            }
+            return new Promise(function(resolve, reject){
+              state.turnstileResolver = function(tok){
+                state.turnstileResolver = null;
+                state.turnstileRejecter = null;
+                resolve(tok || generateGuardToken("transfer"));
+              };
+              state.turnstileRejecter = function(err){
+                state.turnstileResolver = null;
+                state.turnstileRejecter = null;
+                reject(err || createError("turnstile_failed","فشل الحصول على رمز الحماية."));
+              };
+              state.turnstileToken = "";
+              try{
+                turnstile.reset(state.turnstileWidgetId);
+                turnstile.execute(state.turnstileWidgetId);
+              }catch(err){
+                state.turnstileRejecter(err);
+              }
+              setTimeout(function(){
+                if (!state.turnstileToken && state.turnstileRejecter){
+                  state.turnstileRejecter(createError("turnstile_timeout","انتهى وقت الحماية، حاول مجدداً."));
+                }
+              }, 10000);
+            });
+          });
         }
 
         function bindBalanceListener(){
@@ -3035,6 +3335,15 @@ button#logoutBtn:hover{background:#990000}
           }catch(_){}
         }
 
+        function mountConfirmModalPortal(){
+          if (!state.refs || !state.refs.confirmModal) return;
+          if (state.refs.confirmModal.dataset && state.refs.confirmModal.dataset.portaled === "1") return;
+          try{
+            document.body.appendChild(state.refs.confirmModal);
+            if (state.refs.confirmModal.dataset) state.refs.confirmModal.dataset.portaled = "1";
+          }catch(_){}
+        }
+
         function bindFormEvents(){
           if (!state.refs || state.eventsBound) return;
           state.eventsBound = true;
@@ -3045,8 +3354,174 @@ button#logoutBtn:hover{background:#990000}
             state.refs.amount.addEventListener("input", updateHelperText);
           }
           if (state.refs.target){
-            state.refs.target.addEventListener("input", function(){ showStatus(); });
+            state.refs.target.addEventListener("input", function(){
+              showStatus();
+              scheduleRecipientLookup(this.value);
+            });
           }
+          if (state.refs.copyWebuid){
+            state.refs.copyWebuid.addEventListener("click", handleCopyMyWebuid);
+          }
+          if (state.refs.confirmCancel){
+            state.refs.confirmCancel.addEventListener("click", function(){ closeConfirmModal(false); });
+          }
+          if (state.refs.confirmApprove){
+            state.refs.confirmApprove.addEventListener("click", function(){ closeConfirmModal(true); });
+          }
+          if (state.refs.confirmModal){
+            state.refs.confirmModal.addEventListener("click", function(evt){
+              if (evt.target === state.refs.confirmModal) closeConfirmModal(false);
+            });
+          }
+          document.addEventListener("keydown", function(evt){
+            if (evt.key === "Escape" && state.refs && state.refs.confirmModal && state.refs.confirmModal.classList.contains("show")){
+              closeConfirmModal(false);
+            }
+          });
+        }
+
+        function handleCopyMyWebuid(){
+          var val = state.profile && state.profile.webuid;
+          copyText(val || "").then(function(){
+            showToast("تم نسخ الايدي", true);
+          }).catch(function(){
+            showToast("تعذر النسخ", false);
+          });
+        }
+
+        function closeConfirmModal(approved){
+          if (!state.refs || !state.refs.confirmModal) return;
+          state.refs.confirmModal.classList.remove("show");
+          state.refs.confirmModal.setAttribute("aria-hidden","true");
+          document.documentElement.classList.remove("transfer-modal-open");
+          document.body.classList.remove("transfer-modal-open");
+          if (state.confirmResolver){
+            state.confirmResolver(!!approved);
+            state.confirmResolver = null;
+          }
+        }
+
+        function showConfirmModal(params){
+          if (!state.refs || !state.refs.confirmModal){
+            return Promise.resolve(false);
+          }
+          mountConfirmModalPortal();
+          var receiver = params && params.receiver ? params.receiver : "--";
+          var webuid = params && params.webuid ? params.webuid : "--";
+          var amount = params && params.amount ? params.amount : 0;
+          state.refs.confirmReceiver.textContent = receiver;
+          state.refs.confirmWebuid.textContent = webuid;
+          state.refs.confirmAmount.textContent = formatBalance(amount);
+          state.refs.confirmModal.classList.add("show");
+          state.refs.confirmModal.setAttribute("aria-hidden","false");
+          document.documentElement.classList.add("transfer-modal-open");
+          document.body.classList.add("transfer-modal-open");
+          return new Promise(function(resolve){
+            state.confirmResolver = resolve;
+          });
+        }
+
+        function updateRecipientPreview(status, payload){
+          var card = state.refs && state.refs.recipientCard;
+          var nameEl = state.refs && state.refs.recipientName;
+          var hintEl = state.refs && state.refs.recipientHint;
+          if (!card || !nameEl || !hintEl) return;
+          var stateName = status || "idle";
+          card.setAttribute("data-state", stateName);
+          if (stateName === "loading"){
+            nameEl.textContent = "جارِ البحث عن المستلم...";
+            hintEl.textContent = "نحتاج إلى الاسم قبل تأكيد التحويل.";
+          } else if (stateName === "found"){
+            var data = payload || state.recipientInfo || {};
+            var username = data.username || "مستخدم بدون اسم";
+            var webuid = data.webuid || "";
+            nameEl.textContent = username;
+            var hint = webuid ? ("المعرف: " + webuid) : "تم العثور على المستلم.";
+            if (data.level) hint += " • المستوى: " + data.level;
+            hintEl.textContent = hint;
+          } else if (stateName === "error"){
+            nameEl.textContent = "تعذر العثور على اسم المستلم.";
+            hintEl.textContent = (payload && payload.message) ? payload.message : "تحقق من webuid وأعد المحاولة.";
+          } else if (stateName === "need-login"){
+            nameEl.textContent = "سجّل الدخول للبحث عن المستلم.";
+            hintEl.textContent = "نسجّل الاسم فور تسجيل الدخول.";
+          } else {
+            nameEl.textContent = "أدخل webuid للتحقق من اسم المستلم.";
+            hintEl.textContent = "لن نبدأ التحويل قبل ظهور الاسم.";
+          }
+        }
+
+        function scheduleRecipientLookup(value, immediate){
+          if (!state.refs || !state.refs.target) return;
+          var next = normalizeWebuid(value != null ? value : state.refs.target.value);
+          if (state.lookupTimer) clearTimeout(state.lookupTimer);
+          if (state.recipientInfo && state.recipientInfo.webuid && state.recipientInfo.webuid !== next){
+            state.recipientInfo = null;
+          }
+          if (!next){
+            state.recipientInfo = null;
+            updateRecipientPreview(state.currentUser ? "idle" : "need-login");
+            return;
+          }
+          updateRecipientPreview("loading");
+          var runner = function(){ lookupRecipient(next).catch(function(){}); };
+          if (immediate){
+            runner();
+          } else {
+            state.lookupTimer = setTimeout(runner, 350);
+          }
+        }
+
+        function lookupRecipient(target){
+          var webuid = normalizeWebuid(target);
+          if (!webuid){
+            state.recipientInfo = null;
+            updateRecipientPreview(state.currentUser ? "idle" : "need-login");
+            return Promise.resolve(null);
+          }
+          if (!state.currentUser){
+            updateRecipientPreview("need-login");
+            return Promise.resolve(null);
+          }
+          var sessionKey = readSessionKey();
+          if (!sessionKey){
+            updateRecipientPreview("error", { message: "أعد تسجيل الدخول لتجديد الجلسة." });
+            return Promise.resolve(null);
+          }
+          updateRecipientPreview("loading");
+          return state.currentUser.getIdToken().then(function(token){
+            var payload = {
+              action: "lookup",
+              targetWebuid: webuid,
+              guardToken: generateGuardToken("lookup")
+            };
+            return fetch(buildApiUrl(), {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token,
+                "X-SessionKey": sessionKey
+              },
+              body: JSON.stringify(payload)
+            });
+          }).then(async function(res){
+            var data = await res.json().catch(function(){ return {}; });
+            if (!res.ok || data.success === false){
+              throw createError(data.code || "lookup_failed", data.error || "تعذر العثور على المستلم.");
+            }
+            var info = {
+              webuid: data.webuid || webuid,
+              username: data.username || data.name || "",
+              level: data.level || null
+            };
+            state.recipientInfo = info;
+            updateRecipientPreview("found", info);
+            return info;
+          }).catch(function(err){
+            state.recipientInfo = null;
+            updateRecipientPreview("error", { message: err && err.message ? err.message : "تعذر العثور على المستلم." });
+            return null;
+          });
         }
 
         function bindAuth(){
@@ -3070,17 +3545,19 @@ button#logoutBtn:hover{background:#990000}
         }
 
         function setNeedLogin(){
+          state.recipientInfo = null;
           setFormDisabled(true);
           showStatus("info","سجّل الدخول لاستخدام تحويل الرصيد.");
           if (state.refs && state.refs.helper){
             state.refs.helper.textContent = "تحتاج إلى تسجيل الدخول لتستطيع التحويل.";
             state.refs.helper.classList.remove("warn");
           }
+          updateRecipientPreview("need-login");
         }
 
         function setFormDisabled(disabled){
           if (!state.refs) return;
-          var keys = ["target","amount","note","submit"];
+          var keys = ["target","amount","submit"];
           keys.forEach(function(key){
             if (state.refs[key]) state.refs[key].disabled = disabled || state.loading;
           });
@@ -3125,10 +3602,15 @@ button#logoutBtn:hover{background:#990000}
             if (state.refs.balance) state.refs.balance.textContent = formatBalance(state.profile.balance);
             if (state.refs.senderWebuid) state.refs.senderWebuid.textContent = state.profile.webuid || "--";
             setFormDisabled(false);
+            updateRecipientPreview("idle");
+            if (state.refs.target && state.refs.target.value){
+              scheduleRecipientLookup(state.refs.target.value, true);
+            }
           } else {
             if (state.refs.balance) state.refs.balance.textContent = "--";
             if (state.refs.senderWebuid) state.refs.senderWebuid.textContent = "--";
             setFormDisabled(true);
+            updateRecipientPreview("need-login");
           }
           updateHelperText();
         }
@@ -3175,7 +3657,7 @@ button#logoutBtn:hover{background:#990000}
           if (loading && hint) showStatus("info", hint);
         }
 
-        function submitTransfer(target, amount, note){
+        function submitTransfer(target, amount){
           return new Promise(function(resolve, reject){
             var user = state.currentUser;
             if (!user) { reject(createError("auth_required","سجّل الدخول أولاً.")); return; }
@@ -3188,7 +3670,6 @@ button#logoutBtn:hover{background:#990000}
                 action: "transfer",
                 targetWebuid: target,
                 amount: Number(amount),
-                note: note || "",
                 guardToken: guardToken || "",
                 turnstileToken: guardToken || "",
                 currentUrl: window.location.href
@@ -3198,7 +3679,9 @@ button#logoutBtn:hover{background:#990000}
                 headers: {
                   "Content-Type": "application/json",
                   "Authorization": "Bearer " + token,
-                  "X-SessionKey": sessionKey
+                  "X-SessionKey": sessionKey,
+                  "X-Guard-Token": guardToken || "",
+                  "CF-Turnstile-Token": guardToken || ""
                 },
                 body: JSON.stringify(payload)
               });
@@ -3243,27 +3726,48 @@ button#logoutBtn:hover{background:#990000}
           }
         }
 
-        function handleSubmit(e){
+        async function handleSubmit(e){
           if (e && typeof e.preventDefault === "function") e.preventDefault();
           if (!state.refs || state.loading) return;
-          var target = (state.refs.target && state.refs.target.value || "").trim();
+          var target = normalizeWebuid(state.refs.target && state.refs.target.value);
           var amount = Number(state.refs.amount && state.refs.amount.value);
-          var note = (state.refs.note && state.refs.note.value || "").trim();
           if (!target){
             showStatus("error","أدخل webuid المستلم.");
+            updateRecipientPreview("error", { message: "أدخل webuid المستلم." });
             return;
           }
           if (!Number.isFinite(amount) || amount <= 0){
             showStatus("error","أدخل قيمة صالحة للتحويل.");
             return;
           }
-          if (note.length > 180) note = note.slice(0, 180);
           if (state.profile && amount - (state.profile.balance || 0) > 0.0001){
             showStatus("error","القيمة تتجاوز رصيدك الحالي.");
             return;
           }
-          setLoading(true, "جاري تنفيذ التحويل...");
-          submitTransfer(target, amount, note).then(function(result){
+          showStatus("info","جارٍ التحقق من المستلم...");
+          try{
+            var recipientInfo = state.recipientInfo;
+            if (!recipientInfo || recipientInfo.webuid !== target){
+              recipientInfo = await lookupRecipient(target);
+            }
+            if (!recipientInfo){
+              showStatus("error","تعذر العثور على المستخدم تحقق من الايدي وأعد المحاولة.");
+              return;
+            }
+            var receiverLabel = recipientInfo && recipientInfo.username
+              ? recipientInfo.username + " (" + (recipientInfo.webuid || target) + ")"
+              : target;
+            var approved = await showConfirmModal({
+              receiver: recipientInfo.username || "مستخدم",
+              webuid: recipientInfo.webuid || target,
+              amount: amount
+            });
+            if (!approved){
+              showStatus("info","تم إلغاء الطلب قبل الإرسال.");
+              return;
+            }
+            setLoading(true, "جاري تنفيذ التحويل...");
+            var result = await submitTransfer(target, amount);
             if (state.refs && state.refs.form) state.refs.form.reset();
             if (state.profile && Number.isFinite(result.senderBalance)){
               state.profile.balance = result.senderBalance;
@@ -3273,13 +3777,23 @@ button#logoutBtn:hover{background:#990000}
               state.profile.balance = Math.max(0, (state.profile.balance || 0) - amount);
               updateProfileUI();
             }
+            var receiverDisplay = "";
+            if (result && result.receiverName){
+              receiverDisplay = result.receiverName + " (" + (result.receiverWebuid || target) + ")";
+            } else if (recipientInfo && recipientInfo.username){
+              receiverDisplay = recipientInfo.username + " (" + (result.receiverWebuid || target) + ")";
+            } else {
+              receiverDisplay = (result.receiverWebuid || target);
+            }
+            state.recipientInfo = null;
+            updateRecipientPreview("idle");
             updateHelperText();
-            showStatus("success","تم تحويل " + formatBalance(result.amount || amount) + " إلى " + (result.receiverWebuid || target) + " .");
-          }).catch(function(err){
+            showStatus("success","تم تحويل " + formatBalance(result.amount || amount) + " إلى " + receiverDisplay + " .");
+          } catch(err){
             showStatus("error", err && err.message ? err.message : "تعذر تنفيذ التحويل.");
-          }).finally(function(){
+          } finally {
             setLoading(false);
-          });
+          }
         }
 
         function build(){
