@@ -3451,7 +3451,7 @@ button#logoutBtn:hover{background:#990000}
       })();
 
       var manualGamesInline = (function(){
-        var DISABLED = true;
+        var DISABLED = false;
         var cache = null;
         var lastFetched = 0;
         var inflight = null;
@@ -3621,13 +3621,33 @@ button#logoutBtn:hover{background:#990000}
       })();
 
       var socialBoostInline = (function(){
-        var API_BASE = "https://z3em-manwal.laithqarqaz1.workers.dev/?game=smm";
+        var DEFAULT_API_BASE = "https://z3em-manwal.laithqarqaz1.workers.dev/";
         var CACHE_TTL = 60 * 1000;
         var cache = [];
         var lastFetched = 0;
         var inflight = null;
         var stylesInjected = false;
         var authReadyPromise = null;
+
+        function buildApiBase(){
+          var base = DEFAULT_API_BASE;
+          try{
+            var stored = localStorage.getItem("MANWAL_ROUTER_BASE");
+            if (stored) base = stored;
+          }catch(_){}
+          try{
+            var url = new URL(base);
+            url.searchParams.set("game", "smm");
+            return url.toString();
+          }catch(_){}
+          try{
+            var fallback = new URL(DEFAULT_API_BASE);
+            fallback.searchParams.set("game", "smm");
+            return fallback.toString();
+          }catch(_){}
+          var sep = DEFAULT_API_BASE.indexOf("?") >= 0 ? "&" : "?";
+          return DEFAULT_API_BASE + sep + "game=smm";
+        }
 
         function themeIsDark(){
           try{
@@ -3790,21 +3810,24 @@ button#logoutBtn:hover{background:#990000}
           if (!force && cache && cache.length && (now - lastFetched) < CACHE_TTL) return Promise.resolve(cache);
           if (inflight) return inflight;
 
-          inflight = waitForUser().then(function(user){
-            if (!user) throw createError("login_required", "سجّل الدخول للاطلاع على خدمات الرشق");
-            var sessionKey = getLocalSessionKey();
-            if (!sessionKey) throw createError("session_missing", "يرجى إعادة تسجيل الدخول لتجديد الجلسة");
-            var url = new URL(API_BASE);
+          inflight = Promise.resolve().then(function(){
+            var url = new URL(buildApiBase());
             url.searchParams.set("mode", "services");
-            return user.getIdToken(true).then(function(token){
-              return fetch(url.toString(), {
-                method: "GET",
-                headers: {
-                  "Authorization": "Bearer " + token,
-                  "X-SessionKey": sessionKey
-                },
-                cache: "no-store"
-              });
+            return waitForUser().then(function(user){
+              if (!user) return { headers: {} };
+              var sessionKey = getLocalSessionKey();
+              var headers = {};
+              if (sessionKey) headers["X-SessionKey"] = sessionKey;
+              return user.getIdToken(true).then(function(token){
+                headers["Authorization"] = "Bearer " + token;
+                return { headers: headers };
+              }).catch(function(){ return { headers: headers }; });
+            }).catch(function(){ return { headers: {} }; }).then(function(auth){
+              var opts = { method: "GET", cache: "no-store" };
+              if (auth && auth.headers && Object.keys(auth.headers).length){
+                opts.headers = auth.headers;
+              }
+              return fetch(url.toString(), opts);
             });
           }).then(async function(res){
             var data = await res.json().catch(function(){ return {}; });
@@ -4649,7 +4672,7 @@ button#logoutBtn:hover{background:#990000}
           }).then(function(results){
             var idToken = results[0];
             var guardToken = results[1];
-            var url = new URL(API_BASE);
+            var url = new URL(buildApiBase());
             url.searchParams.set('mode','order');
             var payload = {
               action: 'order',
