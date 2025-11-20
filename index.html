@@ -13,6 +13,7 @@
   <link rel="canonical" href="https://z3em.shop/">
   <link rel="alternate" href="https://z3em.shop/" hreflang="ar">
   <link rel="alternate" href="https://z3em.shop/" hreflang="x-default">
+  <meta name="turnstile-sitekey" content="0x4AAAAAABmiVmi7wosqeHQT">
 
   <!-- SEO -->
   <meta name="description" content="متجر زعيم | زعيم ستور — متجر موثوق لشحن الألعاب والاشتراكات الرقمية بسرعة وأمان. فري فاير، ببجي،  جواكر والمزيد بأسعار تنافسية ودعم فني سريع.">
@@ -2998,6 +2999,19 @@ button#logoutBtn:hover{background:#990000}
 
       var transferRoute = (function(){
         var DEFAULT_BASE = "https://z3em-manwal.laithqarqaz1.workers.dev/";
+        var DEFAULT_TURNSTILE_SITEKEY = "0x4AAAAAABmiVmi7wosqeHQT";
+
+        function resolveTurnstileSiteKey(){
+          try{
+            var meta = document.querySelector('meta[name="turnstile-sitekey"]');
+            var fromMeta = meta && meta.content ? meta.content.trim() : "";
+            var fromWindow = (window.TURNSTILE_SITE_KEY || window.__TURNSTILE_SITE_KEY__ || "").trim();
+            return fromMeta || fromWindow || DEFAULT_TURNSTILE_SITEKEY;
+          }catch(_){
+            return DEFAULT_TURNSTILE_SITEKEY;
+          }
+        }
+
         var state = {
           root: null,
           refs: null,
@@ -3009,7 +3023,7 @@ button#logoutBtn:hover{background:#990000}
           loading: false,
           eventsBound: false,
           balanceListenerBound: false,
-          turnstileSiteKey: "0x4AAAAAABmiVmi7wosqeHQT",
+          turnstileSiteKey: resolveTurnstileSiteKey(),
           turnstileReady: null,
           turnstileWidgetId: null,
           turnstileToken: "",
@@ -3669,13 +3683,16 @@ button#logoutBtn:hover{background:#990000}
             if (!sessionKey) { reject(createError("session_missing","يرجى إعادة تسجيل الدخول لتجديد الجلسة.")); return; }
             Promise.all([user.getIdToken(true), acquireTurnstileToken()]).then(function(results){
               var token = results[0];
-              var guardToken = results[1];
+              var turnstileToken = results[1];
+              if (!turnstileToken){
+                throw createError("turnstile_failed","فشل التحقق من الحماية، حاول مجدداً.");
+              }
               var payload = {
                 action: "transfer",
                 targetWebuid: target,
                 amount: Number(amount),
-                guardToken: guardToken || "",
-                turnstileToken: guardToken || "",
+                guardToken: "",
+                turnstileToken: turnstileToken,
                 currentUrl: window.location.href
               };
               return fetch(buildApiUrl(), {
@@ -3684,8 +3701,8 @@ button#logoutBtn:hover{background:#990000}
                   "Content-Type": "application/json",
                   "Authorization": "Bearer " + token,
                   "X-SessionKey": sessionKey,
-                  "X-Guard-Token": guardToken || "",
-                  "CF-Turnstile-Token": guardToken || ""
+                  "X-Guard-Token": "",
+                  "CF-Turnstile-Token": turnstileToken
                 },
                 body: JSON.stringify(payload)
               });
