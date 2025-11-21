@@ -771,6 +771,33 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     html[data-theme="dark"] #methodModal .calc .field > label { background:#05050b; color:#cbd5e1; }
     html[data-theme="light"] #methodModal .calc .field > label { background:#ffffff; color:#475569; }
 
+    /* USDT Auto wizard */
+    .usdt-card{margin-top:14px;border:1px solid #28344a;border-radius:18px;padding:16px;background:linear-gradient(180deg,#0b1526,#0f172a);display:flex;flex-direction:column;gap:14px;}
+    .usdt-steps{display:flex;align-items:center;gap:10px;justify-content:center;}
+    .usdt-step{display:flex;align-items:center;gap:6px;font-weight:800;font-size:.9rem;color:#cbd5e1;}
+    .usdt-dot{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-weight:800;border:2px solid #334155;color:#cbd5e1;}
+    .usdt-step.active .usdt-dot{background:#0ea5e9;border-color:#0ea5e9;color:#fff;}
+    .usdt-step.active{color:#0ea5e9;}
+    .usdt-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;background:rgba(15,23,42,.7);border:1px solid #263154;border-radius:14px;padding:12px;}
+    .usdt-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+    .usdt-label{font-weight:800;color:#94a3b8;}
+    .usdt-value{font-weight:900;font-size:1.05rem;letter-spacing:.3px;direction:ltr;}
+    .usdt-order{display:flex;flex-direction:column;gap:6px;}
+    .usdt-order input{width:100%;padding:12px;border:1px solid #1f2937;border-radius:10px;font-size:1rem;direction:ltr;}
+    .usdt-qr{border:1px solid #1f2937;border-radius:12px;padding:12px;background:#0f172a;display:grid;place-items:center;gap:8px;}
+    .usdt-qr .qr-box{width:180px;height:180px;border-radius:12px;background:linear-gradient(180deg,#171f3b,#0b1526);display:grid;place-items:center;color:#e2e8f0;font-weight:700;}
+    .usdt-qr small{color:#94a3b8;}
+    .usdt-note{margin:0;color:#cbd5e1;opacity:.86;font-size:.92rem;text-align:center;}
+    .usdt-actions{display:flex;gap:10px;flex-wrap:wrap;}
+    .usdt-copy-btn{padding:8px 12px;border-radius:10px;border:1px solid #334155;background:rgba(14,165,233,.12);color:#e2e8f0;font-weight:800;display:inline-flex;align-items:center;gap:8px;cursor:pointer;}
+    .usdt-copy-btn:hover{background:rgba(14,165,233,.18);}
+    html[data-theme="light"] .usdt-card{background:#f8fafc;border-color:#e2e8f0;}
+    html[data-theme="light"] .usdt-qr{background:#ffffff;border-color:#e2e8f0;}
+    html[data-theme="light"] .usdt-qr .qr-box{background:#f1f5f9;color:#0f172a;}
+    html[data-theme="light"] .usdt-dot{border-color:#cbd5e1;color:#0f172a;}
+    html[data-theme="light"] .usdt-label{color:#64748b;}
+    html[data-theme="light"] .usdt-note{color:#475569;}
+
     /* أزرار */
     .btn-primary { background:linear-gradient(135deg,#7a7cd0,#3b3e8c); border:0; }
     .btn-primary:hover { filter:brightness(.98); }
@@ -864,13 +891,21 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
           <label for="sendJOD">سيدفع (—)</label> <!-- سنضبط العملة لاحقًا -->
           <input type="number" id="sendJOD" min="0" step="0.01" placeholder="0.00"/>
         </div>
-        <div class="field" id="fieldRecv">
-          <label for="recvCUR">سيُضاف (دولار أمريكي USD)</label>
-          <input type="number" id="recvCUR" min="0" step="0.01" placeholder="0.00" />
-        </div>
+      <div class="field" id="fieldRecv">
+        <label for="recvCUR">سيُضاف (دولار أمريكي USD)</label>
+        <input type="number" id="recvCUR" min="0" step="0.01" placeholder="0.00" />
       </div>
+    </div>
 
-      <div id="methodInfo" class="info-list"></div>
+    <div id="methodInfo" class="info-list"></div>
+    <div id="usdtAutoBox" class="usdt-card hidden"></div>
+
+    <div id="orderIdGroup" class="calc hidden" style="margin-top:12px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+      <div class="field" id="fieldOrderId" data-cur="ID">
+        <label for="orderIdInput">Order ID من Binance</label>
+        <input type="text" id="orderIdInput" placeholder="مثال: 1234567890" />
+      </div>
+    </div>
 
             <div class="actions">
         <input type="file" id="proofFile" accept="image/*" style="display:none" />
@@ -928,6 +963,10 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     /* ========================= إعداد عام ========================= */
   const WORKER_BASE = "https://edaaandsahb.laithqarqaz66.workers.dev/";
   const WORKER = (WORKER_BASE || '').replace(/\/+$/, '');
+  const MANWAL_WORKER_BASE = "https://z3em-manwal.laithqarqaz1.workers.dev/";
+  const MANWAL_WORKER = (MANWAL_WORKER_BASE || "").replace(/\/+$/, "");
+  const USDT_AUTO_FX = 1;
+  const USDT_AUTO_ENTRY = { id: 'usdt-auto', data: { name: 'USDT Auto', imageUrl: 'https://i.ibb.co/SXC9MfZL/d90b3c3b7dd2.jpg' } };
   function generateGuardToken(prefix){
     var tag = prefix || 'guard';
     try{
@@ -1037,6 +1076,9 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     const rateLine = document.getElementById('rateLine');
     const sendJOD = document.getElementById('sendJOD'); // مبلغ الدفع بعملة الطريقة
     const recvCUR = document.getElementById('recvCUR'); // ما سيُضاف بالدولار
+    const usdtBox = document.getElementById('usdtAutoBox');
+    const usdtBaseAmount = document.getElementById('usdtBaseAmount');
+    const usdtOrderId = document.getElementById('orderIdInput');
 
     /* ========================= حالة وتنقّل ========================= */
     let currentCountry = null; // { id, data }
@@ -1051,6 +1093,8 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     let fxRatePerJOD = null;    // 1 JOD -> كم من عملة الطريقة (CUR)
     let fxRatePerUSD = null;    // 1 USD -> كم من عملة الطريقة (CUR)
     let usdPerJOD = null;       // 1 JOD -> كم USD (لاحتساب الإضافة بالدولار)
+    let isUsdtAuto = false;
+    let usdtPayAmount = 0;
     // تتبُّع حالة التفرّع عبر العنوان
     let pendingRoute = null;     // يُستخدم لوضع المسار المطلوب حتى تكتمل قائمة الدول
 
@@ -1112,30 +1156,72 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       updateSubmitState();
       try { updateProofUI(); } catch(_){ }
     }
+    // بطاقة ثابتة لـ USDT Auto
+    function ensureUsdtAutoCard(){
+      try{
+        if (!grid) return;
+        const existing = grid.querySelector('[data-usdt-auto-card="1"]');
+        if (existing) return;
+        const a=document.createElement('a');
+        a.href='javascript:void(0)';
+        a.className='card';
+        a.dataset.usdtAutoCard = "1";
+        a.dataset.title='USDT Auto';
+        a.innerHTML=`<img src="https://i.ibb.co/SXC9MfZL/d90b3c3b7dd2.jpg" alt="USDT Auto"><h2>USDT Auto</h2>`;
+        a.addEventListener('click',()=>openUsdtAuto());
+        grid.insertBefore(a, grid.firstChild || null);
+      }catch(_){}
+    }
 
     /* ========================= رسم القوائم ========================= */
-    function renderCountries(list){
+    function renderCountries(list, includeUsdt=true){
       clearGrid();
-      list.forEach(c=>{
+      const seen = new Set();
+      const finalList = [];
+      (list || []).forEach(c=>{
+        if (!c || !c.id) return;
+        const key = c.id.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        finalList.push(c);
+      });
+      finalList.forEach(c=>{
         const a=document.createElement('a');
         a.href='javascript:void(0)';
         a.className='card';
         a.dataset.title=c.data.name||'';
+        if ((c.id||'').toLowerCase() === 'usdt-auto') {
+          a.dataset.usdtAutoCard = "1";
+        }
         a.innerHTML=`
           <img src="${c.data.imageUrl||''}" alt="${c.data.name||''}">
           <h2>${c.data.name||''}</h2>`;
-        a.addEventListener('click',()=>navigateToCountry(c));
+        if ((c.id||'').toLowerCase() === 'usdt-auto') {
+          a.addEventListener('click',()=>openUsdtAuto());
+        } else {
+          a.addEventListener('click',()=>navigateToCountry(c));
+        }
         grid.appendChild(a);
       });
-      showNoResults(list.length===0);
+      showNoResults(finalList.length===0);
+      ensureUsdtAutoCard();
     }
+
+    // حقن بطاقة USDT Auto عند البداية
+    ensureUsdtAutoCard();
 
     /* ========================= بحث ========================= */
     function applySearch(){
       const q=(searchInput.value||'').trim().toLowerCase();
       const list=currentCountry?methods:countries;
       const filtered=list.filter(x=>(x.data.name||'').toLowerCase().includes(q));
-      currentCountry?renderMethods(filtered):renderCountries(filtered);
+      if (!currentCountry){
+        const includeUsdt = !q || 'usdt auto'.includes(q) || 'usdt'.includes(q) || 'تتر'.includes(q);
+        renderCountries(filtered, includeUsdt);
+      } else {
+        renderMethods(filtered);
+      }
+      ensureUsdtAutoCard();
     }
     searchInput.addEventListener('input', applySearch);
 
@@ -1147,6 +1233,8 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
         .orderBy('order','asc')
         .onSnapshot(snap=>{
           countries=snap.docs.map(d=>({id:d.id,data:d.data()}));
+          const hasUsdtAuto = countries.some(c => (c.id||'').toLowerCase() === USDT_AUTO_ENTRY.id);
+          if (!hasUsdtAuto) countries.unshift(USDT_AUTO_ENTRY);
           if(!currentCountry){ renderCountries(countries); applySearch(); }
           // إن وُجد مسار مطلوب قبل اكتمال التحميل، طبّقه الآن
           if (pendingRoute){ try { applyRoute(true); } catch(_){} pendingRoute=null; }
@@ -1402,6 +1490,7 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       const curCode = (fxCurrency || '').toUpperCase();
       if (!curCode) return null;
       if (curCode === 'USD') return v;
+      if (curCode === 'USDT') return v; // 1:1
       if (curCode === 'JOD' && isPositiveNumber(usdPerJOD)) return v * usdPerJOD;
       if (isPositiveNumber(fxRatePerUSD)) return v / fxRatePerUSD;
       if (isPositiveNumber(fxRatePerJOD) && isPositiveNumber(usdPerJOD)) {
@@ -1417,6 +1506,7 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       const curCode = (fxCurrency || '').toUpperCase();
       if (!curCode) return null;
       if (curCode === 'USD') return v;
+      if (curCode === 'USDT') return v; // 1:1
       if (curCode === 'JOD' && isPositiveNumber(usdPerJOD)) return v / usdPerJOD;
       if (isPositiveNumber(fxRatePerUSD)) return v * fxRatePerUSD;
       if (isPositiveNumber(fxRatePerJOD) && isPositiveNumber(usdPerJOD)) {
@@ -1426,9 +1516,79 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       return null;
     }
 
+    function resetUsdtUi(){
+      usdtPayAmount = 0;
+      if (usdtBaseAmount) usdtBaseAmount.value = '';
+      if (usdtOrderId) usdtOrderId.value = '';
+      // reset any USD display placeholder
+      try { const usdBox = document.getElementById('usdtUsdAdded'); if (usdBox) usdBox.textContent = '—'; } catch(_){}
+    }
+
+    function setUsdtMode(on){
+      isUsdtAuto = !!on;
+      if (usdtBox) usdtBox.classList.toggle('hidden', true); // لم نعد نستخدم الصندوق القديم
+      const orderGroup = document.getElementById('orderIdGroup');
+      if (orderGroup) orderGroup.classList.toggle('hidden', !on);
+      setProofVisible(!on);
+      if (!on){
+        resetUsdtUi();
+        const usdBox = document.getElementById('usdtUsdAdded');
+        if (usdBox) usdBox.textContent = '—';
+      }
+    }
+
+  function openUsdtAuto(){
+    showPreloader();
+    currentCountry = { id:'usdt-auto', data:{ name:'USDT Auto' } };
+    currentMethod  = { id:'usdt-auto', data:{ name:'USDT Auto', currency:'USDT', info:{ wallet:'قريبا', note:'أرسل عبر TRC20 وألصق Order ID' } } };
+    submitDepositBtn.onclick = () => handleSubmitDeposit(currentCountry, currentMethod);
+      fxCurrency = 'USDT'; fxRatePerUSD = USDT_AUTO_FX; fxRatePerJOD = 1; usdPerJOD = 1;
+      modalTitle.textContent = 'USDT AUTO';
+     try { document.querySelector('label[for="sendJOD"]').textContent = `سيدفع (USDT)`; }catch(_){}
+     try { document.querySelector('label[for="recvCUR"]').textContent = 'سيُضاف (USD)'; }catch(_){}
+     try { document.getElementById('fieldPay').setAttribute('data-cur', 'USDT'); document.getElementById('fieldRecv').setAttribute('data-cur', 'USD'); }catch(_){}
+     setUsdtMode(true);
+     methodInfo.innerHTML = `
+       <div class="info-item"><strong>المعرّف</strong><div class="info-value"><span class="value-text">قريبا</span></div></div>
+       <div class="info-item"><strong>العملة</strong><div class="info-value"><span class="value-text">USDT</span></div></div>
+     `;
+     setupInfoCopyButtons();
+     sendJOD.value = '';
+     recvCUR.value = '';
+     resetUsdtUi();
+      // ربط 1:1 لحقول USDT
+      sendJOD.oninput = ()=>{
+        const v = Number(sendJOD.value);
+        if (Number.isFinite(v) && v>0){
+          recvCUR.value = (v * USDT_AUTO_FX).toFixed(2);
+          usdtPayAmount = v;
+        } else {
+          recvCUR.value = '';
+          usdtPayAmount = 0;
+        }
+        updateSubmitState();
+      };
+      recvCUR.oninput = ()=>{
+        const v = Number(recvCUR.value);
+        if (Number.isFinite(v) && v>0){
+          const pay = v / USDT_AUTO_FX;
+          sendJOD.value = pay.toFixed(2);
+          usdtPayAmount = pay;
+        } else {
+          sendJOD.value = '';
+          usdtPayAmount = 0;
+        }
+        updateSubmitState();
+      };
+     updateSubmitState();
+     openModal();
+     hidePreloader();
+   }
+
     async function openMethod(m){
       showPreloader();
       currentMethod = m;
+      setUsdtMode(false);
       modalTitle.textContent = (m.data.name||"" ).toUpperCase();
       methodInfo.innerHTML='';
 
@@ -1446,6 +1606,11 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
         }
         if (curCode === 'USD') {
           fxRatePerUSD = 1;
+        }
+        if (curCode === 'USDT') {
+          fxRatePerUSD = 1;
+          fxRatePerJOD = 1;
+          fetchedUsdPerJOD = 1;
         }
       }catch(e){
         fxCurrency = null; fxRatePerJOD = null; fxRatePerUSD = null; usdPerJOD = null;
@@ -1474,6 +1639,9 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       try {
         usdPerJOD = isPositiveNumber(fetchedUsdPerJOD) ? fetchedUsdPerJOD : null;
         const curCode = (fxCurrency || '').toUpperCase();
+        if (curCode === 'USDT') {
+          usdPerJOD = 1;
+        }
         if (!isPositiveNumber(usdPerJOD) && curCode === 'USD' && isPositiveNumber(fxRatePerJOD)) {
           usdPerJOD = fxRatePerJOD;
         }
@@ -1593,6 +1761,16 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       return Number.isFinite(pay) && pay > 0 && isPositiveNumber(usd);
     }
 
+    // USDT Auto helpers
+   function generateUniqueUsdtAmount(){
+      updateSubmitState();
+    }
+
+    async function copyUsdtAmount(){
+      if (!usdtPayAmount) return;
+      await copyToClipboard(usdtPayAmount.toFixed(2));
+    }
+
     /* ========================= اختيار ملف + رفع تلقائي (بدون تسجيل) ========================= */
     const proofFileEl = document.getElementById('proofFile');
 
@@ -1615,6 +1793,21 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
           proofTrigger.innerHTML = 'اثبات الدفع <i class="fa-solid fa-paperclip"></i>';
         }
       }catch(_){ }
+    }
+
+    function setProofVisible(show){
+      const displayStyle = show ? '' : 'none';
+      if (proofTrigger) proofTrigger.style.display = displayStyle;
+      if (proofPreview) proofPreview.style.display = show ? '' : 'none';
+      if (proofFileEl) {
+        proofFileEl.disabled = !show;
+        if (!show) proofFileEl.value = '';
+      }
+      if (!show) {
+        uploadedProofUrl = null;
+        proofUploadPending = false;
+        updateProofUI();
+      }
     }
 
     if (proofFileEl) proofFileEl.addEventListener('change', ()=>{
@@ -1698,10 +1891,16 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     }
 
     function updateSubmitState(){
-      const okPay   = amountsValid();
-      const okProof = !!uploadedProofUrl;
-      const okMeta  = !!currentMethod && !!currentCountry;
+      const isUsdt = isUsdtAuto || (currentMethod && currentMethod.id === 'usdt-auto');
+      const payVal = Number(sendJOD.value);
+      const okPay   = isUsdt ? (Number.isFinite(payVal) && payVal > 0) : amountsValid();
+      const okProof = isUsdt ? true : !!uploadedProofUrl;
+      const okOrder = isUsdt ? ((usdtOrderId?.value || '').trim().length > 0) : true;
+      const okMeta  = isUsdt ? !!currentMethod : (!!currentMethod && !!currentCountry);
       submitDepositBtn.disabled = !(okPay && okProof && okMeta);
+      if (isUsdt && submitDepositBtn.disabled === false && !okOrder) {
+        submitDepositBtn.disabled = true;
+      }
     }
 
     /* ========================= تقديم طلب الإيداع — يتطلب تسجيل دخول ========================= */
@@ -1712,25 +1911,39 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
     }
 
     async function handleSubmitDeposit(country, method){
-      if(!amountsValid()) return alert('أدخل المبلغ أولاً.');
-      if(!uploadedProofUrl) return alert('من فضلك ارفع الإثبات أولاً.');
+      const isUsdt = method && method.id === 'usdt-auto';
+      if (!isUsdt && !amountsValid()) return alert('أدخل المبلغ أولاً.');
+      if (!isUsdt && !uploadedProofUrl) return alert('من فضلك ارفع الإثبات أولاً.');
+      if (isUsdt) {
+        if (!usdtPayAmount || usdtPayAmount <= 0) return alert('أدخل المبلغ المطلوب.');
+        if (!(usdtOrderId?.value || '').trim()) return alert('أدخل Order ID من Binance.');
+      }
       try{
-        const idToken = await getIdTokenOrThrow(); // الإرسال ما زال يتطلب تسجيل الدخول
+        const idToken = await getIdTokenOrThrow();
         const guardToken = generateGuardToken('edaa-submit');
 
-        const payAmount = Number(sendJOD.value); // ما سيدفعه العميل بعملة الطريقة
-        const body = {
+        const body = isUsdt ? {
+          methodId: 'usdt-auto',
+          methodName: 'USDT Auto',
+          currency: 'USDT',
+          payAmount: Number(usdtPayAmount),
+          orderId: (usdtOrderId?.value || '').trim(),
+          guardToken,
+          turnstileToken: guardToken,
+          uniqueAmount: Number(usdtPayAmount)
+        } : {
           countryId: country?.id || "",
           countryName: country?.data?.name || country?.name || "",
           methodId: method?.id || "",
           methodName: method?.data?.name || method?.name || "",
-          payAmount,                       // السيرفر يحسب الباقي
+          payAmount: Number(sendJOD.value),
           proofUrl: uploadedProofUrl,
           guardToken,
           turnstileToken: guardToken
         };
 
-        const res = await fetch(`${WORKER}/deposit/submit`, {
+        const endpoint = isUsdt ? `${MANWAL_WORKER}/usdtauto` : `${WORKER}/deposit/submit`;
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Authorization': 'Bearer ' + idToken,
@@ -1741,41 +1954,18 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
         const data = await res.json();
         if(!res.ok || !data.success) throw new Error(data.error || 'فشل تقديم الطلب');
 
-        // احسب ما سيُضاف بالدولار
         let usdAdded = null;
         if (data && typeof data.amountUSD === 'number') {
           usdAdded = Number(data.amountUSD);
-        } else {
-          try{
-            if (usdPerJOD && Number.isFinite(Number(usdPerJOD))) {
-              const calc = Number(data.amountJOD) * Number(usdPerJOD);
-              if (Number.isFinite(calc)) usdAdded = calc;
-            }
-          }catch(_){ usdAdded = null; }
         }
 
-        const usdLine = (usdAdded!=null && Number.isFinite(usdAdded)) ? `سيُضاف (دولار): ${usdAdded.toFixed(2)} USD` : '';
-        const usdRateLine = (typeof data.usdPerJOD === 'number' && data.usdPerJOD>0)
-          ? `\n(1 JOD = ${Number(data.usdPerJOD).toFixed(4)} USD)`
-          : '';
-        const fxLine = (typeof data.ratePerUSD === 'number' && data.ratePerUSD>0)
-          ? `(السعر من الخادم: 1 USD = ${Number(data.ratePerUSD).toFixed(4)} ${data.currency})`
-          : ((typeof data.ratePerJOD === 'number' && data.ratePerJOD>0)
-              ? `(السعر من الخادم: 1 JOD = ${Number(data.ratePerJOD).toFixed(4)} ${data.currency})`
-              : '');
-
-        // عرض نافذة تأكيد عصرية — CSS يُجلب من الباك-إند المحمي
         try { await ensureConfirmCss(idToken); } catch(_){ }
         showDepositConfirm({
           code: data.depositCode,
           paid: `${data.amountCurrency} ${data.currency}`,
           addedUSD: (usdAdded!=null && Number.isFinite(usdAdded)) ? usdAdded.toFixed(2)+ ' USD' : '—',
-          fx: (function(){
-            if (typeof data.ratePerUSD === 'number' && data.ratePerUSD>0) return `1 USD = ${Number(data.ratePerUSD).toFixed(4)} ${data.currency}`;
-            if (typeof data.ratePerJOD === 'number' && data.ratePerJOD>0) return `1 JOD = ${Number(data.ratePerJOD).toFixed(4)} ${data.currency}`;
-            return '';
-          })(),
-          extra: (typeof data.usdPerJOD === 'number' && data.usdPerJOD>0) ? `1 JOD = ${Number(data.usdPerJOD).toFixed(4)} USD` : ''
+          fx: '',
+          extra: ''
         });
         try { closeModalFn(); } catch(_){ }
       }catch(err){
@@ -1789,6 +1979,10 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
       submitDepositBtn.onclick = ()=>handleSubmitDeposit(currentCountry, m);
       openMethod(m);
     }
+
+    // USDT Auto bindings
+    if (usdtOrderId) usdtOrderId.addEventListener('input', updateSubmitState);
+    if (usdtBaseAmount) usdtBaseAmount.addEventListener('input', ()=>{ usdtPayAmount=0; updateSubmitState(); });
 
     function renderMethods(list){
       clearGrid();
@@ -1824,8 +2018,6 @@ body:not(.dark-mode) .btn-outline { background:#f3f4f6; color:#111827; border-co
   
 </body>
 </html>
-
-
 
 
 
