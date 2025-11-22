@@ -25,13 +25,14 @@ const DEFAULT_GAME_CONFIG = {
 const GAME_ALIASES = {
   freefiremanwal: "freefire",
   freefiremembership: "freefire",
-  freefiren: "freefire",
+  freefiren: "freefiren",
   jawakermanwal: "jawaker",
   fortnite: "fortnight",
 };
 
 const GAME_CONFIGS = {
   freefire: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "freefiremanwal", offerKey: "jewels", cacheTag: "freefire" },
+    freefiren: { apiBase: "https://z3em-manwal.laithqarqaz1.workers.dev/", xGame: "freefiren", offerKey: "jewels", cacheTag: "freefiren" },
   freefireauto: { apiBase: "https://z3em-freefireauto.laithqarqaz1.workers.dev/", offerKey: "jewels", cacheTag: "freefireauto" },
   freefireauto2: { apiBase: "https://z3em-freefireauto2.laithqarqaz1.workers.dev/", offerKey: "jewels", cacheTag: "freefireauto2" },
   jawaker: { apiBase: "https://z3em-jawaker.laithqarqaz1.workers.dev/", offerKey: "tokens", cacheTag: "jawaker" },
