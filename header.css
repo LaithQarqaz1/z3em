@@ -128,6 +128,96 @@ a img {
   z-index: 1800;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-logo-link {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+.header-logo-link img {
+  margin: 0;
+}
+
+.lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.lang-switcher i {
+  font-size: 0.95rem;
+}
+
+.lang-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  min-width: 90px;
+  padding: 0 2px;
+  cursor: pointer;
+  outline: none;
+}
+
+.lang-select option {
+  color: #0f172a;
+}
+body.dark-mode #sidebar {
+  color-scheme: dark;
+}
+body.dark-mode .lang-select {
+  color-scheme: dark;
+}
+body.dark-mode .lang-select option {
+  background: #0f1024;
+  color: #f0f1ff;
+}
+
+html[dir="ltr"] body {
+  direction: ltr !important;
+}
+
+html[dir="ltr"] .top-header {
+  padding-left: 20px;
+  padding-right: 15px;
+}
+
+html[dir="ltr"] .header-logo-link {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+html[dir="ltr"] #sidebar {
+  right: auto;
+  left: 0;
+  transform: translateX(-100%);
+}
+
+html[dir="ltr"] #sidebar.active {
+  transform: translateX(0);
+}
+
+html[dir="ltr"] #sidebar ul li,
+html[dir="ltr"] #sidebar ul li a {
+  text-align: left;
+}
+
 
     .top-header img {
       height: 60px;
@@ -737,6 +827,61 @@ a img {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
+/* Sidebar support section */
+#sidebar .support-section {
+  background: transparent;
+  padding: 14px 14px 8px;
+  border: none;
+  box-shadow: none;
+  text-align: center;
+}
+
+#sidebar .support-title {
+  color: #e6edff;
+  font-size: 1rem;
+  margin: 0 0 10px;
+}
+
+#sidebar .support-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+#sidebar .support-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+#sidebar .support-icon img {
+  width: 32px;
+  height: 32px;
+  filter: none !important;
+}
+
+#sidebar .support-icon:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+#sidebar .support-rights {
+  margin-top: 12px;
+  color: #e6edff;
+  font-size: 11px;
+  text-align: center;
+}
+
+#sidebar .support-rights a {
+  color: #fff;
+  text-decoration: none;
+}
+
 /* ألوان الأيقونات حسب المنصة */
 .support-icon.whatsapp { color: #25D366; }
 .support-icon.facebook { color: #3b5998; }
@@ -1152,6 +1297,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+
+.top-header .header-logo-link img { margin: 0; }
 
 
 

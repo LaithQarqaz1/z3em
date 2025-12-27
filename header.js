@@ -449,7 +449,7 @@ function watchSessionDocForDevice(user){
       try { applyCurrencyNow(); } catch {}
     }
 
-    const STORE_BASE_CODE = 'USD'; // الرصيد المخزن في قاعدة البيانات بالدولار الأمريكي
+    const STORE_BASE_CODE = 'USD'; // Balance stored in database is USD.
     function getFxBase(){ try { return window.__CURRENCY_BASE__ || null; } catch { return null; } }
     function getRates(){ try { return window.__CURRENCIES__ || CURRENCIES; } catch { return CURRENCIES; } }
     function convertAmount(amount, fromCode, toCode){
@@ -516,11 +516,8 @@ function watchSessionDocForDevice(user){
           .replace(/؛/g,',');
         // إذا كان النص ملفوفًا بعلامات اقتباس ويبدأ بـ {، أزل الاقتباس الزائد
         if (/^"\{/.test(s) && /\}"$/.test(s)) s = s.slice(1, -1);
-        // مفاتيح غير مقتبسة → اقتباسها
         s = s.replace(/([\{,]\s*)([A-Za-z_][A-Za-z0-9_-]*)\s*:/g,'$1"$2":');
-        // مفاتيح مقتبسة بأقواس مفردة → مزدوجة
         s = s.replace(/([\{,]\s*)'([^']*)'\s*:/g,'$1"$2":');
-        // قيم نصية مفردة → مزدوجة
         s = s.replace(/:\s*'([^']*)'/g,':"$1"');
         // إزالة الفواصل الزائدة
         s = s.replace(/,(\s*[}\]])/g,'$1');
@@ -543,7 +540,7 @@ function watchSessionDocForDevice(user){
     }
     function parseNumberFromText(t){
       if (!t) return null;
-      const s = String(t).replace(/[\u0660-\u0669]/g, (d)=> String(d.charCodeAt(0) - 0x0660)) // Arabic-Indic digits → Latin
+      const s = String(t).replace(/[\u0660-\u0669]/g, (d)=> String(d.charCodeAt(0) - 0x0660)) // Arabic-Indic digits ? Latin
                           .replace(/[^0-9.,]/g,'')
                           .replace(/,(?=\d{3}(\D|$))/g, '') // drop thousand commas
                           .replace(',', '.');
@@ -623,7 +620,7 @@ function watchSessionDocForDevice(user){
         const li = document.createElement('li');
         li.id = 'currencyLi';
         li.style.position = 'relative';
-        li.innerHTML = '<i class="fa-solid fa-sack-dollar"></i><a href="#">العملة</a>';
+        li.innerHTML = '<i class="fa-solid fa-sack-dollar"></i><a href="#" data-i18n="nav.currency">\u0627\u0644\u0639\u0645\u0644\u0629</a>';
         const labelA = li.querySelector('a');
         if (labelA) labelA.style.pointerEvents = 'none';
 
@@ -911,13 +908,720 @@ function watchSessionDocForDevice(user){
 })();
 document.addEventListener('visibilitychange', () => { try { if (sessionStorage.getItem('nav:loader:expected') === '1') return; } catch {} if (document.visibilityState === 'visible') hidePageLoader(); });
 
+// i18n (language switcher + translations)
+const I18N_TEXT = {
+  ar: {
+    'brand.name': '\u0645\u062A\u062C\u0631\u0020\u0632\u0639\u064A\u0645',
+    'brand.home': '\u0627\u0644\u0639\u0648\u062F\u0629\u0020\u0644\u0644\u0631\u0626\u064A\u0633\u064A\u0629',
+    'nav.home': '\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629',
+    'nav.deposit': '\u0627\u0644\u0625\u064A\u062F\u0627\u0639',
+    'nav.orders': '\u0637\u0644\u0628\u0627\u062A\u064A',
+    'nav.wallet': '\u0627\u0644\u0645\u062D\u0641\u0638\u0629',
+    'nav.transfer': '\u062A\u062D\u0648\u064A\u0644\u0020\u0627\u0644\u0631\u0635\u064A\u062F',
+    'nav.reviews': '\u0627\u0644\u062A\u0642\u064A\u064A\u0645\u0627\u062A',
+    'nav.settings': '\u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A',
+    'nav.api': '\u0648\u062C\u0647\u0629\u0020\u0627\u0644\u0628\u0631\u0645\u062C\u0629',
+    'nav.login': '\u062A\u0633\u062C\u064A\u0644\u0020\u0627\u0644\u062F\u062E\u0648\u0644',
+    'nav.logout': '\u062A\u0633\u062C\u064A\u0644\u0020\u0627\u0644\u062E\u0631\u0648\u062C',
+    'nav.currency': '\u0627\u0644\u0639\u0645\u0644\u0629',
+    'nav.language': '\u0627\u0644\u0644\u063A\u0629',
+    'support.title': '\u0637\u0631\u0642\u0020\u0627\u0644\u062A\u0648\u0627\u0635\u0644',
+    'support.credit': '\uD83D\uDD17\u0020\u062A\u0645\u0020\u062A\u0637\u0648\u064A\u0631\u0020\u0627\u0644\u0645\u0646\u0635\u0629\u0020\u0628\u0648\u0627\u0633\u0637\u0629\u0020LaithDev.',
+    'support.whatsappAlt': '\u0648\u0627\u062A\u0633\u0627\u0628\u00202'
+  },
+  en: {
+    'brand.name': 'Z3em Store',
+    'brand.home': 'Back to home',
+    'nav.home': 'Home',
+    'nav.deposit': 'Deposit',
+    'nav.orders': 'My Orders',
+    'nav.wallet': 'My Wallet',
+    'nav.transfer': 'Balance Transfer',
+    'nav.reviews': 'Reviews',
+    'nav.settings': 'Settings',
+    'nav.api': 'API Docs',
+    'nav.login': 'Log In',
+    'nav.logout': 'Log Out',
+    'nav.currency': 'Currency',
+    'nav.language': 'Language',
+    'support.title': "We're here to help",
+    'support.credit': '\uD83D\uDD17 Platform developed by LaithDev.',
+    'support.whatsappAlt': 'WhatsApp 2'
+  },
+  fr: {
+    'brand.name': 'Boutique Z3em',
+    'brand.home': 'Retour \u00E0 l\'accueil',
+    'nav.home': 'Accueil',
+    'nav.deposit': 'D\u00E9p\u00F4t',
+    'nav.orders': 'Mes commandes',
+    'nav.wallet': 'Mon portefeuille',
+    'nav.transfer': 'Transfert de solde',
+    'nav.reviews': 'Avis',
+    'nav.settings': 'Param\u00E8tres',
+    'nav.api': 'API Docs',
+    'nav.login': 'Connexion',
+    'nav.logout': 'D\u00E9connexion',
+    'nav.currency': 'Devise',
+    'nav.language': 'Langue',
+    'support.title': 'Nous sommes l\u00E0 pour vous aider',
+    'support.credit': '\uD83D\uDD17 Plateforme d\u00E9velopp\u00E9e par LaithDev.',
+    'support.whatsappAlt': 'WhatsApp 2'
+  }
+};
+function normalizeKey(value){
+  return (value || '')
+    .toString()
+    .replace(/[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+const ARABIC_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+function hasArabic(value){
+  return ARABIC_RE.test(String(value || ''));
+}
+const LATIN_RE = /[A-Za-z]/;
+function hasLatin(value){
+  return LATIN_RE.test(String(value || ''));
+}
+function isShortLatinToken(value){
+  const str = normalizeKey(value);
+  if (!str) return false;
+  if (!hasLatin(str) || hasArabic(str)) return false;
+  if (/^[A-Za-z]{1,3}$/.test(str)) return true;
+  if (/^[A-Z0-9._-]+$/.test(str) && str.length <= 4) return true;
+  return false;
+}
+function toLatinDigits(value){
+  const map = { '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9' };
+  return String(value || '').replace(/[0-9]/g, (ch) => map[ch] || ch);
+}
+const I18N_AR_OVERRIDES = {};
+try {
+  const arMap = I18N_TEXT.ar || {};
+  Object.keys(arMap).forEach((key) => {
+    const arText = normalizeKey(arMap[key]);
+    if (!arText) return;
+    I18N_AR_OVERRIDES[arText] = {
+      en: (I18N_TEXT.en && I18N_TEXT.en[key]) || '',
+      fr: (I18N_TEXT.fr && I18N_TEXT.fr[key]) || ''
+    };
+  });
+} catch {}
+const I18N_EN_OVERRIDES = {};
+try {
+  const enMap = I18N_TEXT.en || {};
+  Object.keys(enMap).forEach((key) => {
+    const enText = normalizeKey(enMap[key]);
+    if (!enText) return;
+    I18N_EN_OVERRIDES[enText] = {
+      ar: (I18N_TEXT.ar && I18N_TEXT.ar[key]) || '',
+      fr: (I18N_TEXT.fr && I18N_TEXT.fr[key]) || ''
+    };
+  });
+} catch {}
+
+const I18N_RUNTIME = {
+  loaded: false,
+  byAr: {},
+  byEn: {},
+  pending: new Map(),
+  timer: null,
+  saveTimer: null,
+  inFlight: false,
+  nextAllowedAt: 0
+};
+const RUNTIME_STORAGE_KEY = 'i18n:runtime';
+const RUNTIME_MAX_ITEMS = 600;
+const RUNTIME_BATCH_MAX = 24;
+const RUNTIME_BATCH_DELIM = '|||#|||';
+const RUNTIME_QUEUE_DELAY = 700;
+const RUNTIME_MIN_INTERVAL = 900;
+
+function loadRuntimeDict(){
+  if (I18N_RUNTIME.loaded) return;
+  I18N_RUNTIME.loaded = true;
+  try {
+    const raw = localStorage.getItem(RUNTIME_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      if (parsed.byAr && typeof parsed.byAr === 'object') I18N_RUNTIME.byAr = parsed.byAr;
+      if (parsed.byEn && typeof parsed.byEn === 'object') I18N_RUNTIME.byEn = parsed.byEn;
+    }
+  } catch {}
+}
+function pruneRuntimeDict(map){
+  try {
+    const keys = Object.keys(map || {});
+    if (keys.length <= RUNTIME_MAX_ITEMS) return;
+    const drop = keys.length - RUNTIME_MAX_ITEMS;
+    for (let i = 0; i < drop; i++) delete map[keys[i]];
+  } catch {}
+}
+function scheduleRuntimeSave(){
+  if (I18N_RUNTIME.saveTimer) return;
+  I18N_RUNTIME.saveTimer = setTimeout(() => {
+    I18N_RUNTIME.saveTimer = null;
+    try {
+      pruneRuntimeDict(I18N_RUNTIME.byAr);
+      pruneRuntimeDict(I18N_RUNTIME.byEn);
+      const payload = JSON.stringify({ byAr: I18N_RUNTIME.byAr, byEn: I18N_RUNTIME.byEn });
+      localStorage.setItem(RUNTIME_STORAGE_KEY, payload);
+    } catch {}
+  }, 800);
+}
+function scheduleRuntimeFlush(delay){
+  if (I18N_RUNTIME.timer) return;
+  const wait = Math.max(0, delay || 0);
+  I18N_RUNTIME.timer = setTimeout(() => {
+    I18N_RUNTIME.timer = null;
+    flushRuntimeTranslations();
+  }, wait);
+}
+function shouldSkipRuntimeTranslation(source, text){
+  if (!text || text.length < 2 || text.length > 180) return true;
+  if (/https?:\/\//i.test(text) || /www\./i.test(text)) return true;
+  if (/^[0-9\s.,:+\-()]+$/.test(text)) return true;
+  if (source === 'en' && isShortLatinToken(text)) return true;
+  return false;
+}
+function queueRuntimeTranslation(source, raw, target){
+  try {
+    if (!raw || !target || source === target) return;
+    if (shouldSkipRuntimeTranslation(source, raw)) return;
+    const key = `${source}|${target}`;
+    let set = I18N_RUNTIME.pending.get(key);
+    if (!set) { set = new Set(); I18N_RUNTIME.pending.set(key, set); }
+    if (set.has(raw)) return;
+    set.add(raw);
+    scheduleRuntimeFlush(RUNTIME_QUEUE_DELAY);
+  } catch {}
+}
+async function translateBatch(source, target, list){
+  try {
+    const joined = list.join(RUNTIME_BATCH_DELIM);
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(source)}&tl=${encodeURIComponent(target)}&dt=t&q=${encodeURIComponent(joined)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const translated = data && data[0] && data[0][0] && data[0][0][0];
+    if (!translated || typeof translated !== 'string') return null;
+    const parts = translated.split(RUNTIME_BATCH_DELIM);
+    if (!parts || !parts.length) return null;
+    return parts;
+  } catch {
+    return null;
+  }
+}
+async function flushRuntimeTranslations(){
+  if (I18N_RUNTIME.inFlight) return;
+  const now = Date.now();
+  if (now < I18N_RUNTIME.nextAllowedAt) {
+    scheduleRuntimeFlush(I18N_RUNTIME.nextAllowedAt - now);
+    return;
+  }
+  const entries = Array.from(I18N_RUNTIME.pending.entries());
+  if (!entries.length) return;
+  let pickedKey = null;
+  let pickedSet = null;
+  for (const [key, set] of entries) {
+    if (set && set.size) { pickedKey = key; pickedSet = set; break; }
+    I18N_RUNTIME.pending.delete(key);
+  }
+  if (!pickedSet) return;
+  const [source, target] = pickedKey.split('|');
+  const batch = Array.from(pickedSet).slice(0, RUNTIME_BATCH_MAX);
+  batch.forEach(item => pickedSet.delete(item));
+  if (!pickedSet.size) I18N_RUNTIME.pending.delete(pickedKey);
+  I18N_RUNTIME.inFlight = true;
+  I18N_RUNTIME.nextAllowedAt = now + RUNTIME_MIN_INTERVAL;
+  const translatedParts = await translateBatch(source, target, batch);
+  I18N_RUNTIME.inFlight = false;
+  if (!translatedParts || translatedParts.length !== batch.length) {
+    if (I18N_RUNTIME.pending.size) scheduleRuntimeFlush(RUNTIME_MIN_INTERVAL);
+    return;
+  }
+  const runtimeMap = source === 'ar' ? I18N_RUNTIME.byAr : I18N_RUNTIME.byEn;
+  for (let i = 0; i < batch.length; i++) {
+    const raw = batch[i];
+    const translated = translatedParts[i];
+    if (!raw || !translated) continue;
+    const entry = runtimeMap[raw] || {};
+    entry[target] = translated;
+    runtimeMap[raw] = entry;
+  }
+  try { rebuildPrefixList(); } catch {}
+  scheduleRuntimeSave();
+  try { setTimeout(() => { applyTranslations(document); }, 0); } catch {}
+  if (I18N_RUNTIME.pending.size) scheduleRuntimeFlush(RUNTIME_MIN_INTERVAL);
+}
+
+const I18N_DICT_STATE = { loaded: false, prefixesBy: { ar: [], en: [] } };
+let i18nDictPromise = null;
+function getI18nDictByAr(){
+  try { return (window.__I18N_DICT__ && window.__I18N_DICT__.byAr) || {}; } catch { return {}; }
+}
+function getI18nDictByEn(){
+  try { return (window.__I18N_DICT__ && window.__I18N_DICT__.byEn) || {}; } catch { return {}; }
+}
+function buildPrefixList(dict, overrides, runtime){
+  const set = new Set();
+  Object.keys(dict || {}).forEach((k) => {
+    const key = normalizeKey(k);
+    if (key && key.length >= 6) set.add(key);
+  });
+  Object.keys(overrides || {}).forEach((k) => {
+    const key = normalizeKey(k);
+    if (key && key.length >= 6) set.add(key);
+  });
+  Object.keys(runtime || {}).forEach((k) => {
+    const key = normalizeKey(k);
+    if (key && key.length >= 6) set.add(key);
+  });
+  return Array.from(set).sort((a, b) => b.length - a.length);
+}
+function rebuildPrefixList(){
+  try {
+    loadRuntimeDict();
+    I18N_DICT_STATE.prefixesBy = {
+      ar: buildPrefixList(getI18nDictByAr(), I18N_AR_OVERRIDES, I18N_RUNTIME.byAr),
+      en: buildPrefixList(getI18nDictByEn(), I18N_EN_OVERRIDES, I18N_RUNTIME.byEn)
+    };
+  } catch {}
+}
+function ensureI18nDictLoaded(){
+  try {
+    if (window.__I18N_DICT__ && window.__I18N_DICT__.byAr) {
+      I18N_DICT_STATE.loaded = true;
+      rebuildPrefixList();
+      return Promise.resolve(true);
+    }
+  } catch {}
+  if (i18nDictPromise) return i18nDictPromise;
+  i18nDictPromise = new Promise((resolve) => {
+    try {
+      const s = document.createElement('script');
+      s.src = 'i18n-dict.js';
+      s.defer = true;
+      s.onload = () => { try { I18N_DICT_STATE.loaded = true; rebuildPrefixList(); } catch {} resolve(true); };
+      s.onerror = () => resolve(false);
+      (document.head || document.documentElement).appendChild(s);
+      setTimeout(() => resolve(false), 3000);
+    } catch {
+      resolve(false);
+    }
+  });
+  return i18nDictPromise;
+}
+function translateRawText(raw){
+  const norm = normalizeKey(raw);
+  if (!norm) return null;
+  const source = hasArabic(norm) ? 'ar' : (hasLatin(norm) ? 'en' : null);
+  if (!source || source === currentLang) return null;
+  if (source === 'en' && isShortLatinToken(norm)) return null;
+  loadRuntimeDict();
+  const overrides = source === 'ar' ? I18N_AR_OVERRIDES : I18N_EN_OVERRIDES;
+  const dict = source === 'ar' ? getI18nDictByAr() : getI18nDictByEn();
+  const runtime = source === 'ar' ? I18N_RUNTIME.byAr : I18N_RUNTIME.byEn;
+  const entry = runtime[norm] || overrides[norm] || dict[norm];
+  if (entry && entry[currentLang]) return entry[currentLang];
+  const prefixes = (I18N_DICT_STATE.prefixesBy && I18N_DICT_STATE.prefixesBy[source]) || [];
+  for (let i = 0; i < prefixes.length; i++) {
+    const prefix = prefixes[i];
+    if (!norm.startsWith(prefix)) continue;
+    const remainder = norm.slice(prefix.length);
+    const remTrim = remainder.replace(/^\s+/, '');
+    if (source === 'ar' && remTrim && /^[\u0600-\u06FF]/.test(remTrim)) continue;
+    if (source === 'en' && remTrim && /^[A-Za-z]/.test(remTrim)) {
+      if (!/^[A-Z0-9()$._\/\-\s]+$/.test(remTrim)) continue;
+    }
+    const prefixEntry = runtime[prefix] || overrides[prefix] || dict[prefix];
+    if (prefixEntry && prefixEntry[currentLang]) {
+      const tail = (source === 'ar' && currentLang !== 'ar') ? toLatinDigits(remainder) : remainder;
+      return prefixEntry[currentLang] + tail;
+    }
+  }
+  try { queueRuntimeTranslation(source, norm, currentLang); } catch {}
+  return null;
+}
+function translateStringPreserveWhitespace(raw){
+  if (raw == null) return raw;
+  const str = String(raw);
+  if (currentLang === 'ar' && hasArabic(str)) return str;
+  if (currentLang === 'en' && hasLatin(str) && !hasArabic(str)) return str;
+  const leading = (str.match(/^\s*/) || [''])[0];
+  const trailing = (str.match(/\s*$/) || [''])[0];
+  const translated = translateRawText(str);
+  if (!translated) return str;
+  const finalText = currentLang === 'ar' ? translated : toLatinDigits(translated);
+  return leading + finalText + trailing;
+}
+const TEXT_NODE_ORIG = new WeakMap();
+const ATTR_ORIG = new WeakMap();
+const META_ORIG = new WeakMap();
+let docTitleOriginal = null;
+let i18nApplying = false;
+function getAttrOriginal(el, attr){
+  let record = ATTR_ORIG.get(el);
+  if (!record) {
+    record = {};
+    ATTR_ORIG.set(el, record);
+  }
+  if (!(attr in record)) record[attr] = el.getAttribute(attr) || '';
+  return record[attr];
+}
+function setTranslatedAttr(el, attr){
+  try {
+    const current = el.getAttribute(attr) || '';
+    let raw = getAttrOriginal(el, attr);
+    if (current !== raw) {
+      const expected = translateStringPreserveWhitespace(raw);
+      if (!expected || normalizeKey(expected) !== normalizeKey(current)) {
+        const record = ATTR_ORIG.get(el);
+        if (record) record[attr] = current;
+        raw = current;
+      }
+    }
+    if (!raw) return;
+    const translated = translateStringPreserveWhitespace(raw);
+    if (translated && el.getAttribute(attr) !== translated) el.setAttribute(attr, translated);
+  } catch {}
+}
+function syncDatasetOriginalTitle(el){
+  try {
+    if (!el || !el.dataset || !el.dataset.originalTitle) return;
+    if (!el.dataset.i18nOriginalTitle) el.dataset.i18nOriginalTitle = el.dataset.originalTitle;
+    const raw = el.dataset.i18nOriginalTitle;
+    const translated = translateStringPreserveWhitespace(raw);
+    if (translated) el.dataset.originalTitle = translated;
+  } catch {}
+}
+function translateTextNode(node){
+  try {
+    if (!node || node.nodeType !== 3) return;
+    const parent = node.parentElement;
+    if (parent && parent.closest && parent.closest('[data-i18n-ignore]')) return;
+    if (parent && /^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA)$/i.test(parent.tagName)) return;
+    const current = node.nodeValue || '';
+    let raw = TEXT_NODE_ORIG.get(node);
+    if (raw == null) {
+      raw = current; TEXT_NODE_ORIG.set(node, raw);
+    } else if (current !== raw) {
+      const expected = translateStringPreserveWhitespace(raw);
+      if (!expected || normalizeKey(expected) !== normalizeKey(current)) {
+        raw = current; TEXT_NODE_ORIG.set(node, raw);
+      }
+    }
+    const translated = translateStringPreserveWhitespace(raw);
+    if (translated != null && node.nodeValue !== translated) node.nodeValue = translated;
+  } catch {}
+}
+function applyAutoTranslations(root){
+  if (i18nApplying) return;
+  i18nApplying = true;
+  try {
+    const scope = root && root.nodeType ? root : document;
+    if (scope.nodeType === 3) {
+      translateTextNode(scope);
+      return;
+    }
+    const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, {
+      acceptNode(node){
+        if (!node || !node.parentElement) return NodeFilter.FILTER_REJECT;
+        if (node.parentElement.closest && node.parentElement.closest('[data-i18n-ignore]')) return NodeFilter.FILTER_REJECT;
+        if (/^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA)$/i.test(node.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    let node;
+    while ((node = walker.nextNode())) translateTextNode(node);
+
+    const elements = scope.querySelectorAll ? scope.querySelectorAll('*') : [];
+    if (scope.nodeType === 1) {
+      setTranslatedAttr(scope, 'placeholder');
+      setTranslatedAttr(scope, 'title');
+      setTranslatedAttr(scope, 'aria-label');
+      setTranslatedAttr(scope, 'alt');
+      setTranslatedAttr(scope, 'data-title');
+      setTranslatedAttr(scope, 'data-label');
+      if (scope.tagName === 'INPUT') {
+        const type = (scope.getAttribute('type') || '').toLowerCase();
+        if (type === 'button' || type === 'submit' || type === 'reset') setTranslatedAttr(scope, 'value');
+      }
+      syncDatasetOriginalTitle(scope);
+    }
+    elements.forEach((el) => {
+      if (el.closest && el.closest('[data-i18n-ignore]')) return;
+      setTranslatedAttr(el, 'placeholder');
+      setTranslatedAttr(el, 'title');
+      setTranslatedAttr(el, 'aria-label');
+      setTranslatedAttr(el, 'alt');
+      setTranslatedAttr(el, 'data-title');
+      setTranslatedAttr(el, 'data-label');
+      if (el.tagName === 'INPUT') {
+        const type = (el.getAttribute('type') || '').toLowerCase();
+        if (type === 'button' || type === 'submit' || type === 'reset') setTranslatedAttr(el, 'value');
+      }
+      syncDatasetOriginalTitle(el);
+    });
+  } catch {} finally { i18nApplying = false; }
+}
+function applyMetaTranslations(){
+  try {
+    if (docTitleOriginal == null) docTitleOriginal = document.title || '';
+    if (docTitleOriginal) {
+      const translated = translateStringPreserveWhitespace(docTitleOriginal);
+      if (translated != null) document.title = translated;
+    }
+  } catch {}
+  try {
+    const metas = document.querySelectorAll('meta[content]');
+    metas.forEach((meta) => {
+      const name = (meta.getAttribute('name') || meta.getAttribute('property') || '').toLowerCase();
+      if (name === 'og:locale' || name === 'viewport') return;
+      const current = meta.getAttribute('content') || '';
+      let raw = META_ORIG.get(meta);
+      if (raw == null) {
+        raw = current; META_ORIG.set(meta, raw);
+      } else if (current !== raw) {
+        const expected = translateStringPreserveWhitespace(raw);
+        if (!expected || normalizeKey(expected) !== normalizeKey(current)) {
+          raw = current; META_ORIG.set(meta, raw);
+        }
+      }
+      if (!raw) return;
+      const translated = translateStringPreserveWhitespace(raw);
+      if (translated && meta.getAttribute('content') !== translated) meta.setAttribute('content', translated);
+    });
+  } catch {}
+}
+function watchI18nMutations(){
+  if (!window.MutationObserver || window.__I18N_MUTATIONS__) return;
+  const observer = new MutationObserver((mutations) => {
+    if (i18nApplying) return;
+    mutations.forEach((m) => {
+      if (m.type === 'childList') {
+        m.addedNodes.forEach((node) => { applyAutoTranslations(node); });
+      } else if (m.type === 'characterData') {
+        translateTextNode(m.target);
+      } else if (m.type === 'attributes') {
+        applyAutoTranslations(m.target);
+      }
+    });
+  });
+  try {
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['placeholder', 'title', 'aria-label', 'alt', 'data-title', 'data-label', 'value']
+    });
+    window.__I18N_MUTATIONS__ = observer;
+  } catch {}
+}
+function patchI18nDialogs(){
+  try {
+    if (window.__I18N_DIALOGS__) return;
+    window.__I18N_DIALOGS__ = true;
+    if (typeof window.alert === 'function') {
+      const nativeAlert = window.alert.bind(window);
+      window.alert = (msg) => nativeAlert(translateStringPreserveWhitespace(String(msg || '')));
+    }
+    if (typeof window.confirm === 'function') {
+      const nativeConfirm = window.confirm.bind(window);
+      window.confirm = (msg) => nativeConfirm(translateStringPreserveWhitespace(String(msg || '')));
+    }
+    if (typeof window.prompt === 'function') {
+      const nativePrompt = window.prompt.bind(window);
+      window.prompt = (msg, def) => nativePrompt(
+        translateStringPreserveWhitespace(String(msg || '')),
+        translateStringPreserveWhitespace(String(def || ''))
+      );
+    }
+  } catch {}
+}
+const LANG_KEY = 'site:lang';
+const RTL_LANGS = new Set(['ar']);
+const langSelects = new Set();
+let currentLang = null;
+
+function normalizeLang(lang){
+  const key = (lang || '').toString().toLowerCase();
+  return I18N_TEXT[key] ? key : 'ar';
+}
+function readStoredLang(){
+  try { return localStorage.getItem(LANG_KEY); } catch { return null; }
+}
+function translateKey(key, fallback){
+  if (!key) return fallback || '';
+  const dict = I18N_TEXT[currentLang] || I18N_TEXT.ar || {};
+  if (Object.prototype.hasOwnProperty.call(dict, key)) return dict[key];
+  const rawFallback = (fallback != null) ? fallback : key;
+  const rawTranslated = translateRawText(rawFallback);
+  return rawTranslated != null ? rawTranslated : rawFallback;
+}
+function applyTranslations(root){
+  try {
+    if (root && root.querySelectorAll) {
+      root.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (!key) return;
+      if (!el.dataset.i18nFallback) el.dataset.i18nFallback = el.textContent || '';
+      const val = translateKey(key, el.dataset.i18nFallback);
+      if (val != null) el.textContent = val;
+      });
+      root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (!key) return;
+      if (!el.dataset.i18nPlaceholderFallback) el.dataset.i18nPlaceholderFallback = el.getAttribute('placeholder') || '';
+      const val = translateKey(key, el.dataset.i18nPlaceholderFallback);
+      if (val != null) el.setAttribute('placeholder', val);
+      });
+      root.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+      const key = el.getAttribute('data-i18n-aria-label');
+      if (!key) return;
+      if (!el.dataset.i18nAriaFallback) el.dataset.i18nAriaFallback = el.getAttribute('aria-label') || '';
+      const val = translateKey(key, el.dataset.i18nAriaFallback);
+      if (val != null) el.setAttribute('aria-label', val);
+      });
+      root.querySelectorAll('[data-i18n-alt]').forEach(el => {
+      const key = el.getAttribute('data-i18n-alt');
+      if (!key) return;
+      if (!el.dataset.i18nAltFallback) el.dataset.i18nAltFallback = el.getAttribute('alt') || '';
+      const val = translateKey(key, el.dataset.i18nAltFallback);
+      if (val != null) el.setAttribute('alt', val);
+      });
+      root.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const key = el.getAttribute('data-i18n-title');
+      if (!key) return;
+      if (!el.dataset.i18nTitleFallback) el.dataset.i18nTitleFallback = el.getAttribute('title') || '';
+      const val = translateKey(key, el.dataset.i18nTitleFallback);
+      if (val != null) el.setAttribute('title', val);
+      });
+      root.querySelectorAll('[data-i18n-data-title]').forEach(el => {
+      const key = el.getAttribute('data-i18n-data-title');
+      if (!key) return;
+      if (!el.dataset.i18nDataTitleFallback) el.dataset.i18nDataTitleFallback = el.getAttribute('data-title') || '';
+      const val = translateKey(key, el.dataset.i18nDataTitleFallback);
+      if (val != null) el.setAttribute('data-title', val);
+      });
+    }
+  } catch {}
+  try { applyAutoTranslations(root); } catch {}
+  try { applyMetaTranslations(); } catch {}
+}
+function syncLangSelects(){
+  langSelects.forEach(select => {
+    try { if (select.value !== currentLang) select.value = currentLang; } catch {}
+  });
+}
+function applyLang(lang, opts){
+  const next = normalizeLang(lang);
+  const prev = currentLang;
+  currentLang = next;
+  try {
+    const root = document.documentElement;
+    root.setAttribute('lang', next);
+    root.setAttribute('dir', RTL_LANGS.has(next) ? 'rtl' : 'ltr');
+    root.setAttribute('data-lang', next);
+  } catch {}
+  try { if (!(opts && opts.store === false)) localStorage.setItem(LANG_KEY, next); } catch {}
+  try {
+    const localeMap = { ar: 'ar_AR', en: 'en_US', fr: 'fr_FR' };
+    const metaLocale = document.querySelector('meta[property="og:locale"]');
+    if (metaLocale) metaLocale.setAttribute('content', localeMap[next] || 'ar_AR');
+  } catch {}
+  try {
+    const autoText = translateKey('home.autoRibbon', next === 'ar' ? '\u062A\u0644\u0642\u0627\u0626\u064A' : 'Auto');
+    document.documentElement.style.setProperty('--auto-ribbon-text', `"${autoText}"`);
+  } catch {}
+  applyTranslations(document);
+  try { ensureI18nDictLoaded().then(() => { applyTranslations(document); }); } catch {}
+  try { watchI18nMutations(); } catch {}
+  syncLangSelects();
+  if (!opts || opts.emit !== false) {
+    try { window.dispatchEvent(new CustomEvent('language:change', { detail: { lang: next } })); } catch {}
+  }
+  if (opts && opts.reload && prev !== next) {
+    try { location.reload(); } catch { try { location.href = location.href; } catch {} }
+  }
+}
+function setLang(lang){ applyLang(lang, { reload: true }); }
+function getLang(){ return currentLang || 'ar'; }
+
+function setupLanguageSelect(select){
+  try {
+    if (!select) return;
+    try { select.setAttribute('data-i18n-ignore','true'); } catch {}
+    if (!select.dataset.langReady) {
+      if (!select.querySelector('option')) {
+        select.innerHTML = `
+          <option value="ar">\u0627\u0644\u0639\u0631\u0628\u064A\u0629</option>
+          <option value="en">English</option>
+          <option value="fr">Fran\u00E7ais</option>
+        `;
+      }
+      select.addEventListener('change', () => { setLang(select.value); });
+      select.dataset.langReady = '1';
+    }
+    langSelects.add(select);
+    if (!currentLang) currentLang = normalizeLang(readStoredLang() || 'ar');
+    select.value = currentLang;
+  } catch {}
+}
+
+function attachLanguageSelector(){
+  try {
+    const ul = document.querySelector('#sidebar ul');
+    if (!ul || document.getElementById('langLi')) return;
+    const li = document.createElement('li');
+    li.id = 'langLi';
+    li.style.position = 'relative';
+    li.innerHTML = '<i class="fa-solid fa-language"></i><a href="#" data-i18n="nav.language">\u0627\u0644\u0644\u063A\u0629</a>';
+    const select = document.createElement('select');
+    select.className = 'lang-select lang-select--sidebar';
+    select.setAttribute('data-i18n-aria-label', 'nav.language');
+    select.style.position = 'absolute';
+    select.style.inset = '0 0 0 0';
+    select.style.opacity = '0';
+    select.style.width = '100%';
+    select.style.height = '100%';
+    select.style.cursor = 'pointer';
+    select.style.appearance = 'none';
+    select.style.WebkitAppearance = 'none';
+    select.style.MozAppearance = 'none';
+    setupLanguageSelect(select);
+    li.appendChild(select);
+    ul.appendChild(li);
+    applyTranslations(li);
+  } catch {}
+}
+
+(function initI18n(){
+  const initial = normalizeLang(readStoredLang() || document.documentElement.getAttribute('lang') || 'ar');
+  applyLang(initial, { store: false, emit: false });
+  try { patchI18nDialogs(); } catch {}
+  try { ensureI18nDictLoaded().then(() => { applyTranslations(document); }); } catch {}
+  try { watchI18nMutations(); } catch {}
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => { applyTranslations(document); });
+  } else {
+    applyTranslations(document);
+  }
+  window.addEventListener('DOMContentLoaded', attachLanguageSelector);
+  try { setTimeout(attachLanguageSelector, 200); setTimeout(attachLanguageSelector, 1000); } catch {}
+})();
+
+try { window.__I18N__ = { t: translateKey, setLang, getLang, applyTranslations, setupLanguageSelect }; } catch {}
+
 // Sidebar toggle
 function toggleSidebar(){
   const el = document.getElementById('sidebar');
-  if (!el) { console.warn('الشريط الجانبي غير موجود بعد.'); return; }
+  if (!el) { console.warn('\u0627\u0644\u0634\u0631\u064A\u0637\u0020\u0627\u0644\u062C\u0627\u0646\u0628\u064A\u0020\u063A\u064A\u0631\u0020\u0645\u0648\u062C\u0648\u062F\u0020\u0628\u0639\u062F.'); return; }
   el.classList.toggle('active');
 }
 
+const SKIP_HEADER = !!(typeof window !== 'undefined' && window.__SKIP_HEADER__);
 // Build header
 const header = document.createElement('header');
 header.className = 'top-header';
@@ -932,17 +1636,22 @@ header.appendChild(hamburger);
 // Logo
 const logo = document.createElement('img');
 logo.src = 'store.gif';
-logo.alt = 'متجر زعيم';
 logo.className = 'header-logo';
+logo.alt = 'متجر زعيم';
+logo.setAttribute('data-i18n-alt', 'brand.name');
 logo.setAttribute('fetchpriority','high');
 logo.loading = 'eager';
 logo.decoding = 'async';
 (function(){ try { const href = logo.src; if (href && document.head && !document.querySelector(`link[rel='preload'][as='image'][href='${href}']`)){ const l = document.createElement('link'); l.rel='preload'; l.as='image'; l.href=href; document.head.appendChild(l); } } catch {} })();
 const logoLink = document.createElement('a');
 logoLink.href = 'index.html';
-logoLink.setAttribute('aria-label','العودة إلى الرئيسية');
 logoLink.style.marginLeft = '0';
 logoLink.style.marginRight = 'auto';
+logoLink.className = 'header-logo-link';
+logoLink.setAttribute('aria-label','\u0627\u0644\u0639\u0648\u062F\u0629\u0020\u0625\u0644\u0649\u0020\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629');
+logoLink.setAttribute('data-i18n-aria-label', 'brand.home');
+logoLink.style.marginLeft = '';
+logoLink.style.marginRight = '';
 logoLink.appendChild(logo);
 
 // Balance display with deposit shortcut
@@ -1019,7 +1728,9 @@ balanceSpan.innerHTML = `
   </span>
 `;
 
+
 const leftContainer = document.createElement('div');
+leftContainer.className = 'header-left';
 leftContainer.style.display = 'flex';
 leftContainer.style.alignItems = 'center';
 leftContainer.style.gap = '10px';
@@ -1050,7 +1761,7 @@ function setHeaderBalance(text){
     if (currencyEl) currencyEl.textContent = '—';
     return;
   }
-  const hasDigits = /[0-9٠-٩]/.test(trimmed);
+  const hasDigits = /[0-90-9]/.test(trimmed);
   if (!hasDigits) {
     valueEl.textContent = trimmed;
     if (currencyEl) currencyEl.textContent = '—';
@@ -1106,7 +1817,7 @@ function showBannedOverlay(){
     overlay = document.createElement('div');
     overlay.id = 'ban-block-overlay';
     overlay.setAttribute('role','alertdialog');
-    overlay.setAttribute('aria-label','تم حظر الحساب');
+    overlay.setAttribute('aria-label','\u062A\u0645\u0020\u062D\u0638\u0631\u0020\u0627\u0644\u062D\u0633\u0627\u0628');
     overlay.style.position = 'fixed';
     overlay.style.inset = '0';
     overlay.style.display = 'flex';
@@ -1126,9 +1837,9 @@ function showBannedOverlay(){
     card.style.boxShadow = '0 24px 70px rgba(0,0,0,0.45)';
     card.style.border = '1px solid rgba(148,163,184,0.25)';
     card.innerHTML = `
-      <h2 style="margin:0 0 12px;font-size:1.2rem;">🚫 الحساب محظور</h2>
-      <p style="margin:0 0 18px;line-height:1.7;font-size:1rem;">تم حظر حسابك ولا يمكن متابعة الاستخدام. يُرجى التواصل مع الدعم إذا كنت تعتقد أن هذا خطأ.</p>
-      <button id="banLogoutBtn" type="button" style="width:100%;padding:12px 14px;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800;font-size:1rem;cursor:pointer;">تسجيل الخروج</button>
+      <h2 style="margin:0 0 12px;font-size:1.2rem;">\uD83D\uDEAB \u0627\u0644\u062D\u0633\u0627\u0628 \u0645\u062D\u0638\u0648\u0631</h2>
+      <p style="margin:0 0 18px;line-height:1.7;font-size:1rem;">\u062A\u0645 \u062D\u0638\u0631 \u062D\u0633\u0627\u0628\u0643 \u0648\u0644\u0627 \u064A\u0645\u0643\u0646 \u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u0627\u0633\u062A\u062E\u062F\u0627\u0645. \u064A\u064F\u0631\u062C\u0649 \u0627\u0644\u062A\u0648\u0627\u0635\u0644 \u0645\u0639 \u0627\u0644\u062F\u0639\u0645 \u0625\u0630\u0627 \u0643\u0646\u062A \u062A\u0639\u062A\u0642\u062F \u0623\u0646 \u0647\u0630\u0627 \u062E\u0637\u0623.</p>
+      <button id="banLogoutBtn" type="button" style="width:100%;padding:12px 14px;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800;font-size:1rem;cursor:pointer;">\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062E\u0631\u0648\u062C</button>
     `;
     overlay.appendChild(card);
     (document.body || document.documentElement).appendChild(overlay);
@@ -1234,56 +1945,61 @@ const ul = document.createElement('ul');
 // الرئيسية
 const homeLi = document.createElement('li');
 homeLi.onclick = () => navigateTo('index.html');
-homeLi.innerHTML = '<i class="fas fa-home"></i><a href="#">الرئيسية</a>';
+homeLi.innerHTML = '<i class="fas fa-home"></i><a href="#" data-i18n="nav.home">\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629</a>';
 ul.appendChild(homeLi);
-// الإيداع
+// الرئيسية
 const depositLi = document.createElement('li');
 depositLi.id = 'depositBtn';
-depositLi.innerHTML = '<i class="fa-solid fa-circle-dollar-to-slot"></i><a href="#">الإيداع</a>';
+depositLi.innerHTML = '<i class="fa-solid fa-circle-dollar-to-slot"></i><a href="#" data-i18n="nav.deposit">\u0627\u0644\u0625\u064A\u062F\u0627\u0639</a>';
 depositLi.onclick = () => navigateTo('edaa.html');
 depositLi.style.display = 'none';
 ul.appendChild(depositLi);
-// طلباتي
+// الرئيسية
 const ordersLi = document.createElement('li');
 ordersLi.onclick = () => navigateTo('talabat.html');
-ordersLi.innerHTML = '<i class="fas fa-list"></i><a href="#">طلباتي</a>';
+ordersLi.innerHTML = '<i class="fas fa-list"></i><a href="#" data-i18n="nav.orders">\u0637\u0644\u0628\u0627\u062A\u064A</a>';
 ul.appendChild(ordersLi);
-// محفظتي
+// الرئيسية
 const walletLi = document.createElement('li');
 walletLi.id = 'walletBtn';
-walletLi.innerHTML = '<i class="fas fa-wallet"></i><a href="#">محفظتي</a>';
+walletLi.innerHTML = '<i class="fas fa-wallet"></i><a href="#" data-i18n="nav.wallet">\u0627\u0644\u0645\u062D\u0641\u0638\u0629</a>';
 walletLi.onclick = () => navigateHomeHash('#/wallet','wallet');
 walletLi.style.display = 'none';
 ul.appendChild(walletLi);
 // تحويل الرصيد
 const transferLi = document.createElement('li');
 transferLi.id = 'transferBtn';
-transferLi.innerHTML = '<i class="fa-solid fa-right-left"></i><a href="#">تحويل رصيد</a>';
+transferLi.innerHTML = '<i class="fa-solid fa-right-left"></i><a href="#" data-i18n="nav.transfer">\u062A\u062D\u0648\u064A\u0644\u0020\u0627\u0644\u0631\u0635\u064A\u062F</a>';
 transferLi.onclick = () => navigateHomeHash('#/transfer','transfer');
 transferLi.style.display = 'none';
 ul.appendChild(transferLi);
-// التقييمات
+// الرئيسية
 const reviewsLi = document.createElement('li');
-reviewsLi.innerHTML = '<i class="fa-solid fa-star"></i><a href="#">التقييمات</a>';
+reviewsLi.innerHTML = '<i class="fa-solid fa-star"></i><a href="#" data-i18n="nav.reviews">\u0627\u0644\u062A\u0642\u064A\u064A\u0645\u0627\u062A</a>';
 reviewsLi.onclick = () => navigateHomeHash('#/reviews','reviews');
 ul.appendChild(reviewsLi);
-// الإعدادات
+// الرئيسية
 const settingsLi = document.createElement('li');
 settingsLi.id = 'settingsBtn';
-settingsLi.innerHTML = '<i class="fa-solid fa-gear"></i><a href="#">الإعدادات</a>';
+settingsLi.innerHTML = '<i class="fa-solid fa-gear"></i><a href="#" data-i18n="nav.settings">\u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A</a>';
 settingsLi.onclick = () => navigateHomeHash('#/settings','settings');
 settingsLi.style.display = 'none';
 ul.appendChild(settingsLi);
+// API docs
+const apiLi = document.createElement('li');
+apiLi.innerHTML = '<i class="fa-solid fa-code"></i><a href="#" data-i18n="nav.api">API</a>';
+apiLi.onclick = () => navigateTo('api.html');
+ul.appendChild(apiLi);
 // تسجيل الدخول / الخروج
 const loginLi = document.createElement('li');
 loginLi.id = 'loginSidebarBtn';
-loginLi.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i><a href="#">تسجيل الدخول</a>';
+loginLi.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i><a href="#" data-i18n="nav.login">\u062A\u0633\u062C\u064A\u0644\u0020\u0627\u0644\u062F\u062E\u0648\u0644</a>';
 loginLi.onclick = () => navigateTo('login.html');
 ul.appendChild(loginLi);
 const logoutLi = document.createElement('li');
 logoutLi.id = 'logoutBtn';
 logoutLi.style.display = 'none';
-logoutLi.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i><a href="#">تسجيل الخروج</a>';
+logoutLi.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i><a href="#" data-i18n="nav.logout">\u062A\u0633\u062C\u064A\u0644\u0020\u0627\u0644\u062E\u0631\u0648\u062C</a>';
 logoutLi.onclick = () => {
   try { showPageLoader(); } catch {}
   try {
@@ -1300,11 +2016,16 @@ sidebar.appendChild(ul);
 
 // Attach to containers
 window.addEventListener('DOMContentLoaded', () => {
+  if (SKIP_HEADER) {
+    try { if (window.__I18N__ && typeof window.__I18N__.applyTranslations === 'function') window.__I18N__.applyTranslations(document); } catch {}
+    return;
+  }
   const hc = document.getElementById('headerContainer'); if (hc) hc.appendChild(header);
   const sc = document.getElementById('sidebarContainer'); if (sc) sc.appendChild(sidebar);
   document.addEventListener('click', (e)=>{ const a = e.target.closest ? e.target.closest('a[href$=".html"]') : null; if (a) { try { sessionStorage.setItem('nav:fromHome','1'); } catch {} } });
   // Ensure support anchor exists for sidebar link
   try { const sec = document.querySelector('section.support-section'); if (sec && !sec.id) sec.id = 'support'; } catch {}
+  try { if (window.__I18N__ && typeof window.__I18N__.applyTranslations === 'function') window.__I18N__.applyTranslations(document); } catch {}
 });
 
 // Firebase auth + balance live update
@@ -1466,19 +2187,106 @@ function wirePageBalanceBox(){
 // Support/contact section (basic skeleton; links overridden below)
 (function(){
   try {
+
     const section = document.createElement('section'); section.className = 'support-section'; section.id = 'support';
-    const title = document.createElement('h2'); title.className = 'support-title'; title.textContent = 'متواجدون لمساعدتك'; section.appendChild(title);
+    const title = document.createElement('h2'); title.className = 'support-title'; title.textContent = '\u0637\u0631\u0642\u0020\u0627\u0644\u062A\u0648\u0627\u0635\u0644'; title.setAttribute('data-i18n', 'support.title'); section.appendChild(title);
     const iconsDiv = document.createElement('div'); iconsDiv.className = 'support-icons';
     const contacts = [
-      { href: '', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/telegram.svg', class: 'telegram' },
-      { href: '', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/instagram.svg', class: 'instagram' },
-      { href: '', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg', class: 'whatsapp' },
-      { href: '', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg', class: 'facebook' },
-      { href: '', iconURL: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/gmail.svg', class: 'email' },
+      { href: '', iconURL: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg', class: 'whatsapp' },
+      { href: '', iconURL: 'https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg', class: 'telegram' },
+      { href: '', iconURL: 'https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg', class: 'facebook' },
+      { href: '', iconURL: 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Gmail_Icon.png', class: 'email' },
+      { href: '', iconURL: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png', class: 'instagram' },
     ];
-    contacts.forEach(c => { const a = document.createElement('a'); a.href = c.href; a.target = '_blank'; a.className = 'support-icon ' + c.class; const img = document.createElement('img'); img.src = c.iconURL; img.alt = c.class + ' icon'; img.style.width = '32px'; img.style.height = '32px'; a.appendChild(img); iconsDiv.appendChild(a); });
+    contacts.forEach(c => {
+      const a = document.createElement('a');
+      a.href = c.href;
+      a.target = '_blank';
+      a.className = 'support-icon ' + c.class;
+      const img = document.createElement('img');
+      img.src = c.iconURL;
+      img.alt = c.class + ' icon';
+      img.style.width = '32px';
+      img.style.height = '32px';
+      a.appendChild(img);
+      iconsDiv.appendChild(a);
+    });
     section.appendChild(iconsDiv);
-    document.body.appendChild(section);
+    const host = document.getElementById('sidebar') || document.body;
+    host.appendChild(section);
+
+    function moveToSidebar(){
+      try{
+        const sidebarHost = document.getElementById('sidebar');
+        if (sidebarHost && section.parentElement !== sidebarHost){
+          sidebarHost.appendChild(section);
+        }
+      } catch(_){}
+    }
+    moveToSidebar();
+    const schedule = [0, 150, 500, 1200];
+    schedule.forEach((ms) => {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(moveToSidebar, ms), { once: ms===schedule[schedule.length-1] });
+      } else {
+        setTimeout(moveToSidebar, ms);
+      }
+    });
+
+    const style = document.createElement('style');
+    style.textContent = `
+      #sidebar .support-section {
+        background: transparent !important;
+        padding: 14px 14px 8px !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+      #sidebar .support-section .support-title {
+        color: #e6edff;
+        font-size: 1rem;
+        margin: 0 0 10px;
+      }
+      #sidebar .support-section .support-icons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+      }
+      #sidebar .support-section .support-icon {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        position: relative;
+      }
+      #sidebar .support-section .support-icon img {
+        width: 32px !important;
+        height: 32px !important;
+        filter: none !important;
+      }
+      #sidebar .support-section .support-icon:hover {
+        transform: none;
+        box-shadow: none;
+      }
+      #sidebar .support-section .support-rights {
+        margin-top: 12px !important;
+        color: #e6edff;
+        font-size: 11px;
+        text-align: center;
+      }
+      #sidebar .support-section .support-rights a {
+        color: #fff !important;
+        text-decoration: none;
+      }
+    `;
+    document.head.appendChild(style);
+    try { applyTranslations(section); } catch {}
   } catch {}
 })();
 
@@ -1488,18 +2296,18 @@ function wirePageBalanceBox(){
     var links = {
       whatsapp: 'https://wa.me/963981983751',
       telegram: 'https://t.me/963969898534',
+      instagram: 'https://www.instagram.com/z3.i.m?igsh=MXRwZGl6dXh2YTd2Zg==',
       facebook: 'https://www.facebook.com/share/1B1b48AcqV/',
-      email: 'mailto:hazemediek@gmail.com',
-      instagram: 'https://www.instagram.com/z3.i.m?igsh=MXRwZGl6dXh2YTd2Zg=='
+      email: 'mailto:hazemediek@gmail.com'
     };
 
     function applySupportLinks(){
       var defs = [
         { key: 'whatsapp', sels: ['a.support-icon.whatsapp','i.fa-whatsapp'] },
         { key: 'telegram', sels: ['a.support-icon.telegram','i.fa-telegram','i.fa-telegram-plane','i.fa-paper-plane'] },
+        { key: 'instagram', sels: ['a.support-icon.instagram','i.fa-instagram'] },
         { key: 'facebook', sels: ['a.support-icon.facebook','i.fa-facebook','i.fa-facebook-f'] },
-        { key: 'email', sels: ['a.support-icon.email','i.fa-envelope','a[href^="mailto:"]'] },
-        { key: 'instagram', sels: ['a.support-icon.instagram','i.fa-instagram'] }
+        { key: 'email', sels: ['a.support-icon.email','i.fa-envelope','a[href^="mailto:"]'] }
       ];
 
       function ensureAnchor(el){
@@ -1512,11 +2320,23 @@ function wirePageBalanceBox(){
         try{
           var href = links[d.key];
           var finalSelector = d.sels.join(',');
+          if (!href) {
+            document.querySelectorAll(finalSelector).forEach(function(el){
+              var a = ensureAnchor(el);
+              if (a) a.remove();
+            });
+            return;
+          }
           document.querySelectorAll(finalSelector).forEach(function(el){
             var a = ensureAnchor(el);
             if(!a) return;
             if (d.key === 'telegram') {
-              var appHref = 'tg://resolve?phone=201104453086';
+              var appHref = (function(){
+                try {
+                  var handle = href.replace(/^https?:\/\/t\.me\//i,'').replace(/^@/,'').replace(/\/.*/, '');
+                  return handle ? ('tg://resolve?domain=' + handle) : href;
+                } catch(_){ return href; }
+              })();
               a.setAttribute('href', href); // web fallback
               a.setAttribute('data-app-href', appHref);
               a.setAttribute('target','_blank');
@@ -1529,9 +2349,6 @@ function wirePageBalanceBox(){
                   setTimeout(function(){ if (Date.now() - start < 1500) { window.open(href, '_blank', 'noopener,noreferrer'); } }, 600);
                 }catch(_){ try { window.open(href, '_blank', 'noopener,noreferrer'); } catch(__){} }
               }, { once: true });
-            } else if (d.key === 'email') {
-              a.setAttribute('href', href);
-              a.addEventListener('click', function(ev){ try{ ev.preventDefault(); window.location.href = href; }catch(_){ } }, { once: true });
             } else {
               a.setAttribute('href', href);
               a.setAttribute('target','_blank');
@@ -1548,18 +2365,18 @@ function wirePageBalanceBox(){
   }catch(_){ }
 })();
 
-// Ensure developer credit under قم بتغيير رقم الواتساب الخاص بالدعم بthe Support section
 (function ensureSupportDevCredit(){
   try{
     var CREDIT = {
       href: 'https://wa.me/962790108559', 
-      label: '🔗 تم تطوير المنصة بواسطة LaithDev.',
+      label: '\uD83D\uDD17\u0020\u062A\u0645\u0020\u062A\u0637\u0648\u064A\u0631\u0020\u0627\u0644\u0645\u0646\u0635\u0629\u0020\u0628\u0648\u0627\u0633\u0637\u0629\u0020LaithDev.',
       tagline: ''
     };
 
     // Add style to limit clickable area
     const creditStyle = document.createElement('style');
     creditStyle.textContent = `
+      .support-icons { position: relative; }
       .support-rights {
       pointer-events: none; /* Disable clicks on container */
       }
@@ -1567,6 +2384,25 @@ function wirePageBalanceBox(){
       pointer-events: auto; /* Re-enable clicks just on link */
       display: inline-block; /* Contains the clickable area */
       padding: 5px 10px; /* Add some padding for better touch target */
+      }
+      .support-icon.whatsapp-alt {
+        position: relative;
+      }
+      .support-icon.whatsapp-alt .support-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        background: #ef4444;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
       }
     `;
     document.head.appendChild(creditStyle);
@@ -1613,6 +2449,7 @@ function wirePageBalanceBox(){
         anchor.href = CREDIT.href;
         anchor.target = '_blank';
         anchor.rel = 'noopener noreferrer';
+        anchor.setAttribute('data-i18n', 'support.credit');
         anchor.textContent = CREDIT.label;
 
         var tagline = rights.querySelector('p');
@@ -1621,6 +2458,7 @@ function wirePageBalanceBox(){
           rights.appendChild(tagline);
         }
         tagline.textContent = CREDIT.tagline;
+        try { applyTranslations(rights); } catch {}
       }catch(_){ }
     }
 
@@ -1637,4 +2475,3 @@ function wirePageBalanceBox(){
     }
   }catch(_){ }
 })();
-
