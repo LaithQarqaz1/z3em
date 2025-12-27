@@ -8,7 +8,7 @@
  * - The HTML already registers this file conditionally on HTTPS / localhost.
  */
 
-const VERSION = 'v1.0.1';
+const VERSION = 'v1.0.4';
 const STATIC_CACHE = `static-${VERSION}`;
 const IMAGE_CACHE  = `images-${VERSION}`;
 const PAGE_CACHE   = `pages-${VERSION}`;
@@ -24,8 +24,10 @@ const PRECACHE_URLS = [
   '/index.html',
   '/header.css',
   '/header.js',
+  '/i18n-dict.js',
   '/loader.css',
   '/loader.js',
+  '/api.html',
   // lightweight key pages (optional; remove if not present)
   '/games.html',
   '/social.html',
