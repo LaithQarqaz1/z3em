@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-lang="ar">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -158,9 +158,10 @@
   <!-- Styles for inline-loaded pages: auto ribbon, premium cards -->
   <style>
   /* Auto ribbon like FREEFIREINBUT */
+  :root { --auto-ribbon-text: "تلقائي"; }
   a.card.auto{position:relative;overflow:hidden}
   a.card.auto::before {
-    content: "تلقائي";
+    content: var(--auto-ribbon-text);
     position: absolute;
     top: 12px;
     right: -50px;
@@ -1592,7 +1593,7 @@ button#logoutBtn:hover{background:#990000}
 <div id="sidebarContainer"></div>
 
 <!-- عنوان دلالي واضح للمحركات -->
-<h1 class="sr-only">متجر زعيم | متجر شحن الألعاب والاشتراكات الرقمية بسرعة وأمان</h1>
+<h1 class="sr-only" data-i18n="home.srTitle">متجر زعيم | متجر شحن الألعاب والاشتراكات الرقمية بسرعة وأمان</h1>
 
 <style>
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -1602,11 +1603,11 @@ button#logoutBtn:hover{background:#990000}
 <div style="height:70px;"></div>
 
     <div class="page-hero">
-      <div class="hero-slider" id="heroSlider" aria-label="بانرات مميزة">
+      <div class="hero-slider" id="heroSlider" aria-label="بانرات مميزة" data-i18n-aria-label="home.heroAria">
         <div class="hero-track">
-          <div class="hero-slide"><img draggable="false" src="IMGS/in1.jpg" alt="بانر ترحيبي" loading="eager" decoding="async" fetchpriority="high"></div>
-          <div class="hero-slide"><img draggable="false" src="IMGS/in2.jpg" alt="عرض 1"  decoding="async"></div>
-          <div class="hero-slide"><img draggable="false" src="IMGS/in3.jpg" alt="عرض 2"  decoding="async"></div>
+          <div class="hero-slide"><img draggable="false" src="IMGS/in1.jpg" alt="بانر ترحيبي" data-i18n-alt="home.heroAltWelcome" loading="eager" decoding="async" fetchpriority="high"></div>
+          <div class="hero-slide"><img draggable="false" src="IMGS/in2.jpg" alt="عرض 1" data-i18n-alt="home.heroAltOffer1" decoding="async"></div>
+          <div class="hero-slide"><img draggable="false" src="IMGS/in3.jpg" alt="عرض 2" data-i18n-alt="home.heroAltOffer2" decoding="async"></div>
 
         </div>
       </div>
@@ -1731,10 +1732,10 @@ button#logoutBtn:hover{background:#990000}
     </script>
 
   <!-- شريط الإشعار: يبدأ من البداية، يخرج تمامًا، ثم يعاود من البداية -->
-  <div class="notice-ticker" id="homeTicker" aria-label="إعلانات الموقع">
+  <div class="notice-ticker" id="homeTicker" aria-label="إعلانات الموقع" data-i18n-aria-label="home.noticeAria">
     <div class="ticker-track" role="marquee" aria-live="polite">
       <div class="ticker-copy">
-        <span>متجر زعيم | شحن الألعاب والاشتراكات الرقمية بسرعة وأمان وبأفضل الأسعار</span>
+        <span data-i18n="home.noticeText">متجر زعيم | شحن الألعاب والاشتراكات الرقمية بسرعة وأمان وبأفضل الأسعار</span>
       </div>
     </div>
   </div>
@@ -1743,7 +1744,7 @@ button#logoutBtn:hover{background:#990000}
 
     <!-- البحث -->
   <div class="search-container">
-    <input type="text" id="searchInput" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" />
+    <input type="text" id="searchInput" placeholder="ابحث عن الخدمات أو التصنيفات..." aria-label="بحث" data-i18n-placeholder="home.searchPlaceholder" data-i18n-aria-label="home.searchAria" />
   </div>
 
   <script>
@@ -1819,27 +1820,27 @@ button#logoutBtn:hover{background:#990000}
 
 <main>
   <section class="categories" id="categoriesContainer">
-    <a href="games.html" class="card" data-title="الألعاب">
-      <img draggable="false" src="IMGS/العاب.jpg" alt="ألعاب" loading="eager" decoding="async" fetchpriority="high" />
-      <h2>الألعاب</h2>
+    <a href="games.html" class="card" data-title="الألعاب" data-i18n-data-title="home.category.games">
+      <img draggable="false" src="IMGS/العاب.jpg" alt="ألعاب" data-i18n-alt="home.category.games" loading="eager" decoding="async" fetchpriority="high" />
+      <h2 data-i18n="home.category.games">الألعاب</h2>
     </a>
-    <a href="social.html" class="card" data-title="التواصل الاجتماعي">
-      <img draggable="false" src="IMGS/تواصل.jpg" alt="التواصل الاجتماعي" loading="eager" decoding="async" fetchpriority="high" />
-      <h2>تواصل اجتماعي</h2>
+    <a href="social.html" class="card" data-title="التواصل الاجتماعي" data-i18n-data-title="home.category.social">
+      <img draggable="false" src="IMGS/تواصل.jpg" alt="التواصل الاجتماعي" data-i18n-alt="home.category.social" loading="eager" decoding="async" fetchpriority="high" />
+      <h2 data-i18n="home.category.social">تواصل اجتماعي</h2>
     </a>
-    <a href="software.html" class="card" data-title="اشتراكات ">
-      <img draggable="false" src="IMGS/اشتراكات.jpg" alt="برامج" loading="eager" decoding="async" fetchpriority="high" />
-      <h2>اشتراكات</h2>
+    <a href="software.html" class="card" data-title="اشتراكات " data-i18n-data-title="home.category.subscriptions">
+      <img draggable="false" src="IMGS/اشتراكات.jpg" alt="برامج" data-i18n-alt="home.category.subscriptions" loading="eager" decoding="async" fetchpriority="high" />
+      <h2 data-i18n="home.category.subscriptions">اشتراكات</h2>
     </a>
 
-        <a href="sahb.html" class="card" data-title="عملات رقمية">
-      <img draggable="false" src="IMGS/sahb.jpg" alt="عملات رقمية" loading="eager" decoding="async" fetchpriority="high" />
-      <h2>عملات رقمية</h2>
+        <a href="sahb.html" class="card" data-title="عملات رقمية" data-i18n-data-title="home.category.digitalCurrency">
+      <img draggable="false" src="IMGS/sahb.jpg" alt="عملات رقمية" data-i18n-alt="home.category.digitalCurrency" loading="eager" decoding="async" fetchpriority="high" />
+      <h2 data-i18n="home.category.digitalCurrency">عملات رقمية</h2>
     </a>
 
 
   </section>
-  <p class="no-results" id="noResults" style="display:none;">عذراً، لم يتم العثور على نتائج.</p>
+  <p class="no-results" id="noResults" style="display:none;" data-i18n="home.noResults">عذراً، لم يتم العثور على نتائج.</p>
   
   <!-- Inline page content container -->
   <div id="inlinePage" style="display:none"></div>
