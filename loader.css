@@ -1,11 +1,8 @@
-﻿/* loader.css - مُحسَّن بمظهر عصري وخفيف */
-#preloader {
+﻿#preloader {
   position: fixed;
   inset: 0;
-  /* لون خلفية قابل للتكيّف مع الثيم */
   --overlay: rgba(246, 247, 255, 0.65);
   background: var(--overlay);
-  /* ملاحظة: blur واسع على الموبايل يسبب تقطيع، سنُعطّل لاحقًا للموبايل */
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   display: flex;
@@ -13,14 +10,12 @@
   justify-content: center;
   z-index: 12000;
   transition: opacity 0.4s ease, visibility 0.4s ease;
-  will-change: opacity, visibility; /* يقلل التقطّع عند الإخفاء */
+  will-change: opacity, visibility; 
 }
 
-/* تعطيل التعليق في حال فشل الجافاسكريبت: إخفاء تلقائي بعد مهلة قصيرة */
 @keyframes preloaderAutoHide { to { opacity: 0; visibility: hidden; } }
 #preloader.auto-hide { animation: preloaderAutoHide 0s linear 1.2s forwards; }
 
-/* الوضع الداكن */
 html[data-theme="dark"] #preloader,
 body.dark-mode #preloader {
   --overlay: rgba(5, 5, 11, 0.72);
@@ -28,29 +23,27 @@ body.dark-mode #preloader {
 
 #preloader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
-/* حلقة متدرّجة عصرية بخامة conic-gradient */
 .loader {
   position: relative;
   width: 128px;
   height: 128px;
   border-radius: 50%;
-  /* ألوان العلامة التجارية (يمكن تعديلها لاحقًا) */
-  --c1: #7a7cd0; /* لون العلامة الأساسي */
-  --c2: #9c9ede; /* درجة فاتحة للإشعاع */
-  --c3: #b9bbef; /* أكسنت فاتح مطابق للموقع */
-  /* drop-shadow مكلف على الموبايل؛ سيتم تعطيله في وسائط الموبايل */
+  --c1: #7a7cd0; 
+  --c2: #9c9ede; 
+  --c3: #b9bbef; 
   filter: drop-shadow(0 6px 18px rgba(66, 68, 150, 0.35));
   transition: transform 0.4s ease, opacity 0.4s ease;
-  display: grid;               /* تمركز أي محتوى داخلي */
-  place-items: center;         /* يضمن توسيط صورة اللودر */
-  /* اجعل الصورة الخلفية تُحمّل مبكرًا جدًا مع CSS */
+  animation:
+    loader-pop 0.3s cubic-bezier(0.16, 0.6, 0.35, 1) both,
+    loader-pulse 1.2s ease-in-out 0.3s infinite;
+  display: grid;              
+  place-items: center;       
   background-image: url('loading.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: 72px 72px;
 }
 
-/* درجات أفتح قليلاً في الوضع الداكن لضمان التباين */
 html[data-theme="dark"] .loader,
 body.dark-mode .loader {
   --c1: #5c5ebf;
@@ -63,36 +56,46 @@ body.dark-mode .loader {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  /* تفريغ المركز لعمل حلقة بسمك ~8px */
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 7px));
           mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 7px));
 }
 
-/* الحلقة الخارجية: قوس ملون طويل */
 .loader::before {
   background: conic-gradient(from 0deg, var(--c1) 0 140deg, transparent 140deg 360deg);
   animation: ring-spin-a 0.8s linear infinite;
 }
 
-/* الحلقة الداخلية: أصغر وتدور عكسياً بلون آخر */
 .loader::after {
-  inset: 10px; /* تصغير لتصبح حلقة داخلية */
+  inset: 10px; 
   background: conic-gradient(from 180deg, var(--c3) 0 110deg, transparent 110deg 360deg);
   animation: ring-spin-b 0.9s linear infinite reverse;
 }
 
-#preloader.hidden .loader { transform: scale(0.86); opacity: 0; }
+#preloader.hidden .loader {
+  animation: none;
+  transform: scale(0.86);
+  opacity: 0;
+}
+
+@keyframes loader-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes loader-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
 
 @keyframes ring-spin-a { to { transform: rotate(1turn); } }
 @keyframes ring-spin-b { to { transform: rotate(1turn); } }
 
-/* مراعاة تقليل الحركة */
 @media (prefers-reduced-motion: reduce) {
+  .loader { animation: none; }
   .loader::before { animation-duration: 1.4s; }
   .loader::after  { animation-duration: 1.6s; }
 }
 
-/* صورة اللودر الوسطية */
 .loader img.loader-logo {
   width: 72px;
   height: 72px;
@@ -103,10 +106,7 @@ body.dark-mode .loader {
   -webkit-user-drag: none;
 }
 
-/* (تمت إزالة تخصيصات الموبايل لاستعادة السلوك السابق) */
-/* تحسين الأداء على الشاشات الصغيرة: إلغاء تأثيرات مكلفة */
 @media (max-width: 480px) {
   #preloader { -webkit-backdrop-filter: none; backdrop-filter: none; }
   .loader { filter: none; }
 }
-
