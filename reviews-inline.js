@@ -1,4 +1,4 @@
-﻿(function(){
+(function(){
   if (typeof window === 'undefined') return;
   if (window.__REVIEWS_SCRIPT_ATTACHED__) return;
   window.__REVIEWS_SCRIPT_ATTACHED__ = true;
@@ -6,6 +6,14 @@
   window.__initReviewsPage = function(){
     if (window.__REVIEWS_PAGE_ACTIVE__) return;
     window.__REVIEWS_PAGE_ACTIVE__ = true;
+
+    try {
+      if (typeof window.__FIREBASE_ENV_OK__ === 'boolean' && !window.__FIREBASE_ENV_OK__) {
+        console.warn('التقييمات: تم تعطيل Firebase في هذه البيئة.');
+        window.__REVIEWS_PAGE_ACTIVE__ = false;
+        return;
+      }
+    } catch(_){ }
 
     if (typeof firebase === 'undefined') {
       console.warn('التقييمات: Firebase غير متاح.');
@@ -18,7 +26,9 @@
         if (window.__ORIG_FIREBASE__.auth) firebase.auth = window.__ORIG_FIREBASE__.auth;
         if (window.__ORIG_FIREBASE__.firestore) firebase.firestore = window.__ORIG_FIREBASE__.firestore;
       }
-      window.__SKIP_FIREBASE__ = false;
+      if (typeof window.__FIREBASE_ENV_OK__ !== 'boolean' || window.__FIREBASE_ENV_OK__) {
+        window.__SKIP_FIREBASE__ = false;
+      }
     } catch(_){ }
 
     try {
@@ -60,6 +70,7 @@
         4: document.getElementById('count-4'),
         5: document.getElementById('count-5')
       };
+      let reviewsLoadedOnce = false;
 
       const REVIEWS_SECRET = 'ZaeemStore$Reviews#2025!';
       const REVIEWS_SALT = 'z3-store-salt-2025';
@@ -70,7 +81,65 @@
         'قحبة','شرموطة','قذر','كس','زب','زبي','لعين','كلب','حيوان','منيوك','شرموط','خرا','كسم',
         'عاهرة','لوطي','وسخ','حقير','خنزير','زنده','طيز','نجس'
       ];
+      function normalizeDisplayText(value){
+        const str = String(value == null ? '' : value);
+        if (!str) return '';
+        const clean = (input) => {
+          return String(input || '')
+            .replace(/\uFFFD+/g, '')
+            .replace(/[\u00EF\u00BF\u00BD]/g, '')
+            .replace(/[\u00C2\u00C3\u00D8\u00D9\u00D0\u00DE\u00DD\u00C6\u00C7\u00D1]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        };
+        const looksEncoded = /%[0-9A-Fa-f]{2}/.test(str);
+        const hasBad = /[\u00C3\u00C2\u00D8\u00D9\u00D0\u00DE\u00DD\u00C6\u00C7\u00D1\u00EF\u00BF\u00BD\uFFFD]/.test(str) || looksEncoded;
+        if (!hasBad) return str;
 
+        const scoreText = (input) => {
+          const s = String(input || '');
+          const good = (s.match(/[A-Za-z0-9\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0660-\u0669\u06F0-\u06F9]/g) || []).length;
+          const bad = (s.match(/[\uFFFD]/g) || []).length;
+          return good - (bad * 5);
+        };
+
+        const candidates = [];
+        const bytes = new Uint8Array(Array.from(str, ch => ch.charCodeAt(0) & 0xff));
+        if (typeof TextDecoder !== 'undefined') {
+          try { candidates.push(new TextDecoder('utf-8', { fatal: false }).decode(bytes)); } catch(_){ }
+          try { candidates.push(new TextDecoder('windows-1256', { fatal: false }).decode(bytes)); } catch(_){ }
+          try { candidates.push(new TextDecoder('iso-8859-6', { fatal: false }).decode(bytes)); } catch(_){ }
+        }
+        if (looksEncoded) {
+          try { candidates.push(decodeURIComponent(str)); } catch(_){ }
+        }
+        try { candidates.push(decodeURIComponent(escape(str))); } catch(_){ }
+        candidates.push(str);
+
+        let best = str;
+        let bestScore = scoreText(clean(str));
+        for (let i = 0; i < candidates.length; i++) {
+          const cleaned = clean(candidates[i]);
+          if (!cleaned) continue;
+          const sc = scoreText(cleaned);
+          if (sc > bestScore) {
+            bestScore = sc;
+            best = cleaned;
+          }
+        }
+        const cleaned = clean(best);
+        return cleaned || str;
+      }
+      function normalizeDisplayName(value){
+        const base = normalizeDisplayText(value);
+        if (!base) return '';
+        const cleaned = String(base)
+          .replace(/[\uD800-\uDFFF]/g, '')
+          .replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFFA-Za-z0-9\u0660-\u0669\u06F0-\u06F9 @._-]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        return cleaned || String(base).replace(/[\uFFFD\uD800-\uDFFF]/g, '').trim();
+      }
       function getManualRouterBase(){
         try{
           const custom = localStorage.getItem('MANWAL_ROUTER_BASE');
@@ -223,7 +292,7 @@
           userDoc.get().then(doc => {
             if (doc.exists) {
               const data = doc.data() || {};
-              const name = data.username || user.displayName || 'مستخدم';
+              const name = normalizeDisplayName(data.username || user.displayName || 'مستخدم');
               currentUserName.textContent = `مرحباً ${name}`;
             } else {
               currentUserName.textContent = 'مرحباً بك من جديد.';
@@ -263,7 +332,7 @@
           const idToken = await user.getIdToken().catch(() => user.getIdToken(true));
           const response = await sendReviewRequest('create', {
             rating: Number(selectedRating) || 0,
-            comment: textValue,
+            comment: normalizeDisplayText(textValue),
             clientTimestamp: Date.now(),
             source: location.href
           }, idToken);
@@ -311,7 +380,7 @@
 
       function checkFormValid() {
         const value = reviewText.value.trim();
-        const hasBad = containsBadWords(value);
+        const hasBad = /[\u00C3\u00C2\u00D8\u00D9\u00D0\u00DE\u00DD\u00C6\u00C7\u00D1\uFFFD]/.test(value);
         try {
           if (reviewText.setCustomValidity) {
             reviewText.setCustomValidity(hasBad ? 'يرجى تجنب استخدام الألفاظ غير اللائقة.' : '');
@@ -357,7 +426,7 @@
           const comment = data.comment || '';
           const d = data.createdAtMillis ? new Date(data.createdAtMillis) : (data.createdAtISO ? new Date(data.createdAtISO) : null);
           const rel = (d && !isNaN(d)) ? relativeTime(d.getTime()) : '';
-          const userName = data.userName || 'مستخدم';
+          const userName = normalizeDisplayName(data.userName || 'مستخدم');
           const repliesCount = countReplies(data.replies);
           const reviewItem = document.createElement('article');
           reviewItem.className = 'review-item';
@@ -446,7 +515,8 @@
       });
 
       async function loadReviews() {
-        reviewsList.innerHTML = '<p>جاري تحميل التعليقات...</p>';
+        const showLoading = !reviewsLoadedOnce;
+        if (showLoading) reviewsList.innerHTML = '<p>جاري تحميل التعليقات...</p>';
         try {
           const snap = await REVIEWS_DOC.get();
           reviewsData = [];
@@ -462,8 +532,8 @@
             return {
               id: String(r.id||''),
               rating: Number(r.rating)||0,
-              comment: String(r.comment||''),
-              userName: String(r.userName||'مستخدم'),
+              comment: normalizeDisplayText(String(r.comment||'')),
+              userName: normalizeDisplayName(String(r.userName||'مستخدم')),
               createdAtMillis,
               createdAtISO: r.createdAtISO || (createdAtMillis ? new Date(createdAtMillis).toISOString() : ''),
               likes: Number(r.likes||0),
@@ -475,9 +545,12 @@
           try { reviewsData.sort((a,b) => (b.createdAtMillis||0) - (a.createdAtMillis||0)); } catch(_){ }
           updateRatingCounts();
           renderReviews();
+          reviewsLoadedOnce = true;
         } catch(err) {
-          reviewsList.innerHTML = '<p>حدث خطأ في تحميل التعليقات.</p>';
           console.error(err);
+          if (!reviewsLoadedOnce) {
+            reviewsList.innerHTML = '<p>حدث خطأ في تحميل التعليقات.</p>';
+          }
         }
       }
 
@@ -529,8 +602,8 @@
           var uid = (auth && auth.currentUser && auth.currentUser.uid) ? auth.currentUser.uid : null;
           var html = '<div class="replies collapsed"><div class="replies-list">';
           arr.forEach(function(r, i){
-            var t = escapeHTML(String(r.text||''));
-            var n = escapeHTML(String(r.userName||'مستخدم'));
+            var t = escapeHTML(normalizeDisplayText(String(r.text||'')));
+            var n = escapeHTML(normalizeDisplayName(String(r.userName||'مستخدم')));
             var ms = Number(r.createdAtMillis || Date.parse(r.createdAtISO) || 0);
             var rel = ms ? relativeTime(ms) : '';
             var first = n.trim().charAt(0) || 'م';
@@ -578,40 +651,23 @@
         return div.innerHTML;
       }
 
+      async function sendVoteRequest(payload){
+        const user = auth.currentUser;
+        if (!user) throw new Error("auth_required");
+        const idToken = await user.getIdToken(true);
+        return sendReviewRequest('vote', payload, idToken);
+      }
+
       async function handleVote(reviewId, vote){
         try{
           const user = auth.currentUser;
           if (!user) { alert('يجب تسجيل الدخول للتصويت.'); return; }
-          const uid = user.uid;
-          await db.runTransaction(async (tx) => {
-            const snap = await tx.get(REVIEWS_DOC);
-            if (!snap.exists) return;
-            const data = snap.data()||{};
-            let body = await decodeDocDataToBody(data);
-            body.reviews = Array.isArray(body.reviews) ? body.reviews : [];
-            const review = body.reviews.find(r => String(r.id||'') === String(reviewId||''));
-            if (!review) return;
-            review.likes = Number(review.likes||0);
-            review.dislikes = Number(review.dislikes||0);
-            review.votes = (review.votes && typeof review.votes==='object') ? review.votes : {};
-
-            const prev = Number(review.votes[uid]||0);
-            if (prev === vote){
-              if (vote === 1 && review.likes>0) review.likes -= 1;
-              if (vote === -1 && review.dislikes>0) review.dislikes -= 1;
-              delete review.votes[uid];
-            } else {
-              if (prev === 1 && review.likes>0) review.likes -= 1;
-              if (prev === -1 && review.dislikes>0) review.dislikes -= 1;
-              if (vote === 1) review.likes += 1; else if (vote === -1) review.dislikes += 1;
-              review.votes[uid] = vote;
-            }
-
-            const enc = await encryptBody(body);
-            tx.update(REVIEWS_DOC, { payload: enc });
-          });
-
-          loadReviews();
+          // تحديث فوري محليًا لتعزيز الاستجابة
+          const target = applyVoteLocally({ reviewId, vote });
+          // إرسال للخادم في الخلفية
+          sendVoteRequest({ reviewId, vote })
+            .then((res) => { if (target && res) applyServerCounts(target, res); })
+            .catch((err)=>{ console.error(err); loadReviews(); });
         }catch(e){ console.error(e); alert('تعذر تطبيق التصويت حالياً.'); }
       }
 
@@ -619,40 +675,45 @@
         try{
           const user = auth.currentUser;
           if (!user) { alert('يجب تسجيل الدخول للتصويت.'); return; }
-          const uid = user.uid;
-          await db.runTransaction(async (tx) => {
-            const snap = await tx.get(REVIEWS_DOC);
-            if (!snap.exists) return;
-            const data = snap.data()||{};
-            let body = await decodeDocDataToBody(data);
-            body.reviews = Array.isArray(body.reviews) ? body.reviews : [];
-            const review = body.reviews.find(r => String(r.id||'') === String(reviewId||''));
-            if (!review) return;
-            review.replies = Array.isArray(review.replies) ? review.replies : [];
-            const target = findReplyByRid(review.replies, rid);
-            if (!target) return;
-            target.likes = Number(target.likes||0);
-            target.dislikes = Number(target.dislikes||0);
-            target.votes = (target.votes && typeof target.votes==='object') ? target.votes : {};
-
-            const prev = Number(target.votes[uid]||0);
-            if (prev === vote){
-              if (vote === 1 && target.likes>0) target.likes -= 1;
-              if (vote === -1 && target.dislikes>0) target.dislikes -= 1;
-              delete target.votes[uid];
-            } else {
-              if (prev === 1 && target.likes>0) target.likes -= 1;
-              if (prev === -1 && target.dislikes>0) target.dislikes -= 1;
-              if (vote === 1) target.likes += 1; else if (vote === -1) target.dislikes += 1;
-              target.votes[uid] = vote;
-            }
-
-            const enc = await encryptBody(body);
-            tx.update(REVIEWS_DOC, { payload: enc });
-          });
-
-          loadReviews();
+          const target = applyVoteLocally({ reviewId, replyId: rid, vote });
+          sendVoteRequest({ reviewId, replyId: rid, vote })
+            .then((res) => { if (target && res) applyServerCounts(target, res); })
+            .catch((err)=>{ console.error(err); loadReviews(); });
         }catch(e){ console.error(e); alert('تعذر تطبيق التصويت على الرد حالياً.'); }
+      }
+
+      function applyVoteLocally({ reviewId, replyId = null, vote }){
+        if (!Array.isArray(reviewsData) || !reviewId || ![1,-1].includes(vote)) return;
+        const uid = (auth.currentUser && auth.currentUser.uid) ? auth.currentUser.uid : null;
+        const review = reviewsData.find(r => String(r.id||'') === String(reviewId));
+        if (!review) return;
+        const target = replyId
+          ? (Array.isArray(review.replies) ? review.replies.find(r => String(r.rid||r.id||'') === String(replyId)) : null)
+          : review;
+        if (!target) return;
+        target.likes = Number(target.likes||0);
+        target.dislikes = Number(target.dislikes||0);
+        target.votes = (target.votes && typeof target.votes==='object') ? target.votes : {};
+        const prev = Number(target.votes[uid]||0);
+        if (prev === vote){
+          if (vote === 1 && target.likes>0) target.likes -= 1;
+          if (vote === -1 && target.dislikes>0) target.dislikes -= 1;
+          delete target.votes[uid];
+        } else {
+          if (prev === 1 && target.likes>0) target.likes -= 1;
+          if (prev === -1 && target.dislikes>0) target.dislikes -= 1;
+          if (vote === 1) target.likes += 1; else if (vote === -1) target.dislikes += 1;
+          if (uid) target.votes[uid] = vote;
+        }
+        renderReviews();
+        return target;
+      }
+
+      function applyServerCounts(target, res){
+        if (!target || !res) return;
+        if (typeof res.likes === 'number') target.likes = res.likes;
+        if (typeof res.dislikes === 'number') target.dislikes = res.dislikes;
+        renderReviews();
       }
 
       function genRid(){ try{ return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }catch(_){ return String(Date.now()); } }
@@ -899,5 +960,6 @@
     })(authInstance, dbInstance);
   };
 })();
+
 
 

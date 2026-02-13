@@ -15,6 +15,8 @@
     }catch(e){}
   })();
 </script>
+<script>window.__SKIP_HEADER__ = true;</script>
+<script src="header.js" defer></script>
 <title>تسجيل الدخول</title>
   <link rel="icon" href="emp.png" type="image/png">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet"/>
@@ -22,1009 +24,319 @@
 <link href="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/css/intlTelInput.min.css" rel="stylesheet"/>
 <link rel="stylesheet" href="loader.css">
 <script src="loader.js" defer></script>
-<style>
+
+
+<style id="clean-login">
   :root{
-    --bg-start:#eef2ff;         /* indigo-50 */
-    --bg-end:#f5f3ff;           /* violet-50 */
+    --page-bg:#f7f7fb;
     --surface:#ffffff;
-    --text:#1b1d3b;             /* gray-800 */
-    --muted:#6f72a6;            /* gray-500 */
-    --primary:#4f46e5;          /* indigo-600 */
-    --primary-2:#7c3aed;        /* violet-600 */
-    --ring:#a78bfa;             /* violet-400 */
+    --text:#0f172a;
+    --muted:#64748b;
+    --primary:#4f46e5;
+    --primary-2:#7c3aed;
     --danger:#ef4444;
     --success:#16a34a;
-    --shadow:0 10px 30px rgba(2,6,23,.10);
-    --shadow-lg:0 20px 50px rgba(2,6,23,.15);
-    --radius-xl:24px;
-    --radius-lg:16px;
+    --field-bg:#f3f4f6;
+    --field-border:#e5e7eb;
+    --card-border:rgba(15,23,42,.08);
+    --card-shadow:0 18px 44px rgba(15,23,42,.12);
+    --link:#2563eb;
+  }
+  html[data-theme="dark"]{
+    --page-bg:#0b1020;
+    --surface:#0f172a;
+    --text:#e5e7eb;
+    --muted:#9ca3af;
+    --field-bg:#111827;
+    --field-border:#1f2937;
+    --card-border:rgba(148,163,184,.2);
+    --card-shadow:0 18px 44px rgba(0,0,0,.45);
+    --link:#93c5fd;
   }
 
-  @media (prefers-color-scheme: dark){
-    :root{
-      --bg-start:#0b1020;
-      --bg-end:#131a33;
-      --surface:#0f1024;
-      --text:#e5e7eb;
-      --muted:#9ca3af;
-      --primary:#818cf8;
-      --primary-2:#a78bfa;
-      --ring:#c4b5fd;
-      --danger:#f87171;
-      --success:#34d399;
-      --shadow:0 10px 30px rgba(0,0,0,.35);
-      --shadow-lg:0 20px 60px rgba(0,0,0,.45);
-    }
-  }
-
-  *{box-sizing:border-box}
-  html,body{height:100%}
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
   body{
-    font-family:'Cairo',sans-serif;
     margin:0;
+    font-family:'Cairo',sans-serif;
     color:var(--text);
-    background:
-      radial-gradient(1200px 700px at 100% -10%, rgba(167,139,250,.15), transparent 60%),
-      radial-gradient(1000px 600px at -10% 110%, rgba(129,140,248,.18), transparent 60%),
-      linear-gradient(135deg,var(--bg-start),var(--bg-end));
-    display:flex;align-items:center;justify-content:center;
-    padding:24px;
+    background:var(--page-bg);
   }
+  input, select, textarea{ font-size:16px; }
 
-  /* Shell */
-  .auth-shell{
-    width:100%;
-    max-width:980px;
-    display:grid;
-    grid-template-columns:1.1fr .9fr;
-    gap:24px;
+  .auth-page{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 16px 48px;
   }
-  @media (max-width:880px){
-    .auth-shell{grid-template-columns:1fr}
-    .brand-side{display:none}
-  }
+  .auth-shell{ width:min(92vw, 440px); }
 
-  /* Brand side */
-  .brand-side{
-    background: linear-gradient(135deg, rgba(79,70,229,.85), rgba(124,58,237,.85)),url('https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?q=80&w=1400&auto=format&fit=crop');background-position: center, center;background-repeat: no-repeat, no-repeat;background-size: auto, contain;
-    box-shadow:var(--shadow-lg);
-    border-radius:18px; overflow:hidden;
-    padding:36px 32px;
-    display:flex;flex-direction:column;justify-content:space-between;min-height:560px;
-    color:#fff;
-  }
-  .brand-logo{
-    display:flex;align-items:center;gap:12px;
-  }
-  .brand-logo .mark{
-    width:40px;height:40px;border-radius:12px;
-    background:#fff; color:var(--primary);
-    display:grid;place-items:center;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.15);
-  }
-  .brand-side h1{margin:0;font-size:1.35rem;font-weight:700}
-  .brand-cta{
-    margin-top:auto;
-    background:rgba(255,255,255,.12);
-    border:1px solid rgba(255,255,255,.25);
-    padding:18px;
-    border-radius:18px;
-    backdrop-filter: blur(6px);
-  }
-  .brand-cta p{margin:0 0 10px;color:#f3f4f6}
-  .brand-badges{display:flex;gap:10px;flex-wrap:wrap}
-  .badge{
-    padding:6px 10px;border-radius:999px;
-    background:rgba(255,255,255,.16);
-    border:1px solid rgba(255,255,255,.25);
-    font-size:.85rem
-  }
-
-  /* Form side */
   .form-side{
     background:var(--surface);
-    border:1px solid rgba(2,6,23,.05);
-    border-radius:18px; overflow:hidden;
-    box-shadow:var(--shadow);
-    padding:28px 26px;
-  }
-  .header{
-    display:flex;align-items:center;gap:12px;margin-bottom:6px
-  }
-  .avatar{
-    width:48px;height:48px;border-radius:14px;
-    background:linear-gradient(135deg,#e9d5ff,#eff6ff);
-    display:grid;place-items:center;color:var(--primary)
-  }
-  .form-side h2{margin:0;font-size:1.6rem}
-  .subtitle{margin:4px 0 20px;color:var(--muted)}
-
-  /* Cards (login/register/reset) */
-  .login-box{padding:0;background:none;box-shadow:none;border-radius:0;max-width:none}
-  .card{
-    background:var(--surface);
-    border:1px solid rgba(2,6,23,.06);
-    border-radius:var(--radius-lg);
-    padding:22px;
+    border:1px solid var(--card-border);
+    border-radius:26px;
+    padding:28px 24px 26px;
+    box-shadow:var(--card-shadow);
   }
 
-  .input-group{position:relative;margin-bottom:14px}
+  .header--simple{ text-align:center; margin-bottom:18px; }
+  .header--simple h2{ margin:0; font-size:1.45rem; }
+
+  .card{ width:100%; }
+  .login-box{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .input-group{ position:relative; }
   .input-group input{
     width:100%;
-    padding:14px 44px;
-    border:1px solid rgba(2,6,23,.12);
-    border-radius:14px;
-    font-size:1rem;
-    background:#fff;
+    height:48px;
+    background:var(--field-bg);
+    border:1px solid var(--field-border);
+    border-radius:999px;
+    padding:14px 54px;
     color:var(--text);
-    transition:border-color .2s, box-shadow .2s, background-color .2s;
   }
-  .input-group input::placeholder{color:#9ea0d9}
+  .input-group input::placeholder{ color:var(--muted); }
   .input-group input:focus{
     outline:none;
-    border-color:var(--ring);
-    box-shadow:0 0 0 4px rgba(167,139,250,.15);
-    background:#fff;
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(79,70,229,.15);
   }
   .input-group i{
-    position:absolute;top:50%;transform:translateY(-50%);color:#9aa3b2;font-size:16px
-  }
-  .input-group i.fa-lock, .input-group i.fa-envelope{right:14px}
-  .input-group .fa-phone{right:14px}
-  .eye-icon{left:14px;top:50%;transform:translateY(-50%);position:absolute;cursor:pointer;color:var(--primary)}
-
-  /* Buttons */
-  .stack{display:flex;flex-direction:column;gap:10px;margin-top:10px}
-  .btn{
-    display:flex;align-items:center;justify-content:center;gap:10px;
-    width:100%; padding:12px 14px; border-radius:14px; border:none;
-    font-size:1rem; cursor:pointer; transition:transform .06s ease, box-shadow .2s ease;
-    box-shadow: 0 6px 14px rgba(79,70,229,.08);
-  }
-  .btn:disabled,
-  .btn.is-loading{
-    opacity:.65;
-    cursor:not-allowed;
-    pointer-events:none;
-  }
-  .btn:active{transform:translateY(1px)}
-  .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-2)); color:#fff}
-  .btn-secondary{
-    background:#fff; color:var(--text);
-    border:1px solid rgba(2,6,23,.12);
-  }
-  .btn-info{background:linear-gradient(135deg,#9c9ede,#b9bbef); color:#fff}
-  .btn-success{background:linear-gradient(135deg,#10b981,#34d399); color:#fff}
-
-  /* Helper links */
-  .help{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:8px 0 2px}
-  .help a{color:var(--primary);text-decoration:none;font-size:.95rem}
-  .help a:hover{text-decoration:underline}
-
-  .error-message{color:var(--danger);text-align:center;margin-top:8px}
-
-  /* Modals */
-  .modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:50}
-  .modal.hidden{display:none}
-  .modal-content{
-    background:var(--surface);border:1px solid rgba(2,6,23,.08);
-    padding:26px;border-radius:18px; box-shadow:var(--shadow-lg); width:min(92vw,420px); text-align:center
-  }
-  .modal-content p{color:var(--muted)}
-  .btn-login{width:100%; padding:12px 14px; border:none; border-radius:14px; cursor:pointer;
-             background:linear-gradient(135deg,var(--primary),var(--primary-2)); color:#fff}
-  .bottom-link{border:none}
-
-  /* Loader */
-  #pageLoader{position:fixed;inset:0;background:rgba(255,255,255,.65);display:flex;align-items:center;justify-content:center;z-index:60}
-  #pageLoader.hidden{display:none}
-  .half-circle-spinner{width:60px;height:60px;position:relative}
-  .half-circle-spinner .circle{
-    position:absolute;width:100%;height:100%;border:5px solid transparent;border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite
-  }
-  .half-circle-spinner .circle.circle-2{border-top-color:transparent;border-bottom-color:var(--primary-2);animation-delay:.3s}
-  @keyframes spin{to{transform:rotate(360deg)}}
-
-  /* Password strength */
-  .password-strength-bar{width:100%;height:6px;background-color:#e5e7eb;border-radius:4px;margin-top:8px;overflow:hidden}
-  .password-strength-bar #strengthIndicator{height:100%;width:0%;transition:width .35s ease, background-color .35s ease}
-  .strength-text{font-size:.9rem;margin-top:6px;color:var(--muted);text-align:right}
-
-  .hidden{display:none !important}
-
-  /* Phone input plugin tweaks */
-  .iti{width:100%;display:flex;flex-direction:row-reverse;align-items:center}
-  .iti__flag-container{margin-left:10px !important}
-  #phoneInput,#googlePhoneInput{direction:ltr;text-align:left}
-
-  /* Reset page styling */
-  .reset-hero{
-    background:linear-gradient(135deg, rgba(79,70,229,.12), rgba(124,58,237,.10));
-    border:1px solid rgba(79,70,229,.18);
-    border-radius:16px;
-    padding:14px 16px;
-    display:flex;
-    align-items:flex-start;
-    gap:12px;
-    margin-bottom:14px;
-  }
-  .reset-hero__badge{
-    width:44px;height:44px;border-radius:12px;
-    display:grid;place-items:center;
-    background:linear-gradient(135deg,#4f46e5,#7c3aed);
-    color:#fff;font-weight:800;font-size:1.05rem;
-    box-shadow:0 6px 16px rgba(79,70,229,.25);
-  }
-  .reset-hero__content h4{
-    margin:0 0 4px;font-size:1.05rem;color:var(--text);
-  }
-  .reset-hero__content p{
-    margin:0;color:var(--muted);font-size:.95rem;line-height:1.5;
-  }
-  .reset-meta{
-    display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;
-  }
-  .pill{
-    padding:6px 10px;
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    right:14px;
+    width:34px;
+    height:34px;
     border-radius:999px;
-    font-size:.9rem;
-    background:rgba(15,23,42,.05);
-    color:var(--text);
-    border:1px solid rgba(15,23,42,.08);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--field-bg);
+    border:1px solid var(--field-border);
+    color:#9ca3af;
   }
-  .pill.success{
-    background:rgba(16,185,129,.12);
-    border-color:rgba(16,185,129,.25);
-    color:#047857;
-  }
-  .pill.muted{
-    background:rgba(99,102,241,.1);
-    border-color:rgba(99,102,241,.2);
-    color:#312e81;
-  }
-  .reset-steps{
-    list-style:none;
-    margin:0 0 14px;
-    padding:0;
-    display:grid;
+  html[dir="ltr"] .input-group i{ right:auto; left:14px; }
+
+  .stack{ display:flex; flex-direction:column; gap:10px; }
+
+  .btn{
+    width:100%;
+    height:48px;
+    border:none;
+    border-radius:999px;
+    cursor:pointer;
+    font-size:1rem;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     gap:8px;
   }
-  .reset-steps li{
+  .btn-primary{
+    background:var(--primary);
+    color:#fff;
+    box-shadow:0 10px 22px rgba(79,70,229,.25);
+  }
+  .btn-secondary{
+    background:#fff;
+    border:1px solid var(--field-border);
+    color:var(--text);
+  }
+  .btn-success{ background:#10b981; color:#fff; }
+  .btn-google{ height:48px; }
+
+  .btn-link,
+  .btn-info{
+    background:transparent;
+    border:none;
+    color:var(--link);
+    height:auto;
+    padding:0;
+    width:auto;
+    align-self:center;
+    box-shadow:none;
+    font-weight:600;
+  }
+  #showReset{ align-self:flex-start; }
+  html[dir="ltr"] #showReset{ align-self:flex-end; }
+  #toggleRegister{ margin:0 auto; }
+  .btn-link:hover, .btn-info:hover{ text-decoration:underline; }
+
+  .divider{
     display:flex;
     align-items:center;
     gap:10px;
-    padding:10px 12px;
-    border:1px solid rgba(15,23,42,.06);
-    border-radius:12px;
-    background:#f8fafc;
+    margin:6px 0;
+    color:#9ca3af;
+    font-size:.9rem;
+  }
+  .divider::before,
+  .divider::after{ content:""; flex:1; height:1px; background:var(--field-border); }
+
+  .error-message{ color:var(--danger); text-align:center; margin:0; }
+  .hidden{ display:none !important; }
+
+  /* Modals */
+  .modal{ position:fixed; inset:0; background:rgba(15,23,42,.55); display:flex; align-items:center; justify-content:center; z-index:50; }
+  .modal.hidden{ display:none; }
+  .modal-content{
+    background:var(--surface);
+    border:1px solid var(--card-border);
+    padding:26px;
+    border-radius:18px;
+    box-shadow:var(--card-shadow);
+    width:min(92vw,420px);
+    text-align:center;
+  }
+  .modal-content p{ color:var(--muted); }
+  .totp-modal{ position:relative; text-align:center; }
+  .totp-modal h3{ margin:0 0 8px; font-size:1.2rem; }
+  .totp-modal .totp-subtitle{ margin:0 0 16px; color:var(--muted); line-height:1.6; }
+  .totp-modal .totp-close{
+    position:absolute; top:10px; left:10px; border:none; background:transparent;
+    font-size:20px; color:var(--muted); cursor:pointer;
+  }
+  .totp-error{ color:var(--danger); margin:8px 0 0; font-size:.95rem; min-height:18px; }
+  .btn-login{
+    width:100%; height:48px; border:none; border-radius:999px; cursor:pointer;
+    background:var(--primary); color:#fff; font-weight:700;
+  }
+
+  /* Password strength */
+  .password-strength-bar{ width:100%; height:6px; background:#e5e7eb; border-radius:4px; overflow:hidden; }
+  #strengthIndicator{ height:100%; width:0%; transition:width .35s ease, background-color .35s ease; }
+  .strength-text{ font-size:.9rem; color:var(--muted); text-align:right; }
+  .login-box h3{ margin:0; text-align:center; font-size:1.1rem; }
+  .password-criteria{ margin-top:10px; direction:rtl; background:var(--surface); border:1px solid var(--field-border); border-radius:12px; padding:12px; }
+  .password-criteria p{ margin:6px 0; color:var(--muted); }
+
+  .modal-content img{ max-width:100%; margin-bottom:15px; }
+  #googleUsernameInput{
+    width:100%;
+    padding:10px;
+    margin-bottom:15px;
+    border-radius:8px;
+    border:1px solid var(--field-border);
+    background:var(--field-bg);
     color:var(--text);
   }
-  .reset-steps i{color:var(--primary)}
-
-</style>
-
-<style id="polish-overrides">
-  :root{
-    --text:#0f1024;            /* slate-900 for stronger contrast */
-    --muted:#475569;           /* slate-600 */
-    --field-bg:#f8fafc;        /* slate-50 */
-    --field-border:#cbd5e1;    /* slate-300 */
-    --field-icon:#64748b;      /* slate-500 */
+  #googleUsernameError,
+  #phoneSaveError{
+    color:var(--danger);
+    margin-bottom:10px;
+    font-size:.9rem;
   }
-  .form-side h2{ color: var(--text); }
-  .subtitle{ color: var(--muted); }
+  #googlePhoneModal .modal-content > p{ margin-bottom:15px; }
 
-  /* Input: make the icon feel INSIDE the field, and strengthen contrast */
-  .input-group{ position:relative; }
-  .input-group input{
-    background: var(--field-bg) !important;
-    border-color: var(--field-border) !important;
-    color: var(--text) !important;
+  #unverifiedEmailModal .modal-content{
+    background:#1e293b;
+    color:#fff;
+    border:none;
   }
-  .input-group input::placeholder{
-    color: #64748b !important; /* slate-500 */
-    opacity: .9;
+  #unverifiedEmailModal .modal-content p,
+  #unverifiedEmailModal .modal-content ul{ color:#fff; }
+  #unverifiedEmailModal .modal-content ul{ text-align:right; margin:0 0 1.5rem; padding-right:18px; }
+  #unverifiedEmailModal .modal-content i{ font-size:3rem; color:var(--primary-2); margin-bottom:1rem; }
+  #unverifiedEmailModal .modal-content h3{ margin:0 0 1rem; }
+  .unverified-warning{ color:#fecaca; font-weight:700; margin-bottom:1.5rem; }
+  .modal-actions{ display:flex; gap:10px; }
+  #verificationMessage{ margin-top:12px; text-align:center; }
+
+  /* Pills */
+  .pill{ padding:6px 10px; border-radius:999px; font-size:.9rem; background:rgba(15,23,42,.05); color:var(--text); border:1px solid rgba(15,23,42,.08); }
+  .pill.success{ background:rgba(16,185,129,.12); border-color:rgba(16,185,129,.25); color:#047857; }
+  .pill.muted{ background:rgba(99,102,241,.1); border-color:rgba(99,102,241,.2); color:#312e81; }
+
+  /* Phone input (intl-tel-input) */
+  .phone-group{
+    background:var(--field-bg);
+    border:1px solid var(--field-border);
+    border-radius:999px;
+    height:48px;
+    display:flex;
+    align-items:center;
+    padding:0 12px;
   }
-  /* RTL-aware padding so text doesn't collide with the icon on the right */
-  html[dir="rtl"] .input-group input{ padding-right: 52px !important; padding-left: 44px !important; }
-  html[dir="ltr"] .input-group input{ padding-left: 52px !important; padding-right: 44px !important; }
-
-  /* Icons as inset elements */
-  .input-group i{
-    width: 34px; height: 34px;
-    display: inline-flex; align-items: center; justify-content: center;
-    background: #ffffff; /* small chip to feel inset */
-    border: 1px solid var(--field-border);
-    border-radius: 10px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
-    color: var(--field-icon) !important;
-    pointer-events: none; /* don't block clicks */
+  .phone-group:focus-within{
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(79,70,229,.15);
   }
-  /* place icon to the right for RTL, left for LTR */
-  html[dir="rtl"] .input-group i{ right: 8px !important; left: auto !important; }
-  html[dir="ltr"] .input-group i{ left: 8px !important; right: auto !important; }
-
-  /* Eye icon: align symmetrically as an inset chip on the opposite side */
-  .eye-icon{
-    width: 34px; height: 34px;
-    display: inline-flex; align-items: center; justify-content: center;
-    background: #ffffff;
-    border: 1px solid var(--field-border);
-    border-radius: 10px;
-    color: var(--primary);
+  .phone-group .iti{
+    width:100%;
+    display:flex;
+    align-items:center;
+    background:transparent;
+    border:none;
+    height:48px;
+    direction:ltr;
   }
-  html[dir="rtl"] .eye-icon{ left: 8px !important; right: auto !important; }
-  html[dir="ltr"] .eye-icon{ right: 8px !important; left: auto !important; }
-
-  /* Focus ring polish */
-  .input-group input:focus{
-    border-color: var(--ring) !important;
-    box-shadow: 0 0 0 4px rgba(167,139,250,.18) !important;
-    background: #fff !important;
+  .phone-group .iti__flag-container,
+  .phone-group .iti__selected-flag{
+    background:transparent;
+    border:none;
+    box-shadow:none;
   }
-
-  /* Stronger typography for labels and headings */
-  .brand-side h1{ color: #fff; }
-  .brand-cta p{ color: #eef2ff; }
-
-  /* Buttons: slightly darker text for secondary */
-  .btn-secondary{ color: var(--text) !important; }
-
-  /* Error text slightly darker for accessibility */
-  .error-message{ color: #b91c1c !important; } /* red-700 */
-</style>
-
-
-<style id="register-form-tweaks">
-  /* 1) Move intl-tel-input selector to the other side only in Register form */
-  #registerForm .iti{ flex-direction: row !important; } /* default LTR flow: flag on the left of input */
-  /* Keep some spacing to the right in RTL layout */
-  html[dir="rtl"] #registerForm .iti__flag-container{ margin-right: 10px !important; margin-left: 0 !important; }
-  html[dir="ltr"] #registerForm .iti__flag-container{ margin-left: 10px !important; margin-right: 0 !important; }
-
-  /* Ensure the tel input remains left-aligned numerically */
-  #registerForm #phoneInput{ direction:ltr !important; text-align:left !important; }
-
-  /* 2) Tighten spacing for password requirements */
-  #registerForm .password-criteria p{
-    margin: 3px 0 !important;
-    line-height: 1.25 !important;
-    font-size: 14px !important;
+  .phone-group .iti__selected-flag{ padding:0 10px; }
+  .phone-group .iti__selected-dial-code{ color:var(--text); font-weight:600; }
+  .phone-group .iti__flag-container{ order:1; margin-right:10px; margin-left:0; }
+  .phone-group input[type="tel"]{
+    order:2;
+    flex:1;
+    width:100%;
+    height:48px;
+    background:transparent;
+    border:none;
+    padding:0 12px;
+    color:var(--text);
+    text-align:right;
+    direction:rtl;
+    padding-right:54px;
+  }
+  html[dir="rtl"] .phone-group .iti__flag-container{
+    left:12px;
+    right:auto;
+  }
+  html[dir="rtl"] .phone-group input[type="tel"]{
+    padding-left:72px;
+  }
+  html[dir="ltr"] .phone-group input[type="tel"]{
+    text-align:left;
+    direction:ltr;
+    padding-left:54px;
+    padding-right:12px;
   }
 
-  /* 3) Prevent field-side icons from stretching */
-  .input-group i, .eye-icon{
-    flex: 0 0 34px;
-    line-height: 1;
-    font-size: 16px;
-  }
-  /* Make sure chips keep their size and don't scale */
-  .input-group i, .eye-icon{
-    max-width: 34px; max-height: 34px;
+  #registerForm > h3, #resetForm > h3{ display:none; }
+  .support-section{ display:none !important; }
+
+  @media (max-width:520px){
+    .auth-page{ padding:24px 14px 36px; }
+    .form-side{ padding:22px 18px 22px; }
   }
 </style>
-
-
-<style id="quick-fixes-rtl-ux">
-  /* A) Fix "two eyes" + position and ensure only one visible controller */
-  #registerForm .eye-icon{
-    z-index: 2 !important;
-  }
-  /* Hide any direct eye icons injected as siblings to inputs */
-  #registerForm .input-group > i.fa-eye,
-  #registerForm .input-group > i.fa-eye-slash{ display:none !important; }
-
-  /* B) Move country selector to the opposite side inside Register only */
-  #registerForm .iti{
-    flex-direction: row-reverse !important; /* reverse DOM: input then flag */
-  }
-  /* In RTL, when flag moves to left edge, reserve padding-left for the chip */
-  html[dir="rtl"] #registerForm #phoneInput{
-    padding-left: 52px !important;
-    padding-right: 14px !important;
-  }
-  /* Ensure flag container sits flush on the left in RTL */
-  html[dir="rtl"] #registerForm .iti__flag-container{
-    left: 8px !important;
-    right: auto !important;
-    margin: 0 !important;
-    position: absolute !important;
-  }
-  /* Keep the input full width in the .input-group */
-  #registerForm .input-group{ padding-left: 46px; } /* space for flag chip */
-
-  /* C) Stabilize the right-side image panel height to avoid stretch */
-  .brand-side{
-    height: 640px;               /* stable, corporate feel */
-    min-height: 640px;
-    background-position: center;
-    background-size: cover;
-  }
-  @media (max-width: 880px){
-    .brand-side{ height: auto; min-height: unset; } /* hidden anyway on mobile */
-  }
-</style>
-
-
-<style id="final-eye-phone-patch">
-  /* Ensure only ONE eye icon in password field */
-  #registerForm .input-group .eye-icon{ position:absolute !important; top:50%; transform:translateY(-50%); }
-  #registerForm .input-group > i.fa-eye,
-  #registerForm .input-group > i.fa-eye-slash{ display:none !important; }
-
-  /* Place the eye icon inside input area */
-  html[dir="rtl"] #registerForm .eye-icon{ left:8px !important; right:auto !important; }
-  html[dir="ltr"] #registerForm .eye-icon{ right:8px !important; left:auto !important; }
-
-  /* Phone number input align right for RTL */
-  html[dir="rtl"] #registerForm #phoneInput{
-    direction: rtl !important;
-    text-align: right !important;
-    padding-right: 52px !important; /* space for phone icon */
-    padding-left: 14px !important;
-  }
-
-  /* Phone icon position fix for RTL */
-  html[dir="rtl"] #registerForm .fa-phone{
-    right: 8px !important;
-    left: auto !important;
-  }
-</style>
-
-
-<style id="eye-fix-strong">
-  /* Hide any stray eye icons outside the .eye-icon span */
-  #registerForm .input-group > i.fa-eye,
-  #registerForm .input-group > i.fa-eye-slash {
-    display: none !important;
-  }
-  /* Position .eye-icon inside the input field */
-  #registerForm .eye-icon {
-    position: absolute !important;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    background: #fff;
-    border: 1px solid var(--field-border, #ccc);
-    cursor: pointer;
-    z-index: 2;
-  }
-  html[dir="rtl"] #registerForm .eye-icon {
-    left: 8px !important;
-    right: auto !important;
-  }
-  html[dir="ltr"] #registerForm .eye-icon {
-    right: 8px !important;
-    left: auto !important;
-  }
-</style>
-
-
-<style id="eye-only-one-override">
-  /* Make the chip be the span.eye-icon, not the inner <i> */
-  #registerForm .eye-icon{
-    position:absolute !important;
-    width:34px; height:34px;
-    display:inline-flex; align-items:center; justify-content:center;
-    top:50%; transform:translateY(-50%);
-    z-index:3;
-  }
-  html[dir="rtl"] #registerForm .eye-icon{ left:8px !important; right:auto !important; }
-  html[dir="ltr"] #registerForm .eye-icon{ right:8px !important; left:auto !important; }
-
-  /* Neutralize any styling applied to the inner <i> so it doesn't render as a second chip */
-  #registerForm .eye-icon i{
-    position: static !important;
-    width:auto !important; height:auto !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    margin:0 !important; padding:0 !important;
-  }
-
-  /* Hide any stray eye icons that might be direct children of .input-group */
-  #registerForm .input-group > i.fa-eye,
-  #registerForm .input-group > i.fa-eye-slash{ display:none !important; }
-
-  /* Force phone input typing from the right in RTL */
-  html[dir="rtl"] #registerForm #phoneInput{
-    direction: rtl !important;
-    text-align: right !important;
-    padding-right: 52px !important;
-    padding-left: 14px !important;
-  }
-</style>
-
-
-<style id="remove-eye-icons">
-  #registerForm .eye-icon,
-  #registerForm .input-group > i.fa-eye,
-  #registerForm .input-group > i.fa-eye-slash{ display:none !important; }
-</style>
-
-
-<style id="unify-register-login-widths">
-  #registerForm .input-group input,
-  #registerForm .iti,
-  #registerForm .iti input[type="tel"] {
-    width: 100% !important;
-    box-sizing: border-box !important;
-  }
-</style>
-
-
-<style id="force-register-fields-width">
-  /* Force same width, padding, and border radius as login form */
-  #registerForm .input-group,
-  #registerForm .input-group input,
-  #registerForm .iti,
-  #registerForm .iti input[type="tel"] {
-    width: 100% !important;
-    max-width: none !important;
-    display: block !important;
-  }
-
-  /* Ensure .iti container doesn't shrink */
-  #registerForm .iti {
-    flex: 1 1 auto !important;
-  }
-
-  /* Adjust input styles to match login form exactly */
-  #registerForm .input-group input,
-  #registerForm .iti input[type="tel"] {
-    padding: 14px 44px !important;
-    border-radius: 14px !important;
-  }
-</style>
-
-
-<style id="register-width-fix">
-  /* Remove group-level padding that was shrinking visual width */
-  #registerForm .input-group{ padding-left: 0 !important; padding-right: 0 !important; }
-
-  /* Make every input truly full-width */
-  #registerForm .input-group input{ width: 100% !important; display:block; }
-
-  /* Ensure the intl-tel-input wrapper spans the full width */
-  #registerForm .iti{ width: 100% !important; }
-  #registerForm .iti .iti__tel-input,
-  #registerForm input[type="tel"]{ width: 100% !important; }
-
-  /* Keep icon chips positioned without stealing width */
-  #registerForm .input-group i,
-  #registerForm .eye-icon{ position:absolute; }
-
-  /* Maintain phone input paddings for RTL without affecting container width */
-  html[dir="rtl"] #registerForm #phoneInput{
-    padding-right: 52px !important;
-    padding-left: 14px !important;
-  }
-</style>
-
-
-<style id="responsive-register-fields">
-  /* Ensure inputs and phone field scale fluidly on all screens */
-  #registerForm .input-group,
-  #registerForm .iti {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-  #registerForm input,
-  #registerForm .iti input[type="tel"] {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  /* Adjust font sizes and paddings for smaller screens */
-  @media (max-width: 600px) {
-    #registerForm .input-group input {
-      font-size: 0.95rem !important;
-      padding: 12px 40px !important;
-    }
-    #registerForm .input-group i,
-    #registerForm .eye-icon {
-      width: 30px; height: 30px;
-      font-size: 14px;
-    }
-    #registerForm .password-criteria p {
-      font-size: 13px !important;
-    }
-  }
-
-  /* On very narrow screens, stack brand and form side */
-  @media (max-width: 880px) {
-    .auth-shell {
-      grid-template-columns: 1fr !important;
-    }
-    .brand-side {
-      display: none !important;
-    }
-  }
-</style>
-
-
-<style id="responsive-all-screens">
-  /* Prevent horizontal scroll */
-  html, body{ overflow-x:hidden; }
-
-  /* Fluid typography */
-  :root{
-    --fs-base: clamp(0.95rem, 0.9rem + 0.3vw, 1.05rem);
-    --fs-h2: clamp(1.25rem, 1.1rem + 1.2vw, 1.8rem);
-  }
-  body{ font-size: var(--fs-base); }
-  .form-side h2{ font-size: var(--fs-h2); }
-
-  /* Container: fluid with safe padding */
-  .auth-shell{ width:min(100%, 1120px); padding: clamp(12px, 2vw, 24px); gap: clamp(12px, 2.5vw, 24px); }
-
-  /* Brand panel: stable aspect without stretching */
-  .brand-side{
-    height: clamp(520px, 60vh, 700px);
-    min-height: unset;
-    border-radius: clamp(16px, 2vw, 24px);
-    background-position:center;
-    background-size:cover;
-  }
-
-  /* Form side padding scales */
-  .form-side{ padding: clamp(18px, 2.8vw, 28px); border-radius: clamp(14px, 2vw, 24px); }
-  .card{ padding: clamp(16px, 2.4vw, 22px); border-radius: clamp(12px, 2vw, 16px); }
-
-  /* Inputs & buttons: touch-friendly */
-  .input-group input{
-    min-height: clamp(44px, 5.2vh, 52px);
-    font-size: var(--fs-base);
-  }
-  .btn{ min-height: clamp(44px, 5.2vh, 52px); font-size: var(--fs-base); }
-
-  /* Eye/phone chips keep size on all screens */
-  .input-group i, .eye-icon{ width:34px; height:34px; }
-
-  /* Phone plugin never exceeds container */
-  .iti, .iti *{ max-width: 100% !important; box-sizing: border-box; }
-
-  /* Breakpoint: <= 1024px */
-  @media (max-width: 1024px){
-    .auth-shell{ width:min(100%, 980px); }
-  }
-
-  /* Breakpoint: <= 880px (stack layout) */
-  @media (max-width: 880px){
-    .brand-side{ display:block; height: 220px; }
-    .auth-shell{ grid-template-columns: 1fr; }
-    .form-side{ padding: clamp(16px, 4vw, 22px); }
-  }
-
-  /* Breakpoint: <= 640px */
-  @media (max-width: 640px){
-    .brand-side{ height: 180px; border-radius: 14px; }
-    .btn{ gap:8px; }
-  }
-
-  /* Breakpoint: <= 420px (small phones) */
-  @media (max-width: 420px){
-    .brand-side{ height: 150px; }
-    .input-group input{ padding: 12px 42px; }
-    .btn{ padding: 10px 12px; }
-    .modal-content{ width: 92vw; padding: 18px; border-radius: 14px; }
-  }
-
-  /* iOS zoom fix in inputs */
-  input, select, textarea{ font-size:16px; }
-</style>
-
-
-<style id="brand-side-image-fix">
-  /* Brand side image fills fully without heavy clipping */
-  .brand-side{
-    background-size: cover !important;
-    background-position: center !important;
-    border-radius: 16px !important; /* softer corners */
-    overflow: hidden; /* ensure no scrollbars from background */
-    height: clamp(520px, 60vh, 700px);
-  }
-
-  /* Brighten headings and text for visibility on image background */
-  .brand-side h1,
-  .brand-side .brand-logo div,
-  .brand-side .brand-cta p,
-  .brand-side .brand-badges .badge{
-    color: #ffffff !important;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-  }
-  .brand-side .brand-cta p{ opacity: 1; }
-  .brand-side .badge{
-    background: rgba(255,255,255,0.2);
-    border-color: rgba(255,255,255,0.3);
-  }
-
-  /* Dark text for form headings */
-  .form-side h2,
-  .form-side .subtitle{
-    color: #0f1024 !important;
-    text-shadow: none !important;
-  }
-</style>
-
-
-<style id="heading-contrast-fix">
-  .form-side h2, #registerForm h3, #resetForm h3{ color:#0f1024 !important; } /* slate-900 */
-  .brand-side h1, .brand-side .subtitle{ color:#ffffff !important; text-shadow:0 1px 2px rgba(0,0,0,.35); }
-</style>
-
-
-<style id="white-headings-fix">
-  /* Ensure headings are visible on light backgrounds, and stay white in dark mode */
-  #loginForm h2,
-  #resetForm h2,
-  #registerForm h2,
-  #resetForm h3,
-  #registerForm h3 {
-    color: #0f1024 !important; /* dark for light mode */
-    text-shadow: none !important;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    #loginForm h2,
-    #resetForm h2,
-    #registerForm h2,
-    #resetForm h3,
-    #registerForm h3 {
-      color: #ffffff !important; /* white for dark mode */
-      text-shadow: 0 1px 2px rgba(0,0,0,0.35);
-    }
-  }
-</style>
-
-
-<style id="force-heading-contrast-override-2">
-  /* FINAL OVERRIDE: ensure headings above fields are always visible */
-  .form-side .header h2,
-  .form-side h2,
-  #loginForm h2,
-  #resetForm h2,
-  #registerForm h2,
-  #resetForm h3,
-  #registerForm h3 {
-    color: #0f1024 !important; /* strong dark text on light surfaces */
-    text-shadow: none !important;
-  }
-  @media (prefers-color-scheme: dark) {
-    .form-side .header h2,
-    .form-side h2,
-    #loginForm h2,
-    #resetForm h2,
-    #registerForm h2,
-    #resetForm h3,
-    #registerForm h3 {
-      color: #ffffff !important; /* white on dark surfaces */
-      text-shadow: 0 1px 2px rgba(0,0,0,0.35) !important;
-    }
-  }
-</style>
-
-
-<style id="force-contrast-v3">
-  /* FINAL-FINAL OVERRIDE: make these labels always visible above fields */
-  .form-side .header h2,
-  #loginForm h2,
-  #resetForm h2,
-  #registerForm h2,
-  #resetForm h3,
-  #registerForm h3,
-  /* the line: 'املأ البيانات التالية لإنشاء حساب جديد' */
-  #registerForm .subtitle,
-  .form-side .subtitle {
-    color: #0f1024 !important; /* dark text for light mode */
-    text-shadow: none !important;
-  }
-  @media (prefers-color-scheme: dark) {
-    .form-side .header h2,
-    #loginForm h2,
-    #resetForm h2,
-    #registerForm h2,
-    #resetForm h3,
-    #registerForm h3,
-    #registerForm .subtitle,
-    .form-side .subtitle {
-      color: #ffffff !important; /* white for dark mode */
-      text-shadow: 0 1px 2px rgba(0,0,0,0.35) !important;
-    }
-  }
-</style>
-
-
-<style id="brand-side-sticky-fix">
-  /* Keep the image panel visible while scrolling and prevent disappearing */
-  @media (min-width: 881px){
-    /* Stop vertical centering which shortens the page and makes panels jump */
-    body{ align-items: flex-start !important; }
-    .auth-shell{ align-items: start; }
-
-    .brand-side{
-      position: sticky !important;
-      top: 24px !important;
-      height: calc(100vh - 48px) !important; /* viewport-tall */
-      min-height: 520px !important;
-      background-size: cover !important;
-      background-position: center !important;
-    }
-  }
-</style>
-
-
-<style id="brand-side-mobile-visible">
-  /* Force brand-side to display on mobile */
-  @media (max-width: 880px){
-    .brand-side{
-      display: block !important;
-      order: -1; /* show above form */
-      width: 100% !important;
-      height: auto !important;
-      min-height: 220px !important;
-      margin-bottom: 16px;
-    }
-  }
-</style>
-
-
-<style id="brand-side-mobile-nocrop">
-  /* Make the brand image fully visible on phones (no cropping) */
-  @media (max-width: 880px){
-    .brand-side{
-      /* Two background layers: [0]=gradient, [1]=image */
-      background-size: 100% 100%, contain !important; /* gradient fills, image fits */
-      background-repeat: no-repeat, no-repeat !important;
-      background-position: center, center !important;
-      min-height: 260px !important; /* a bit taller so contain has room */
-    }
-  }
-</style>
-
-
-<style id="brand-side-mobile-strong-v7">
-  /* Ensure brand image is visible and NOT tiny on phones */
-  @media (max-width: 880px){
-    .brand-side{
-      display: block !important;              /* undo any display:none */
-      order: -1;                               /* place above the form */
-      width: 100% !important;
-      height: auto !important;
-      min-height: 420px !important;            /* give the image room */
-      /* Use two-layer sizing: gradient fills, image fits fully */
-      background-size: 100% 100%, contain !important;
-      background-repeat: no-repeat, no-repeat !important;
-      background-position: center, center !important;
-      border-radius: 14px !important;
-    }
-  }
-</style>
-
-
-<style id="mobile-root-cause-fix-v8">
-  /* Root-cause fixes for phones (≤880px) */
-  @media (max-width: 880px){
-    /* 0) Stop vertical centering that can hide top content */
-    body{ align-items: flex-start !important; }
-
-    /* 1) Always show brand-side and place it above the form */
-    .brand-side{
-      display: block !important;
-      order: -1 !important;
-      width: 100% !important;
-      height: auto !important;         /* cancel any fixed heights */
-      min-height: 420px !important;    /* enough room for image + content */
-      /* show the background image fully */
-      background-size: 100% 100%, contain !important; /* gradient fills, image fits */
-      background-position: center, center !important;
-      background-repeat: no-repeat, no-repeat !important;
-      justify-content: center !important; /* cancel space-between that clips top with small heights */
-      padding: 20px 16px !important;
-    }
-
-    /* 2) Remove any later small-height rules */
-    .brand-side{ height: auto !important; }
-
-    /* 3) Ensure grid stacks cleanly */
-    .auth-shell{ grid-template-columns: 1fr !important; }
-  }
-
-  /* Extra small phones: keep at least 360px so image isn't just a strip */
-  @media (max-width: 420px){
-    .brand-side{ min-height: 360px !important; }
-  }
-</style>
-
-
-<style id="brand-side-mobile-benefits-bottom">
-  @media (max-width: 880px){
-    .brand-side{
-      justify-content: flex-end !important; /* Move benefits to bottom */
-      padding-bottom: 20px !important;      /* Add bottom space */
-    }
-  }
-</style>
-
-
-<style id="brand-side-mobile-benefits-absolute-v10">
-  /* Pin the benefits card to the bottom on phones */
-  @media (max-width: 880px){
-    .brand-side{
-      position: relative !important;
-      padding-bottom: 110px !important;  /* reserve space for the card */
-    }
-    .brand-side .brand-cta{
-      position: absolute !important;
-      left: 16px !important;
-      right: 16px !important;
-      bottom: 16px !important;
-      margin-top: 0 !important;          /* override margin-top:auto */
-    }
-    .brand-side .brand-logo{
-      margin-bottom: auto !important;     /* keep logo toward the top */
-    }
-  }
-</style>
-
-
-<style id="brand-side-desktop-fixed">
-  @media (min-width: 881px){
-    .brand-side{
-      position: sticky !important;
-      top: 0 !important;
-      height: 100vh !important; /* full viewport height */
-      overflow: hidden !important;
-    }
-  }
-</style>
-
 </head>
 <body>
   <div id="preloader"><div class="loader"></div></div>
 
+<div class="auth-page">
 <div class="auth-shell">
-  <!-- Brand / left -->
-  <aside class="brand-side" aria-hidden="true">
-    <div class="brand-logo">
-      <div class="mark">∞</div>
-      <div>
-        <h1>لوحة دخول زعيم ستور</h1>
-        <div style="opacity:.9">أمان عالي. تجربة متناسقة. تصميم احترافي.</div>
-      </div>
-    </div>
-
-    <div class="brand-cta">
-      <p><i class="fa-solid fa-shield-halved"></i> تمكين المصادقة المؤمّنة وتحقق البريد وإدارة الجلسات.</p>
-      <div class="brand-badges">
-        <span class="badge"><i class="fa-regular fa-circle-check"></i> SSO جاهز</span>
-        <span class="badge"><i class="fa-regular fa-clock"></i> 24/7</span>
-        <span class="badge"><i class="fa-solid fa-lock"></i> تشفير</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Form / right -->
+  <!-- Form -->
   <section class="form-side">
-    <header class="header">
-      <div class="avatar"><i class="fa-solid fa-building"></i></div>
-      <div>
-        <h2>تسجيل الدخول</h2>
-        <div class="subtitle">مرحبًا بك مجددًا</div>
-      </div>
+    <header class="header header--simple">
+      <h2 id="formTitle">تسجيل الدخول</h2>
     </header>
 
     <!-- Keep original structure inside a card to preserve JS -->
     <div class="card">
       <div class="login-box" id="loginForm">
-        <button class="btn btn-secondary" id="googleLogin"><i class="fa-brands fa-google"></i> تسجيل دخول بواسطة Google</button>
-        <hr style="margin: 12px 0; border: none; border-top: 1px solid #ffffff; width:100%;">
         <div class="input-group">
           <input id="emailInput" placeholder="أدخل بريدك الإلكتروني" type="email"/>
           <i class="fa-regular fa-envelope"></i>
@@ -1033,39 +345,39 @@
           <input id="passwordInput" placeholder="أدخل كلمة المرور" type="password"/>
           <i class="fa-solid fa-lock"></i>
         </div>
-        <div class="stack">
-          
-
-          <button class="btn btn-primary" id="submitLogin" onclick="window.__manualLogin && window.__manualLogin(event)"><i class="fa-solid fa-arrow-right-to-bracket"></i> دخول</button>
-          
-          <button class="btn btn-info" id="showReset"><i class="fa-solid fa-unlock-keyhole"></i> نسيت كلمة المرور؟</button>
-          
-          <button class="btn btn-primary" id="toggleRegister"><i class="fa-solid fa-user-plus"></i> إنشاء حساب جديد</button>
+        <div class="input-group" id="totpRow" style="display:none;">
+          <input id="totpInput" placeholder="رمز التحقق (6 أرقام)" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6"/>
+          <i class="fa-solid fa-shield-halved"></i>
         </div>
+        <div class="stack">
+          <button class="btn btn-primary" id="submitLogin" type="button">تسجيل الدخول</button>
+          <button class="btn btn-info btn-link" id="showReset">نسيت كلمة المرور؟</button>
+        </div>
+        <div class="divider">أو</div>
+        <button class="btn btn-link" id="toggleRegister">إنشاء حساب جديد</button>
+        <div class="divider">أو</div>
+        <button class="btn btn-secondary btn-google" id="googleLogin"><i class="fa-brands fa-google"></i> تسجيل دخول بواسطة Google</button>
         <p class="error-message" id="loginError"></p>
-</div>
+      </div>
 
       <!-- Reset Form -->
       <div class="login-box hidden" id="resetForm">
-        <h3 style="margin-top:0">استعادة كلمة المرور</h3>
+        <h3>استعادة كلمة المرور</h3>
 
         <div class="input-group">
           <input id="resetEmail" placeholder="أدخل بريدك الإلكتروني" type="email"/>
           <i class="fa-regular fa-envelope"></i>
         </div>
         <div class="stack">
-          <button class="btn btn-success" id="resetSubmitBtn" onclick="sendResetLink()"><i class="fa-solid fa-paper-plane"></i> إرسال رابط الاستعادة</button>
-          <button class="btn btn-secondary" onclick="switchForm('login')"><i class="fa-solid fa-arrow-right"></i> العودة إلى تسجيل الدخول</button>
+          <button class="btn btn-success" id="resetSubmitBtn" onclick="sendResetLink()">إرسال رابط الاستعادة</button>
+          <button class="btn btn-link" onclick="switchForm('login')">العودة إلى تسجيل الدخول</button>
         </div>
         <p class="error-message" id="resetMessage"></p>
       </div>
 
       <!-- Register Form -->
       <div class="login-box hidden" id="registerForm">
-        <h3 style="margin-top:0">إنشاء حساب</h3>
-        <p class="subtitle">املأ البيانات التالية لإنشاء حساب جديد</p>
-          <button class="btn btn-secondary" id="googleLoginRegister"><i class="fa-brands fa-google"></i> تسجيل دخول بواسطة Google</button>
-          <hr style="margin: 12px 0; border: none; border-top: 1px solid #ffffff; width:100%;">
+        <h3>إنشاء حساب</h3>
         <div class="input-group">
           <input id="usernameInput" placeholder="اسم المستخدم" type="text"/>
           <i class="fa-solid fa-user"></i>
@@ -1075,12 +387,12 @@
           <i class="fa-regular fa-envelope"></i>
         </div>
 
-        <div class="input-group">
+        <div class="input-group phone-group">
           <input id="phoneInput" type="tel" placeholder="رقم الهاتف"/>
           <i class="fa-solid fa-phone"></i>
         </div>
 
-        <div class="input-group" style="position: relative;">
+        <div class="input-group">
           <input id="registerPassword" onkeyup="validatePassword()" placeholder="كلمة المرور" type="text"/>
           <i class="fa-solid fa-lock"></i>
         </div>
@@ -1088,7 +400,7 @@
         <div class="password-strength-bar"><div id="strengthIndicator"></div></div>
         <div id="strengthText" class="strength-text"></div>
 
-        <div class="password-criteria" id="passwordCriteria" style="direction: rtl; background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin-top:10px">
+        <div class="password-criteria" id="passwordCriteria">
           <p id="minLength"><i class="fa-solid fa-xmark icon"></i> 6 حروف على الأقل (إجباري)</p>
           <p id="hasNumber"><i class="fa-solid fa-xmark icon"></i> رقم</p>
           <p id="hasUpper"><i class="fa-solid fa-xmark icon"></i> حرف كبير</p>
@@ -1098,19 +410,22 @@
         </div>
 
         <div class="stack">
-          <button class="btn btn-primary" onclick="register()"><i class="fa-solid fa-user-plus"></i> تسجيل</button>
-          <button class="btn btn-secondary" onclick="switchForm('login')"><i class="fa-solid fa-arrow-right"></i> العودة إلى تسجيل الدخول</button>
+          <button class="btn btn-primary" onclick="register()">إنشاء حساب</button>
+          <button class="btn btn-link" onclick="switchForm('login')">العودة إلى تسجيل الدخول</button>
         </div>
+        <div class="divider">أو</div>
+        <button class="btn btn-secondary btn-google" id="googleLoginRegister"><i class="fa-brands fa-google"></i> تسجيل دخول بواسطة Google</button>
         <p class="error-message" id="registerError"></p>
       </div>
     </div>
   </section>
 </div>
+</div>
 
 <!-- Modals (kept from original) -->
 <div class="modal hidden" id="emailVerificationModal">
   <div class="modal-content">
-    <img alt="تأكيد البريد" src="https://i.ibb.co/Fkftn6tJ/2025-07-09-162704-2.png" style="max-width: 100%; margin-bottom: 15px;"/>
+    <img alt="تأكيد البريد" src="https://i.ibb.co/Fkftn6tJ/2025-07-09-162704-2.png"/>
     <p>يرجى تأكيد ملكية البريد الإلكتروني عبر الرسالة الواردة في الإيميل.</p>
     <button class="btn-login" onclick="closeModal()">تم</button>
   </div>
@@ -1118,7 +433,7 @@
 
 <div class="modal hidden" id="resetSuccessModal">
   <div class="modal-content">
-    <img alt="تأكيد البريد" src="https://i.ibb.co/Fkftn6tJ/2025-07-09-162704-2.png" style="max-width: 100%; margin-bottom: 15px;"/>
+    <img alt="تأكيد البريد" src="https://i.ibb.co/Fkftn6tJ/2025-07-09-162704-2.png"/>
     <p>تم إرسال رابط الاستعادة إلى بريدك الإلكتروني.</p>
     <button class="btn-login" onclick="closeModal()">تم</button>
   </div>
@@ -1127,43 +442,57 @@
 <div class="modal hidden" id="completeProfileModal">
   <div class="modal-content">
     <p>يرجى اختيار اسم مستخدم لإكمال التسجيل:</p>
-    <input id="googleUsernameInput" placeholder="اسم المستخدم" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc;" type="text"/>
-    <div id="googleUsernameError" style="color: red; margin-bottom: 10px;"></div>
+    <input id="googleUsernameInput" placeholder="اسم المستخدم" type="text"/>
+    <div id="googleUsernameError"></div>
     <button class="btn-login" onclick="submitGoogleUsername()">إكمال</button>
   </div>
 </div>
 
 <div class="modal hidden" id="googlePhoneModal">
   <div class="modal-content">
-    <p style="margin-bottom: 15px;">يرجى إدخال رقم هاتفك لإكمال التسجيل:</p>
+    <p>يرجى إدخال رقم هاتفك لإكمال التسجيل:</p>
     <div class="input-group">
       <input id="googlePhoneInput" type="tel" placeholder="رقم الهاتف" />
       <i class="fa-solid fa-phone"></i>
     </div>
-    <div id="phoneSaveError" style="color: red; font-size: 0.9rem; margin-bottom: 10px;"></div>
+    <div id="phoneSaveError"></div>
     <button class="btn-login" id="savePhoneBtn">
       <i class="fa-solid fa-check"></i> حفظ رقم الهاتف والمتابعة
     </button>
   </div>
 </div>
 
+<div class="modal hidden" id="totpLoginModal">
+  <div class="modal-content totp-modal">
+    <button class="totp-close" id="totpLoginClose" type="button" aria-label="إغلاق">×</button>
+    <h3>التحقق بخطوتين</h3>
+    <p class="totp-subtitle" id="totpLoginSubtitle">من فضلك افتح تطبيق Google Authenticator وأدخل الكود المكون من 6 أرقام.</p>
+    <div class="input-group">
+      <input id="totpLoginInput" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" maxlength="6"/>
+      <i class="fa-solid fa-shield-halved"></i>
+    </div>
+    <p class="totp-error" id="totpLoginError"></p>
+    <button class="btn btn-primary" id="totpLoginConfirm" type="button">تأكيد الدخول</button>
+  </div>
+</div>
+
 <!-- إضافة مودال جديد قبل نهاية body -->
 <div class="modal hidden" id="unverifiedEmailModal">
   <div class="modal-content">
-    <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; color: var(--primary-2); margin-bottom: 1rem;"></i>
-    <h3 style="margin: 0 0 1rem;">تنبيه: البريد الإلكتروني غير مؤكد</h3>
-    <p style="color: #fff; margin-bottom: 1rem;">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <h3>تنبيه: البريد الإلكتروني غير مؤكد</h3>
+    <p>
       لم يتم تأكيد بريدك الإلكتروني بعد. في حال كان البريد غير صحيح، قد تفقد إمكانية:
     </p>
-    <ul style="text-align: right; color: #fff; margin-bottom: 1.5rem;">
+    <ul>
       <li>استعادة كلمة المرور</li>
       <li>استلام إشعارات مهمة</li>
       <li>حماية حسابك من الاختراق</li>
     </ul>
-    <p style="color: var(--danger); font-weight: bold; margin-bottom: 1.5rem;">
+    <p class="unverified-warning">
       أتحمل كامل المسؤولية عن صحة البريد الإلكتروني المسجل
     </p>
-    <div style="display: flex; gap: 10px;">
+    <div class="modal-actions">
       <button class="btn btn-primary" onclick="confirmUnverifiedLogin()">
         <i class="fa-solid fa-check"></i> موافق، أكمل الدخول
       </button>
@@ -1171,7 +500,7 @@
         <i class="fa-solid fa-paper-plane"></i> تأكيد البريد الآن
       </button>
     </div>
-    <p class="error-message" id="verificationMessage" style="margin-top: 12px; text-align: center;"></p>
+    <p class="error-message" id="verificationMessage"></p>
   </div>
 </div>
 
@@ -1284,6 +613,7 @@
   let activeModalId = null;
   let verificationTimer = null;
   let resetBusy = false;
+  let pendingTotpResolve = null;
 
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
@@ -1321,11 +651,55 @@
   const db = getFirestore(app);
 
   const DEVICE_ID_STORAGE_KEY = "session:device:id";
+  function generateDeviceId(){
+    try {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") {
+        return window.crypto.randomUUID();
+      }
+    } catch (_) {}
+    const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+    const size = 24;
+    let out = "";
+    try {
+      if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+        const buf = new Uint8Array(size);
+        window.crypto.getRandomValues(buf);
+        for (let i = 0; i < size; i++) out += alphabet[buf[i] % alphabet.length];
+        return out;
+      }
+    } catch (_) {}
+    for (let i = 0; i < size; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+    return out;
+  }
   function ensureDeviceId(){
-    return "";
+    try {
+      const cached = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
+      if (cached) return cached;
+    } catch (_) {}
+    const id = generateDeviceId();
+    try { localStorage.setItem(DEVICE_ID_STORAGE_KEY, id); } catch (_) {}
+    return id;
   }
   function getDeviceId(){
-    return "";
+    return ensureDeviceId();
+  }
+  function collectDeviceInfo(){
+    try {
+      const nav = navigator || {};
+      const uaData = nav.userAgentData || {};
+      const platform = String(uaData.platform || nav.platform || "").trim();
+      const brand = Array.isArray(uaData.brands) ? uaData.brands.map(b => b.brand).join(", ") : "";
+      const label = [platform, brand].filter(Boolean).join(" ").trim();
+      return {
+        label: label || "",
+        userAgent: String(nav.userAgent || ""),
+        platform: platform,
+        language: String(nav.language || ""),
+        timezone: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch { return ""; } })()
+      };
+    } catch (_) {
+      return {};
+    }
   }
   try {
     if (!window.getDeviceFingerprint) window.getDeviceFingerprint = getDeviceId;
@@ -1334,21 +708,67 @@
   /***** تخزين sessionKey محليًا لاستخدامه بالطلبات (localStorage) *****/
   const saveSessionLocal   = (obj = {}) => {
     const payload = { ...obj };
+    if (!payload.deviceId) payload.deviceId = getDeviceId();
     localStorage.setItem("sessionKeyInfo", JSON.stringify(payload));
   };
   const getSessionLocal    = () => JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
   const POST_LOGIN_STORAGE_KEY = "postLoginPayload";
+  const TRANSIENT_AUTH_PREFIX = "__Z3EM_AUTH__:";
   const savePostLoginPayload = (payload = {}) => {
+    const data = { ...payload, ts: Date.now() };
+    if (!data.deviceId) data.deviceId = getDeviceId();
     try {
-      localStorage.setItem(POST_LOGIN_STORAGE_KEY, JSON.stringify({ ...payload, ts: Date.now() }));
+      localStorage.setItem(POST_LOGIN_STORAGE_KEY, JSON.stringify(data));
     } catch (_) {}
+    try {
+      window.name = TRANSIENT_AUTH_PREFIX + JSON.stringify(data);
+    } catch (_) {}
+    try { window.__POST_LOGIN_PAYLOAD__ = data; } catch (_) {}
   };
+  const readPostLoginPayload = () => {
+    try {
+      const raw = localStorage.getItem(POST_LOGIN_STORAGE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data && typeof data === "object") return data;
+      }
+    } catch (_) {}
+    // fallback to window.name (same-tab navigation)
+    try {
+      if (typeof window.name === "string" && window.name.startsWith(TRANSIENT_AUTH_PREFIX)) {
+        const json = window.name.slice(TRANSIENT_AUTH_PREFIX.length);
+        const data = JSON.parse(json);
+        return (data && typeof data === "object") ? data : null;
+      }
+    } catch (_) {}
+    return null;
+  };
+  function canUseFirebaseAuth() {
+    try {
+      if (window.__SKIP_FIREBASE__ === true) return false;
+    } catch (_) {}
+    try {
+      const p = location.protocol;
+      if (p !== "http:" && p !== "https:" && p !== "chrome-extension:") return false;
+    } catch (_) {
+      return false;
+    }
+    return true;
+  }
 
   /***** مراجع عناصر الواجهة *****/
   const emailInput    = document.getElementById('emailInput');
   const passwordInput = document.getElementById('passwordInput');
+  const totpRow       = document.getElementById('totpRow');
+  const totpInput     = document.getElementById('totpInput');
   const submitLogin   = document.getElementById('submitLogin');
   const loginError    = document.getElementById('loginError');
+  const totpLoginModal = document.getElementById("totpLoginModal");
+  const totpLoginInput = document.getElementById("totpLoginInput");
+  const totpLoginError = document.getElementById("totpLoginError");
+  const totpLoginConfirm = document.getElementById("totpLoginConfirm");
+  const totpLoginSubtitle = document.getElementById("totpLoginSubtitle");
+  const totpLoginClose = document.getElementById("totpLoginClose");
 
   const loginForm     = document.getElementById("loginForm");
   const resetForm     = document.getElementById("resetForm");
@@ -1393,16 +813,45 @@
   }
 
   /* ===== أدوات فحص الاتصال وإدارة الأزرار ===== */
-  const NETWORK_CHECK_URL = "https://www.gstatic.com/generate_204";
   const NETWORK_TIMEOUT_MS = 4500;
 
   const sleep = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  async function pingNetwork(timeoutMs = NETWORK_TIMEOUT_MS) {
-    if (typeof navigator !== "undefined" && navigator.onLine === false) {
-      return { ok: false, code: "network/offline" };
-    }
-    const fetchOptions = { mode: "no-cors", cache: "no-store" };
+  function getSameOriginPingUrl() {
+    try {
+      if (location && typeof location.origin === "string" && /^https?:/i.test(location.origin)) {
+        const base = location.origin.replace(/\/+$/, "");
+        return `${base}/robots.txt?ping=${Date.now()}`;
+      }
+    } catch (_) {}
+    return "";
+  }
+
+  function getManualPingUrl() {
+    try {
+      const base = getManualRouterBase();
+      if (!base) return "";
+      const url = new URL(base);
+      url.searchParams.set("ping", "1");
+      url.searchParams.set("_t", String(Date.now()));
+      return url.toString();
+    } catch (_) {}
+    return "";
+  }
+
+  function getNetworkCheckUrls() {
+    const urls = [];
+    const manual = getManualPingUrl();
+    if (manual) urls.push(manual);
+    const origin = getSameOriginPingUrl();
+    if (origin) urls.push(origin);
+    // احتياطي خارجي، قد يكون محجوباً في بعض الدول
+    urls.push("https://www.gstatic.com/generate_204");
+    return urls;
+  }
+
+  async function pingUrlOnce(url, timeoutMs) {
+    const fetchOptions = { method: "GET", mode: "no-cors", cache: "no-store" };
     let controller;
     let timer;
     if (typeof AbortController !== "undefined") {
@@ -1411,7 +860,7 @@
       timer = setTimeout(() => controller.abort(), timeoutMs);
     }
     try {
-      await fetch(NETWORK_CHECK_URL, fetchOptions);
+      await fetch(url, fetchOptions);
       return { ok: true };
     } catch (error) {
       if (error && error.name === "AbortError") {
@@ -1423,10 +872,114 @@
     }
   }
 
+  async function pingNetwork(timeoutMs = NETWORK_TIMEOUT_MS) {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      return { ok: false, code: "network/offline" };
+    }
+    const urls = getNetworkCheckUrls();
+    if (!urls.length) return { ok: true };
+    const perTimeout = Math.max(1500, Math.floor(timeoutMs / Math.max(1, urls.length)));
+    let sawTimeout = false;
+    for (const url of urls) {
+      const result = await pingUrlOnce(url, perTimeout);
+      if (result.ok) return { ok: true };
+      if (result.code === "network/timeout") sawTimeout = true;
+    }
+    return { ok: false, code: sawTimeout ? "network/timeout" : "network/ping-blocked" };
+  }
+
+  function hideTotpRow() {
+    if (totpRow) totpRow.style.display = "none";
+    if (totpInput) totpInput.value = "";
+  }
+
+  function normalizeTotpCode(value) {
+    return String(value || "").replace(/\D/g, "").slice(0, 6);
+  }
+
+  function resolveTotpRequest(code) {
+    if (!pendingTotpResolve) return;
+    const resolver = pendingTotpResolve;
+    pendingTotpResolve = null;
+    resolver(code);
+  }
+
+  function openTotpModal({ subtitle = "", error = "" } = {}) {
+    if (!totpLoginModal) return;
+    if (totpLoginSubtitle) {
+      totpLoginSubtitle.textContent = subtitle || "من فضلك افتح تطبيق Google Authenticator وأدخل الكود المكون من 6 أرقام.";
+    }
+    if (totpLoginError) totpLoginError.textContent = error || "";
+    if (totpLoginInput) totpLoginInput.value = "";
+    showModal("totpLoginModal");
+    setTimeout(() => {
+      try { totpLoginInput && totpLoginInput.focus(); } catch (_) {}
+    }, 60);
+  }
+
+  function requestTotpCodeWithModal({ subtitle = "", error = "" } = {}) {
+    if (!totpLoginModal || !totpLoginInput) return Promise.resolve("");
+    if (pendingTotpResolve) resolveTotpRequest("");
+    return new Promise((resolve) => {
+      pendingTotpResolve = resolve;
+      openTotpModal({ subtitle, error });
+    });
+  }
+
+  function confirmTotpModal() {
+    if (!totpLoginInput) return;
+    const code = normalizeTotpCode(totpLoginInput.value);
+    if (totpLoginInput.value !== code) totpLoginInput.value = code;
+    if (code.length !== 6) {
+      if (totpLoginError) totpLoginError.textContent = "يرجى إدخال رمز تحقق من 6 أرقام.";
+      return;
+    }
+    resolveTotpRequest(code);
+    closeModal("totpLoginModal");
+  }
+
+  if (totpLoginInput) {
+    totpLoginInput.addEventListener("input", () => {
+      const clean = normalizeTotpCode(totpLoginInput.value);
+      if (totpLoginInput.value !== clean) totpLoginInput.value = clean;
+      if (totpLoginError) totpLoginError.textContent = "";
+    });
+    totpLoginInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        confirmTotpModal();
+      }
+    });
+  }
+
+  if (totpLoginConfirm) {
+    totpLoginConfirm.addEventListener("click", (event) => {
+      event.preventDefault();
+      confirmTotpModal();
+    });
+  }
+
+  if (totpLoginClose) {
+    totpLoginClose.addEventListener("click", (event) => {
+      event.preventDefault();
+      resolveTotpRequest("");
+      closeModal("totpLoginModal");
+    });
+  }
+
+  const formTitleEl = document.getElementById("formTitle");
+  function updateFormTitle(form){
+    if (!formTitleEl) return;
+    if (form === "register") formTitleEl.textContent = "إنشاء حساب";
+    else if (form === "reset") formTitleEl.textContent = "استعادة كلمة المرور";
+    else formTitleEl.textContent = "تسجيل الدخول";
+  }
+
   window.switchForm = function (form) {
     loginForm.classList.add("hidden");
     resetForm.classList.add("hidden");
     registerForm.classList.add("hidden");
+    hideTotpRow();
     if (form === "login") loginForm.classList.remove("hidden");
     else if (form === "reset") {
       resetForm.classList.remove("hidden");
@@ -1437,9 +990,8 @@
       if (resetMessageEl) { resetMessageEl.textContent = ""; }
     }
     else if (form === "register") registerForm.classList.remove("hidden");
+    updateFormTitle(form);
   }
-
-
 
   async function ensureNetworkHealthy(targetEl, timeoutMs) {
     const status = await pingNetwork(timeoutMs);
@@ -1523,6 +1075,11 @@
       throw err;
     }
     const body = { action, ...payload };
+    if (!body.deviceId) body.deviceId = getDeviceId();
+    if (!body.deviceInfo) {
+      const info = collectDeviceInfo();
+      if (info && Object.keys(info).length) body.deviceInfo = info;
+    }
     try {
       try { console.info("manualAuth ->", { action, manualUrl }); } catch (_) {}
       const controller = (typeof AbortController !== "undefined") ? new AbortController() : null;
@@ -1609,6 +1166,13 @@
     profile: { username: '', phone: '' }
   };
 
+  async function requestTotpCode(message, errorText) {
+    return requestTotpCodeWithModal({
+      subtitle: message || "من فضلك افتح تطبيق Google Authenticator وأدخل الكود المكون من 6 أرقام.",
+      error: errorText || ""
+    });
+  }
+
   async function syncGoogleSession(targetErrorEl) {
     const user = googleFlowState.user;
     if (!user) throw new Error("google_user_missing");
@@ -1621,11 +1185,37 @@
       displayName: user.displayName || '',
       photoURL: user.photoURL || ''
     };
-    const result = await callManualAuth("sync", payload, targetErrorEl);
-    const sessionKey = result.sessionKey || "";
-    const ttlSeconds = Number(result.ttlSeconds) || 0;
-    if (sessionKey) saveSessionLocal({ uid: result.uid, sessionKey, ts: Date.now(), ttlSeconds });
-    return { result, idToken };
+    let totpCode = "";
+    while (true) {
+      try {
+        const result = await callManualAuth("sync", { ...payload, ...(totpCode ? { code: totpCode } : {}) }, targetErrorEl);
+        const sessionKey = result.sessionKey || "";
+        const ttlSeconds = Number(result.ttlSeconds) || 0;
+        if (sessionKey) saveSessionLocal({ uid: result.uid, sessionKey, deviceId: result.deviceId || getDeviceId(), ts: Date.now(), ttlSeconds });
+        return { result, idToken };
+      } catch (err) {
+        const code = err && err.code ? String(err.code) : "";
+        if (code === "totp_required" || code === "totp_code_invalid") {
+          if (targetErrorEl) targetErrorEl.textContent = "";
+          const subtitle = code === "totp_code_invalid"
+            ? "رمز التحقق غير صحيح. افتح تطبيق Google Authenticator وأعد المحاولة."
+            : "من فضلك افتح تطبيق Google Authenticator وأدخل الكود المكون من 6 أرقام.";
+          const errorText = code === "totp_code_invalid" ? "رمز التحقق غير صحيح." : "";
+          const inputCode = await requestTotpCode(subtitle, errorText);
+          if (!inputCode) {
+            const cancelErr = new Error("totp_cancelled");
+            cancelErr.code = "totp_cancelled";
+            throw cancelErr;
+          }
+          totpCode = inputCode;
+          continue;
+        }
+        if (code === "totp_not_configured" && targetErrorEl) {
+          targetErrorEl.textContent = translateFirebaseError(code);
+        }
+        throw err;
+      }
+    }
   }
 
   let googleBusy = false;
@@ -1731,20 +1321,18 @@
       if (!allowed) { resetGoogleFlow(); return; }
       const { result, idToken } = await syncGoogleSession(loginError);
       const sessionKey = result.sessionKey || "";
-      const isVerified = result.emailVerified === true || googleFlowState.user.emailVerified;
-      if (!isVerified) {
-        document.getElementById('unverifiedEmailModal').classList.remove('hidden');
-        return;
-      }
       savePostLoginPayload({
         uid: googleFlowState.user.uid,
         email: googleFlowState.user.email || '',
         token: idToken,
-        sessionKey
+        sessionKey,
+        customToken: result.customToken || "",
+        authkey: result.authkey || result.authKey || ""
       });
       resetGoogleFlow();
       window.location.href = "index.html";
     } catch (error) {
+      if (error?.code === "totp_cancelled") return;
       loginError.textContent = translateFirebaseError(error?.code);
     }
   }
@@ -1796,8 +1384,14 @@
         if (targetErrorEl) {
           targetErrorEl.style.color = "var(--danger, #ef4444)";
           targetErrorEl.textContent = "🚫 لا يمكن الدخول لهذا الحساب.";
-        }
-        try { await signOut(auth); } catch (_) {}
+            const reason = (typeof data.banReason === "string" ? data.banReason.trim() : "");
+            if (reason) {
+              targetErrorEl.textContent = `🚫 تم حظر حسابك. سبب الحظر: ${reason}`;
+            } else {
+              targetErrorEl.textContent = "🚫 تم حظر حسابك.";
+            }
+          }
+          try { await signOut(auth); } catch (_) {}
         try { localStorage.removeItem("sessionKeyInfo"); } catch (_) {}
         return false;
       }
@@ -1815,6 +1409,7 @@
   async function performManualLogin(event) {
     if (event && typeof event.preventDefault === "function") event.preventDefault();
     if (!submitLogin) return;
+    if (submitLogin.disabled || submitLogin.getAttribute("aria-busy") === "true") return;
     try { console.info("performManualLogin start"); } catch (_) {}
     try {
       const url = buildManualAuthUrl();
@@ -1837,34 +1432,86 @@
       const networkReady = await ensureNetworkHealthy(loginError);
       if (!networkReady) return;
 
-      const loginResult = await callManualAuth("login", { email, password }, loginError);
+      let loginResult = null;
+      let totpCode = "";
+      while (true) {
+        try {
+          const loginPayload = { email, password, ...(totpCode ? { code: totpCode } : {}) };
+          loginResult = await callManualAuth("login", loginPayload, loginError);
+          break;
+        } catch (err) {
+          const code = err && err.code ? String(err.code) : "";
+          if (code === "totp_required" || code === "totp_code_invalid") {
+            loginError.textContent = "";
+            const subtitle = code === "totp_code_invalid"
+              ? "رمز التحقق غير صحيح. افتح تطبيق Google Authenticator وأعد المحاولة."
+              : "من فضلك افتح تطبيق Google Authenticator وأدخل الكود المكون من 6 أرقام.";
+            const errorText = code === "totp_code_invalid" ? "رمز التحقق غير صحيح." : "";
+            const inputCode = await requestTotpCode(subtitle, errorText);
+            if (!inputCode) return;
+            totpCode = inputCode;
+            continue;
+          }
+          if (code === "totp_not_configured") {
+            loginError.textContent = translateFirebaseError(code);
+            return;
+          }
+          throw err;
+        }
+      }
       const sessionKey = loginResult.sessionKey || "";
       const ttlSeconds = Number(loginResult.ttlSeconds) || 0;
-      if (sessionKey) saveSessionLocal({ uid: loginResult.uid, sessionKey, ts: Date.now(), ttlSeconds });
+      if (sessionKey) saveSessionLocal({ uid: loginResult.uid, sessionKey, deviceId: loginResult.deviceId || getDeviceId(), ts: Date.now(), ttlSeconds });
 
-      await signInWithCustomToken(auth, loginResult.customToken);
-      const user = auth.currentUser;
-      const isVerified = loginResult.emailVerified === true || (user && user.emailVerified);
+      const basePayload = {
+        uid: loginResult.uid || "",
+        email: loginResult.email || email,
+        token: loginResult.idToken || loginResult.id_token || "",
+        sessionKey,
+        customToken: loginResult.customToken || loginResult.custom_token || "",
+        authkey: loginResult.authkey || loginResult.authKey || ""
+      };
+      if (basePayload.token || basePayload.customToken || basePayload.sessionKey) {
+        savePostLoginPayload(basePayload);
+      }
 
-      if (!isVerified) {
-        document.getElementById('unverifiedEmailModal').classList.remove('hidden');
+      const canFirebase = canUseFirebaseAuth() && !!basePayload.customToken && typeof signInWithCustomToken === "function";
+      let user = null;
+      if (canFirebase) {
+        try {
+          await signInWithCustomToken(auth, basePayload.customToken);
+          user = auth.currentUser;
+        } catch (_) {
+          user = null;
+        }
+      }
+
+      if (user) {
+        const allowed = await assertNotBanned(user.uid, loginError);
+        if (!allowed) return;
+      }
+
+      let idToken = basePayload.token;
+      if (user) {
+        try { idToken = await getIdToken(user, true); } catch (_) { idToken = basePayload.token; }
+      }
+      if (!idToken) {
+        loginError.textContent = "تعذر تأكيد الجلسة، أعد تسجيل الدخول.";
         return;
       }
 
-      const allowed = await assertNotBanned(user.uid, loginError);
-      if (!allowed) return;
-
-      const idToken = await getIdToken(user, true);
       savePostLoginPayload({
-        uid: user.uid,
-        email: user.email,
-        token: idToken,
-        sessionKey
+        ...basePayload,
+        uid: (user && user.uid) ? user.uid : basePayload.uid,
+        email: (user && user.email) ? user.email : basePayload.email,
+        token: idToken || basePayload.token,
+        authkey: basePayload.authkey || ""
       });
       window.location.href = "index.html";
     } catch (err) {
       try { console.error("performManualLogin error", err); } catch (_) {}
-      loginError.textContent = translateFirebaseError(err.code || err.message || "");
+      const code = err && err.code ? String(err.code) : "";
+      loginError.textContent = translateFirebaseError(code || err.message || "");
     } finally {
       setButtonBusy(submitLogin, false);
     }
@@ -1879,31 +1526,43 @@
   // تعديل دالة تأكيد الدخول مع بريد غير موثق
   window.confirmUnverifiedLogin = async function() {
     const user = auth.currentUser;
-    if (!user) {
-      loginError.textContent = "يرجى تسجيل الدخول أولًا لإكمال العملية.";
-      return;
-    }
+    const cached = readPostLoginPayload() || {};
 
     try {
-      const allowed = await assertNotBanned(user.uid, loginError);
-      if (!allowed) return;
+      if (user) {
+        const allowed = await assertNotBanned(user.uid, loginError);
+        if (!allowed) return;
+      }
       const sessionInfo = getSessionLocal() || {};
-      const sessionKey = sessionInfo.sessionKey || "";
+      const sessionKey = sessionInfo.sessionKey || cached.sessionKey || "";
       if (!sessionKey) {
         loginError.textContent = "رمز الجلسة غير متوفر. أعد تسجيل الدخول.";
         return;
       }
-      const idToken = await getIdToken(user, true);
+
+      let idToken = "";
+      if (user) {
+        try { idToken = await getIdToken(user, true); } catch (_) { idToken = ""; }
+      }
+      if (!idToken) {
+        idToken = cached.token || cached.idToken || "";
+      }
+      if (!idToken) {
+        loginError.textContent = "تعذر تأكيد الجلسة، أعد تسجيل الدخول.";
+        return;
+      }
 
       savePostLoginPayload({
-        uid: user.uid,
-        email: user.email,
+        uid: (user && user.uid) ? user.uid : (cached.uid || ""),
+        email: (user && user.email) ? user.email : (cached.email || ""),
         token: idToken,
-        sessionKey
+        sessionKey,
+        customToken: cached.customToken || cached.custom_token || "",
+        authkey: cached.authkey || cached.authKey || ""
       });
       window.location.href = "index.html";
     } catch (err) {
-      loginError.textContent = translateFirebaseError(err.code);
+      loginError.textContent = translateFirebaseError(err.code || err.message || "");
     }
   }
 
@@ -2010,14 +1669,23 @@
       const sessionKey = registerResult.sessionKey || "";
       const ttlSeconds = Number(registerResult.ttlSeconds) || 0;
       if (sessionKey && registerResult.uid) {
-        saveSessionLocal({ uid: registerResult.uid, sessionKey, ts: Date.now(), ttlSeconds });
+        saveSessionLocal({ uid: registerResult.uid, sessionKey, deviceId: registerResult.deviceId || getDeviceId(), ts: Date.now(), ttlSeconds });
       }
 
-      // حاول الدخول مباشرة باستخدام customToken القادم من الخادم
+      const basePayload = {
+        uid: registerResult.uid || "",
+        email: registerResult.email || email,
+        token: registerResult.idToken || registerResult.id_token || "",
+        sessionKey,
+        customToken: registerResult.customToken || registerResult.custom_token || "",
+        authkey: registerResult.authkey || registerResult.authKey || ""
+      };
+
+      const canFirebase = canUseFirebaseAuth() && !!basePayload.customToken && typeof signInWithCustomToken === "function";
       let user = null;
-      if (registerResult.customToken) {
+      if (canFirebase) {
         try {
-          await signInWithCustomToken(auth, registerResult.customToken);
+          await signInWithCustomToken(auth, basePayload.customToken);
           user = auth.currentUser;
         } catch (_) {
           user = null;
@@ -2030,20 +1698,19 @@
           await signOut(auth).catch(() => {});
           return;
         }
-        const isVerified = registerResult.emailVerified === true || user.emailVerified;
-        if (!isVerified && registerResult.verificationSent) {
-          msg.style.color = "var(--success, #22c55e)";
-          msg.textContent = "تم إرسال رسالة تأكيد إلى بريدك الإلكتروني.";
-          showModal("emailVerificationModal");
-          await signOut(auth).catch(() => {});
-          return;
-        }
-        const idToken = await getIdToken(user, true);
+      }
+
+      let idToken = basePayload.token;
+      if (user) {
+        try { idToken = await getIdToken(user, true); } catch (_) { idToken = basePayload.token; }
+      }
+      if (idToken) {
         savePostLoginPayload({
-          uid: user.uid,
-          email: user.email,
-          token: idToken,
-          sessionKey
+          ...basePayload,
+          uid: (user && user.uid) ? user.uid : basePayload.uid,
+          email: (user && user.email) ? user.email : basePayload.email,
+          token: idToken || basePayload.token,
+          authkey: basePayload.authkey || ""
         });
         window.location.href = "index.html";
         return;
@@ -2051,10 +1718,7 @@
 
       // fallback في حال لم يتم تسجيل الدخول تلقائياً
       msg.style.color = "var(--success, #22c55e)";
-      msg.textContent = registerResult.verificationSent
-        ? "تم إرسال رسالة تأكيد إلى بريدك الإلكتروني."
-        : "تم إنشاء الحساب بنجاح.";
-      showModal("emailVerificationModal");
+      msg.textContent = "تم إنشاء الحساب بنجاح.";
     } catch (err) {
       msg.style.color = "var(--danger, #ef4444)";
       msg.textContent = translateFirebaseError(err.code) || "تعذر إكمال العملية، حاول مرة أخرى.";
@@ -2140,6 +1804,9 @@
     "auth/operation-not-allowed": "تم تعطيل هذا النوع من التسجيل في الوقت الحالي.",
     "auth/requires-recent-login": "يرجى تسجيل الدخول من جديد لإكمال العملية.",
     "auth/banned": "🚫 تم حظر حسابك.",
+    "totp-required": "يرجى إدخال رمز المصادقة الثنائية.",
+    "totp-code-invalid": "رمز التحقق غير صحيح.",
+    "totp-not-configured": "إعدادات التحقق بخطوتين غير مكتملة.",
     "network/url-invalid": "رابط خادم المانوال غير صالح.",
     "network/fetch-failed": "تعذر الاتصال بالخادم، تحقق من عنوان المانوال أو الشبكة.",
     "network/blocked": "يبدو أن المتصفح يمنع الاتصال (Mixed Content/VPN). استخدم HTTPS لخادم المانوال.",
@@ -2183,6 +1850,9 @@
   function closeModal(modalId) {
     const targetId = modalId || activeModalId;
     if (!targetId) return;
+    if (targetId === "totpLoginModal") {
+      resolveTotpRequest("");
+    }
     const modal = document.getElementById(targetId);
     if (!modal) return;
     modal.classList.add("hidden");
@@ -2260,8 +1930,21 @@
     }
   });
 </script>
-</body>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var select = document.getElementById("loginLangSelect");
+    if (select && window.__I18N__ && typeof window.__I18N__.setupLanguageSelect === "function") {
+      window.__I18N__.setupLanguageSelect(select);
+    }
+  });
+</script></body>
 </html>
+
+
+
+
+
+
 
 
 

@@ -58,6 +58,54 @@ body.dark-mode .footerContainer{
 body.dark-mode .footer-title{
   color:#f0f1ff;
 }
+
+/* صيانة وثيمات عامة (متزامنة مع الموقع الرئيسي) */
+#maintenance-overlay{
+  position:fixed;inset:0;z-index:15000;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(5,6,20,.92);
+  color:#f8f9ff;text-align:center;padding:30px;
+  backdrop-filter:blur(3px);
+}
+#maintenance-overlay .card{
+  background:#0f172a;border:1px solid rgba(124,126,208,.35);
+  padding:24px 20px;border-radius:16px;max-width:520px;width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,.45);
+}
+#maintenance-overlay h2{margin:0 0 10px;font-size:1.5rem;}
+#maintenance-overlay p{margin:6px 0;color:#cbd5e1;}
+#maintenance-overlay .countdown{font-weight:800;color:#fbbf24;}
+body.theme-fall{
+  background:radial-gradient(circle at 20% 20%, rgba(255,165,0,.08), transparent 35%), #0a0b1a;
+}
+body.theme-fall .leaf{
+  position:fixed;top:-10%;width:24px;height:24px;
+  background:linear-gradient(135deg,#f59e0b,#d97706);opacity:.75;
+  border-radius:4px;animation:falling 12s linear infinite;z-index:50;pointer-events:none;
+}
+body.theme-fall .leaf:nth-child(odd){background:linear-gradient(135deg,#fbbf24,#f59e0b);}
+body.theme-snow{
+  background:linear-gradient(180deg,#0b1024,#0f172a 40%,#0a0f1f);
+}
+body.theme-snow .snowflake{
+  position:fixed;top:-8%;color:#e0e9ff;font-size:14px;opacity:.8;
+  animation:snowfall 11s linear infinite;pointer-events:none;z-index:50;
+  text-shadow:0 0 6px rgba(255,255,255,.35);
+}
+body.theme-ramadan{
+  background:radial-gradient(circle at 20% 20%, rgba(255,215,0,.08), transparent 35%), #0b0c1f;
+}
+body.theme-eid{
+  background:linear-gradient(135deg,#0b132b,#1f1c2c 60%,#0f172a);
+}
+@keyframes falling{
+  0%{transform:translate3d(0,0,0) rotate(0deg);}
+  100%{transform:translate3d(-20vw,110vh,0) rotate(720deg);}
+}
+@keyframes snowfall{
+  0%{transform:translateY(-10%) translateX(0);}
+  100%{transform:translateY(115vh) translateX(20px);}
+}
 body.dark-mode .icon-box{
   background:#0f1024;
   color:#f0f1ff;
@@ -103,11 +151,81 @@ body.dark-mode .order-card .order-details span {
   color: #ffffff !important;   /* ضمان أن كل النصوص تكون بيضاء */
 }
 
+/* حركات ظهور/اختفاء البطاقات عند البحث أو التحديث (سحب من اليمين لكل بطاقة) */
+.order-card.anim-enter-right{animation:orderCardInRight .28s ease forwards;}
+.order-card.anim-exit-right{animation:orderCardOutRight .22s ease forwards;}
+@keyframes orderCardInRight{
+  from{opacity:0;transform:translateX(18px);}
+  to{opacity:1;transform:translateX(0);}
+}
+@keyframes orderCardOutRight{
+  from{opacity:1;transform:translateX(0);}
+  to{opacity:0;transform:translateX(18px);}
+}
+
 body.dark-mode .order-card .order-details strong {
   color: #9c9ede !important;   /* تمييز النص الغامق بلون أزرق فاتح */
 }
 
 /* ===== شريط أدوات الطلبات (مثل المحفظة) ===== */
+.provider-response{
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px dashed rgba(0,0,0,0.12);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.03);
+}
+.order-actions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin:8px 0 10px;
+}
+.btn-refresh-order{
+  border:1px solid #e5e7eb;
+  background:#fff;
+  border-radius:8px;
+  padding:6px 10px;
+  cursor:pointer;
+  font-weight:700;
+  font-size:13px;
+}
+.btn-refresh-order:disabled{opacity:.65;cursor:not-allowed;}
+body.dark-mode .btn-refresh-order{
+  background:#0f1024;
+  border-color:#2b2d52;
+  color:#f0f1ff;
+}
+.provider-response-body{
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* تنسيق عرض العروض والكميات */
+.offers-list{padding-right:20px; margin:6px 0; list-style:disc;}
+.offers-list .offer-item{margin-bottom:6px;}
+.offers-list .offer-name{font-weight:700;}
+.offers-list .offer-qty{font-size:13px;color:#6b7280;}
+body.dark-mode .offers-list .offer-qty{color:#cbd5e1;}
+
+/* صندوق الأكواد القادمة من المزود */
+.codes-box{margin:10px 0;padding:10px;border:0;border-radius:10px;background:transparent;}
+.codes-box .codes-list{list-style:none;margin:8px 0 0;padding:0;}
+.codes-box .codes-list li{display:flex;align-items:center;gap:8px;margin:6px 0;}
+.codes-box .code-text{direction:ltr;font-family:monospace;background:transparent;padding:6px 10px;border-radius:8px;}
+.codes-box .btn-copy-code{border:1px solid #e5e7eb;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;}
+body.dark-mode .codes-box{border:0;background:transparent;}
+body.dark-mode .codes-box .code-text{background:transparent;color:#e5e7eb;}
+body.dark-mode .codes-box .btn-copy-code{border-color:#374151;background:#1f2937;color:#e5e7eb;}
+body.dark-mode .provider-response{
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.18);
+}
+
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 12px}
 .chip{padding:6px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-weight:700}
 .chip.active{box-shadow:0 0 0 2px rgba(122,124,208,.15)}
@@ -123,27 +241,57 @@ body.dark-mode .chip[data-filter="all"].active{background:#151836;border-color:#
 body.dark-mode .chip[data-filter="pending"]{background:#2b2f3a;border-color:#a16207;color:#fde68a}
 body.dark-mode .chip[data-filter="approved"]{background:#064e3b;border-color:#047857;color:#bbf7d0}
 body.dark-mode .chip[data-filter="rejected"]{background:#3f1d1d;border-color:#7f1d1d;color:#fecaca}
+.orders-search{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:0 0 12px;
+  padding:12px 14px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(122,124,208,0.35);
+  border-radius:14px;
+  box-shadow:0 6px 14px rgba(0,0,0,0.08) inset;
+}
+.orders-search i{
+  color:#7a7cd0;
+  font-size:18px;
+}
+.orders-search input{
+  flex:1;
+  border:0;
+  background:transparent;
+  color:inherit;
+  font-size:1rem;
+  outline:none;
+  box-shadow:none;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.orders-search button{display:none;}
+body.dark-mode .orders-search{
+  background:rgba(15,16,36,0.8);
+  border-color:#2b2d52;
+  box-shadow:0 10px 20px rgba(0,0,0,.35) inset;
+}
 /* Empty message styles */
 #ordersEmptyMessage{
   padding:24px;
   text-align:center;
-  border:1px dashed #e5e7eb;
+  border:0;
   border-radius:12px;
   color:#6f72a6;
-  background:#fff;
+  background:transparent;
   margin:12px 0;
-  /* Center content nicely */
   display:flex;
   align-items:center;
   justify-content:center;
   flex-direction:column;
   gap:8px;
   min-height:200px;
-  /* Explicitly center in both axes in case of overrides */
   place-items:center;
   place-content:center;
 }
-body.dark-mode #ordersEmptyMessage{background:#0f1024;border-color:#2b2d52;color:#9aa7b7}
+body.dark-mode #ordersEmptyMessage{background:transparent;border-color:transparent;color:#9aa7b7}
 /* Empty state illustration */
 #ordersEmptyMessage .illu{display:block;margin:0 auto;align-self:center}
 #ordersEmptyMessage .caption{font-size:14px}
@@ -404,6 +552,68 @@ body:not(.dark-mode) .content-container{
   box-shadow: 0 4px 12px rgba(0,0,0,0.04);
 }
 
+/* ===== إصلاح ألوان النصوص في الوضع الفاتح ===== */
+body:not(.dark-mode) .order-card{
+  color: #1f2937;
+}
+body:not(.dark-mode) .order-header,
+body:not(.dark-mode) .order-header-text,
+body:not(.dark-mode) .order-code-line,
+body:not(.dark-mode) .order-meta-line{
+  color: #1f2937;
+}
+body:not(.dark-mode) .order-details,
+body:not(.dark-mode) .order-details p,
+body:not(.dark-mode) .order-details li,
+body:not(.dark-mode) .order-details span{
+  color: #1f2937;
+}
+body:not(.dark-mode) .order-details strong{
+  color: #111827;
+}
+body:not(.dark-mode) .provider-response,
+body:not(.dark-mode) .provider-response-body{
+  color: #1f2937;
+}
+body:not(.dark-mode) .orders-search input{
+  color: #111827;
+}
+body:not(.dark-mode) .chip,
+body:not(.dark-mode) #dateChip{
+  color:#1f2937;
+  background:#ffffff;
+  border-color:#e5e7eb;
+}
+body:not(.dark-mode) .chip.active{
+  color:#2e316f;
+}
+body:not(.dark-mode) .cal-nav,
+body:not(.dark-mode) .calendar-mode-btn{
+  color:#1f2937;
+  background:#ffffff;
+  border-color:#e5e7eb;
+}
+body:not(.dark-mode) .cal-nav:disabled,
+body:not(.dark-mode) .calendar-mode-btn:disabled{
+  color:#9ca3af;
+}
+body:not(.dark-mode) .btn-refresh-order,
+body:not(.dark-mode) .codes-box .btn-copy-code{
+  color:#1f2937;
+  background:#ffffff;
+  border-color:#e5e7eb;
+}
+body:not(.dark-mode) .order-header i{
+  color:#6b7280;
+}
+body:not(.dark-mode) .calendar-panel,
+body:not(.dark-mode) .calendar-weekday,
+body:not(.dark-mode) .calendar-day,
+body:not(.dark-mode) .calendar-mode-btn,
+body:not(.dark-mode) .calendar-selection{
+  color: #1f2937;
+}
+
 
 
 /* تضمن الظهور الصحيح على الشاشات الصغيرة أيضًا */
@@ -422,10 +632,114 @@ body:not(.dark-mode) .content-container{
     padding: 8px;
   }
 }
-/* ===== لون الحالة في الوضع الداكن ===== */
-body.dark-mode .order-status {
-  color: #ffffff !important;   /* إجبار اللون أبيض */
+
+/* ================== توحيد تصميم الديسكتوب ليطابق الموبايل ================== */
+@media (min-width: 481px){
+  /* نفس تبسيط الموبايل لكن بفراغ جانبي أكبر قليلًا */
+  .content-container{
+    max-width: 1100px;
+    width: 100%;
+    margin: 70px auto 16px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  #ordersContainer { padding: 0 12px; }
+
+  .orders-list{
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+
+  .order-card{
+    background: #0f1024;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 0;
+    margin-bottom: 12px;
+    box-shadow: none;
+    transform: none;
+  }
+  body:not(.dark-mode) .order-card{
+    background: #ffffff;
+    border: 1px solid #e6e6e6;
+  }
+  .order-card::after{display:none;}
+
+  .order-header{
+    display: grid;
+    grid-template-columns: 1fr auto 16px; /* معلومات | شارة | سهم */
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    background: transparent;
+  }
+  .order-header > div:first-child{
+    font-size: 14px;
+    line-height: 1.5;
+    color: inherit;
+  }
+  .order-header i{
+    font-size: 14px;
+    margin: 0;
+    transition: transform .2s ease;
+  }
+  .order-card.open .order-header i { transform: rotate(180deg); }
+
+  .order-status{
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .order-details{
+    display: none;
+    border-top: 0;
+    background: #05050b;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    border-radius: 0 0 12px 12px;
+  }
+  body:not(.dark-mode) .order-details{
+    border-top: 0;
+    background: #fafafa;
+    color: #333;
+  }
+
+  .btn-show-proof{
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  /* تصغير الخط + تثبيت سطرين (كود + اسم/ايدي أو سعر) بدون تمدد الكروت */
+  .order-header-text{ min-width: 0; }
+  .order-code-line,
+  .order-meta-line{
+    display:block;
+    overflow:hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .order-code-line{ font-size: 12px; line-height: 1.25; }
+  .order-meta-line{ font-size: 12px; line-height: 1.25; margin-top: 4px; }
+  .order-code{ direction:ltr; unicode-bidi: plaintext; }
+
+  .order-status{ font-size: 11px; }
 }
+/* ===== لون الحالة في الوضع الداكن ===== */
+  body.dark-mode .order-status {
+    color: #ffffff !important;   /* إجبار اللون أبيض */
+  }
+
+  /* إزالة الفراغ (margin-top) الذي قد يضيفه header.css بين رأس الكرت وتفاصيله */
+  .order-details{ margin-top: 0 !important; }
 
 
 /* Calendar popover */
@@ -443,6 +757,23 @@ body.dark-mode .order-status {
 .calendar-weekday{text-align:center;font-weight:700;font-size:.85rem;padding:6px 0;color:#64748b}
 .calendar-spacer{height:1px}
 .calendar-day{position:relative;text-align:center;padding:10px 0;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;background:#fff}
+
+/* ===== Mobile font tightening (force override) ===== */
+@media (max-width: 480px){
+  .order-header > div:first-child{ font-size: 12px !important; line-height: 1.25 !important; }
+  .order-code-line{ font-size: 11px !important; line-height: 1.2 !important; }
+  .order-meta-line{ font-size: 11px !important; line-height: 1.2 !important; }
+  .order-status{ font-size: 10px !important; padding: 3px 8px !important; }
+  /* تفاصيل الطلب (الوصف) */
+  .order-details{ font-size: 12px !important; line-height: 1.55 !important; }
+  .order-details p,
+  .order-details li,
+  .order-details span{ font-size: 12px !important; line-height: 1.55 !important; }
+  .order-details strong{ font-size: 12px !important; }
+  .offers-list .offer-name{ font-size: 12px !important; }
+  .offers-list .offer-qty{ font-size: 11px !important; opacity: .9; }
+  .btn-refresh-order{ font-size: 12px !important; padding: 6px 10px !important; }
+}
 .calendar-day .num{position:relative;z-index:1;font-weight:700}
 .calendar-day.has{background:#dcfce7;border-color:#86efac;color:#065f46}
 .calendar-day.active{background:#e0f2fe;border-color:#9c9ede;outline:none}
@@ -528,6 +859,15 @@ body.dark-mode .calendar-day.range-start, body.dark-mode .calendar-day.range-end
     `;
     contentContainer.appendChild(toolbar);
 
+    // شريط البحث عن الطلبات (كود / آيدي / مزود ...)
+    const searchRow = document.createElement('div');
+    searchRow.className = 'orders-search';
+    searchRow.innerHTML = `
+      <i class="fa fa-search" aria-hidden="true"></i>
+      <input type="search" id="ordersSearch" placeholder="ابحث برقم الطلب أو الآيدي أو المبلغ..." autocomplete="off" />
+    `;
+    contentContainer.appendChild(searchRow);
+
     // قائمة الطلبات
     const ordersList = document.createElement('div');
     ordersList.id = 'ordersList';
@@ -540,42 +880,6 @@ body.dark-mode .calendar-day.range-start, body.dark-mode .calendar-day.range-end
       container.appendChild(contentContainer);
     } else {
       console.error('لم يتم العثور على العنصر بالمعرف "ordersContainer"');
-    }
-
-    // ====== بناء الفوتر ومربعات الأيقونات ======
-    const footer = document.createElement('footer');
-    footer.className = 'footerContainer';
-
-    const footerTitle = document.createElement('h2');
-    footerTitle.className = 'footer-title';
-    footerTitle.textContent = 'لماذا تختارنا؟';
-    footer.appendChild(footerTitle);
-
-    // استخدم البيانات العالمية إن وُجدت وإلا افتراضي
-
-
-    data.forEach(({ iconClass, title, desc }) => {
-      const box = document.createElement('div');
-      box.className = 'icon-box';
-
-      const i = document.createElement('i');
-      i.className = iconClass;
-      box.appendChild(i);
-
-      const h3 = document.createElement('h3');
-      h3.textContent = title;
-      box.appendChild(h3);
-
-      const p = document.createElement('p');
-      p.textContent = desc;
-      box.appendChild(p);
-
-      footer.appendChild(box);
-    });
-
-    const footerMount = document.getElementById('footerContainer');
-    if (footerMount) {
-      footerMount.appendChild(footer);
     }
 
     // ====== دوال مساعدة ======
@@ -606,6 +910,111 @@ function toggleDetails(code) {
   d.style.display = isOpen ? 'none' : 'block';
   card.classList.toggle('open', !isOpen);   // يضيف/يحذف كلاس للتحريك البصري
 }
+
+// ====== صيانة / ثيمات (مزامنة مع config/siteState) ======
+let maintenanceTimer = null;
+function applyMaintenanceState(state){
+  const on = state?.on === true;
+  const untilStr = state?.until || "";
+  const untilMs = untilStr ? Date.parse(untilStr) : null;
+  if (!on) {
+    const el = document.getElementById("maintenance-overlay");
+    if (el) el.remove();
+    if (maintenanceTimer) { clearInterval(maintenanceTimer); maintenanceTimer = null; }
+    return;
+  }
+  let overlay = document.getElementById("maintenance-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "maintenance-overlay";
+    overlay.innerHTML = `<div class="card"><h2>🚧 الموقع في وضع الصيانة</h2><p>الرجاء العودة لاحقاً.</p><p class="countdown"></p></div>`;
+    document.body.appendChild(overlay);
+  }
+  const cd = overlay.querySelector(".countdown");
+  if (maintenanceTimer) clearInterval(maintenanceTimer);
+  maintenanceTimer = setInterval(() => {
+    if (untilMs && Date.now() > untilMs) {
+      applyMaintenanceState({ on: false });
+      return;
+    }
+    if (cd) {
+      if (untilMs) {
+        const diff = Math.max(0, untilMs - Date.now());
+        const mins = Math.floor(diff / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        cd.textContent = `الوقت المتبقي: ${mins} دقيقة ${secs} ثانية`;
+      } else {
+        cd.textContent = "بدون وقت انتهاء";
+      }
+    }
+  }, 1000);
+}
+
+function applyThemeState(theme){
+  const name = String(theme?.name || "").toLowerCase();
+  const color = String(theme?.color || "").trim();
+  const classes = ["theme-fall","theme-snow","theme-ramadan","theme-eid"];
+  classes.forEach(cls => document.body.classList.remove(cls));
+  if (name === "fall" || name === "autumn" || name === "خريف") document.body.classList.add("theme-fall");
+  else if (name === "snow" || name === "winter" || name === "ثلج") document.body.classList.add("theme-snow");
+  else if (name === "ramadan" || name === "رمضان") document.body.classList.add("theme-ramadan");
+  else if (name === "eid" || name === "عيد") document.body.classList.add("theme-eid");
+  if (color) document.documentElement.style.setProperty("--accent-theme", color);
+}
+
+let siteStateUnsub = null;
+// تأثيرات الثيم (أوراق/ثلوج)
+function clearThemeParticles(){
+  document.querySelectorAll(".leaf,.snowflake").forEach(el => el.remove());
+}
+function spawnThemeParticles(kind,count=18){
+  clearThemeParticles();
+  const frag=document.createDocumentFragment();
+  for(let i=0;i<count;i++){
+    const el=document.createElement("div");
+    if(kind==="leaf"){
+      el.className="leaf";
+      el.style.left=`${Math.random()*100}vw`;
+      el.style.animationDelay=`${Math.random()*4}s`;
+      el.style.animationDuration=`${10+Math.random()*6}s`;
+    } else if(kind==="snow"){
+      el.className="snowflake";
+      el.textContent="❄";
+      el.style.left=`${Math.random()*100}vw`;
+      el.style.animationDelay=`${Math.random()*5}s`;
+      el.style.animationDuration=`${10+Math.random()*6}s`;
+      el.style.fontSize=`${12+Math.random()*8}px`;
+    }
+    frag.appendChild(el);
+  }
+  document.body.appendChild(frag);
+}
+const __applyThemeStateBase = applyThemeState;
+applyThemeState = function(theme){
+  __applyThemeStateBase(theme);
+  const name = String(theme?.name || "").toLowerCase();
+  if (name === "fall" || name === "autumn" || name === "خريف") {
+    spawnThemeParticles("leaf",18);
+  } else if (name === "snow" || name === "winter" || name === "ثلج") {
+    spawnThemeParticles("snow",26);
+  } else {
+    clearThemeParticles();
+  }
+};
+
+function startSiteStateListener(){
+  try{
+    if (!db || typeof db.collection !== "function") return;
+    if (siteStateUnsub) return;
+    siteStateUnsub = db.collection("config").doc("siteState").onSnapshot((snap)=>{
+      const data = snap.exists ? snap.data() : {};
+      applyThemeState(data?.theme || {});
+      applyMaintenanceState(data?.maintenance || {});
+    });
+  }catch(err){ console.warn("siteState listener failed", err?.message || err); }
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{ startSiteStateListener(); setTimeout(startSiteStateListener, 1200); });
 
 
 

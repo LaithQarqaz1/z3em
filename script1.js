@@ -64,7 +64,100 @@ const API_BASE_URL = ACTIVE_GAME.apiBase;
 const OFFER_VALUE_KEY = ACTIVE_GAME.offerKey || "jewels";
 const OFFERS_CACHE_KEY = `offersPrices:${ACTIVE_GAME.cacheTag}`;
 const OFFERS_CACHE_KEY_LEGACY = "offersPrices";
+const OFFERS_CODES_KEY = `offersItemCodes:${ACTIVE_GAME.cacheTag}`;
+const OFFERS_CODES_KEY_LEGACY = "offersItemCodes";
 const COMMON_GAME_HEADERS = ACTIVE_GAME.xGame ? { "X-Game": ACTIVE_GAME.xGame } : {};
+
+function persistItemCodes(data) {
+  try {
+    const codes = data && typeof data === "object" ? (data.itemCodes || data.item_codes) : null;
+    if (!codes || typeof codes !== "object") return;
+    const wrapped = { itemCodes: codes, ts: Date.now(), source: ACTIVE_GAME.cacheTag };
+    localStorage.setItem(OFFERS_CODES_KEY, JSON.stringify(wrapped));
+    localStorage.setItem(OFFERS_CODES_KEY_LEGACY, JSON.stringify(wrapped));
+  } catch (e) {
+    console.warn("persistItemCodes failed:", e);
+  }
+}
+
+function readItemCodesCache() {
+  try {
+    const raw = localStorage.getItem(OFFERS_CODES_KEY) || localStorage.getItem(OFFERS_CODES_KEY_LEGACY);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    return obj?.itemCodes || obj;
+  } catch {
+    return null;
+  }
+}
+
+function resolveItemCodesForGame(codes) {
+  if (!codes || typeof codes !== "object") return null;
+  if (codes.topup || codes.membership || codes.memberships) return codes;
+  const key = (ACTIVE_GAME.key || "").toString().trim().toLowerCase();
+  return codes[key] || codes[ACTIVE_GAME.cacheTag] || null;
+}
+
+function resolveOfferAmountFromEl(el) {
+  const raw =
+    el.dataset.amount ||
+    el.dataset[OFFER_VALUE_KEY] ||
+    el.dataset.jewels ||
+    el.dataset.uc ||
+    el.dataset.tokens ||
+    "";
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function resolveItemCodeFromEl(el) {
+  const raw = el.dataset.itemCode || el.dataset.code || el.dataset.item_code || "";
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function applyItemCodesToOffers(root = document) {
+  const codes = resolveItemCodesForGame(readItemCodesCache());
+  if (!codes) return;
+  const boxes = root.querySelectorAll ? root.querySelectorAll(".offer-box") : [];
+  boxes.forEach((el) => {
+    if (!el || !el.dataset) return;
+    if (resolveItemCodeFromEl(el) != null) return;
+    const kind = (el.dataset.type || "").toLowerCase() === "membership" ? "membership" : "topup";
+    const bucket = codes[kind] || codes[`${kind}s`] || {};
+    const itemKey = kind === "membership"
+      ? (el.dataset.offer || "")
+      : (el.dataset.amount || el.dataset[OFFER_VALUE_KEY] || el.dataset.jewels || el.dataset.uc || el.dataset.tokens || "");
+    const code = bucket ? bucket[itemKey] : null;
+    const codeNum = Number(code);
+    if (Number.isFinite(codeNum)) {
+      el.dataset.itemCode = String(codeNum);
+    }
+    if (!el.dataset.amount) {
+      const amt = resolveOfferAmountFromEl(el);
+      if (amt != null) el.dataset.amount = String(amt);
+    }
+  });
+}
+
+function observeOfferBoxes() {
+  try {
+    const obs = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes || []) {
+          if (!node) continue;
+          if (node.classList && node.classList.contains("offer-box")) {
+            applyItemCodesToOffers(node.parentNode || document);
+          } else if (node.querySelectorAll) {
+            const any = node.querySelectorAll(".offer-box");
+            if (any && any.length) applyItemCodesToOffers(node);
+          }
+        }
+      }
+    });
+    obs.observe(document.body || document.documentElement, { childList: true, subtree: true });
+  } catch {}
+}
 
 // ===== حماية الطلب (بديل Turnstile) =====
 let _orderInFlight = false;
@@ -99,6 +192,54 @@ async function getTurnstileTokenWithRetry(maxAttempts = 2) {
 }
 
 /* ================== أدوات محلية للجلسة ================== */
+const DEVICE_ID_STORAGE_KEY = "session:device:id";
+function generateDeviceId() {
+  try {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") {
+      return window.crypto.randomUUID();
+    }
+  } catch (_) {}
+  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const size = 24;
+  let out = "";
+  try {
+    if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+      const buf = new Uint8Array(size);
+      window.crypto.getRandomValues(buf);
+      for (let i = 0; i < size; i++) out += alphabet[buf[i] % alphabet.length];
+      return out;
+    }
+  } catch (_) {}
+  for (let i = 0; i < size; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return out;
+}
+function getDeviceId() {
+  try {
+    const cached = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
+    if (cached) return cached;
+  } catch {}
+  const id = generateDeviceId();
+  try { localStorage.setItem(DEVICE_ID_STORAGE_KEY, id); } catch {}
+  return id;
+}
+function collectDeviceInfo() {
+  try {
+    const nav = navigator || {};
+    const uaData = nav.userAgentData || {};
+    const platform = String(uaData.platform || nav.platform || "").trim();
+    const brand = Array.isArray(uaData.brands) ? uaData.brands.map(b => b.brand).join(", ") : "";
+    const label = [platform, brand].filter(Boolean).join(" ").trim();
+    return {
+      label: label || "",
+      userAgent: String(nav.userAgent || ""),
+      platform: platform,
+      language: String(nav.language || ""),
+      timezone: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch { return ""; } })()
+    };
+  } catch (_) {
+    return {};
+  }
+}
 // نقرأ مفتاح الجلسة من localStorage (حُفظ أثناء الدخول)
 function getLocalSessionKey() {
   try {
@@ -114,6 +255,117 @@ function getLocalUid() {
     const s = JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
     return s?.uid || "";
   } catch { return ""; }
+}
+
+function readSessionInfo() {
+  try {
+    const s = JSON.parse(localStorage.getItem("sessionKeyInfo") || "null");
+    return (s && typeof s === "object") ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+function isSessionExpiredLocal(info) {
+  if (!info || typeof info !== "object") return false;
+  const ttl = Number(info.ttlSeconds) || 0;
+  const ts = Number(info.ts) || 0;
+  if (!ttl || !ts) return false;
+  const ageMs = Date.now() - ts;
+  return ageMs > (ttl * 1000);
+}
+
+const AUTH_ROUTER_DEFAULT = "https://z3em-manwal.laithqarqaz1.workers.dev/";
+
+function getAuthBase() {
+  try {
+    const stored = localStorage.getItem("MANWAL_ROUTER_BASE");
+    if (stored) return stored;
+  } catch {}
+  return AUTH_ROUTER_DEFAULT;
+}
+
+function buildAuthUrl() {
+  try {
+    const url = new URL(getAuthBase());
+    url.searchParams.set("game", "auth");
+    return url.toString();
+  } catch {
+    return AUTH_ROUTER_DEFAULT + "?game=auth";
+  }
+}
+
+function saveSessionInfo(uid, sessionKey, ttlSeconds, deviceId) {
+  if (!uid || !sessionKey) return;
+  const resolvedDeviceId = (deviceId || getDeviceId());
+  try {
+    if (resolvedDeviceId) localStorage.setItem(DEVICE_ID_STORAGE_KEY, resolvedDeviceId);
+  } catch {}
+  try {
+    localStorage.setItem("sessionKeyInfo", JSON.stringify({
+      uid,
+      sessionKey,
+      deviceId: resolvedDeviceId || "",
+      ts: Date.now(),
+      ttlSeconds: Number(ttlSeconds) || 0
+    }));
+  } catch {}
+}
+
+async function refreshSessionKey(user) {
+  return getLocalSessionKey() || "";
+}
+
+async function ensureSessionKey(user) {
+  const info = readSessionInfo() || {};
+  const sessionKey = info.sessionKey || getLocalSessionKey() || "";
+  const uid = (user && user.uid) ? user.uid : (info.uid || getLocalUid() || "");
+  ensureSessionKey.lastError = "";
+  if (!sessionKey || !uid) {
+    ensureSessionKey.lastError = "session_missing";
+    return "";
+  }
+  if (isSessionExpiredLocal(info)) {
+    ensureSessionKey.lastError = "session_expired";
+    return "";
+  }
+  const verify = await verifySessionKeyRemote({ uid, sessionKey, deviceId: info.deviceId || "" });
+  if (!verify.ok) {
+    ensureSessionKey.lastError = verify.code || "verify_failed";
+    return "";
+  }
+  return sessionKey;
+}
+
+async function verifySessionKeyRemote({ uid, sessionKey, deviceId }) {
+  if (!uid || !sessionKey) return { ok: false, code: "session_missing" };
+  let controller, timer;
+  try {
+    controller = new AbortController();
+    timer = setTimeout(() => controller.abort(), 6000);
+  } catch {}
+  try {
+    const res = await fetch(buildAuthUrl(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "totp_status",
+        uid,
+        sessionKey,
+        deviceId: deviceId || ""
+      }),
+      signal: controller ? controller.signal : undefined
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data?.success === false || data?.ok === false) {
+      return { ok: false, code: String(data?.code || "").toLowerCase() };
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, code: "verify_failed", error: err };
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 // نافذة عامة لرسائل انتهاء/فشل الجلسة
@@ -147,7 +399,7 @@ function showSessionModal(messageText = "صلاحية الجلسة منتهية"
   btn.onclick = async () => {
     try { await firebase.auth().signOut(); } catch {}
     try { localStorage.removeItem("sessionKeyInfo"); } catch {}
-    window.location.href = "login.html";
+    window.location.href = "index.html#/login";
   };
 
   box.appendChild(title);
@@ -177,9 +429,8 @@ function hidePreloader() {
   setTimeout(() => { pre.style.display = 'none'; }, 600);
 }
 
-/* ============ توليد وتدوير sessionKey بعد الطلب ============ */
+/* ============ توليد مفاتيح محلية ============ */
 const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-const SYMBOLS = "!@#$%&";
 function rand(alphabet, len) {
   const buf = new Uint32Array(len);
   crypto.getRandomValues(buf);
@@ -187,28 +438,8 @@ function rand(alphabet, len) {
   for (let i = 0; i < len; i++) out += alphabet[buf[i] % alphabet.length];
   return out;
 }
-function generateSessionKey(len = 64) {
-  return rand(ALPHA + SYMBOLS, len);
-}
-
-// كتابة sessionKey الجديد في Firestore ثم تحديث localStorage
-async function rotateSessionKeyAfterOrder(uid, ttlSeconds = 0) {
-  const newKey = generateSessionKey();
-  try {
-    await db.collection("users").doc(uid)
-      .collection("keys").doc("session")
-      .set({
-        sessionKey: newKey,
-        ttlSeconds,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-
-    localStorage.setItem("sessionKeyInfo", JSON.stringify({
-      uid, sessionKey: newKey, ts: Date.now(), ttlSeconds
-    }));
-  } catch (e) {
-    console.warn("Session rotate failed:", e?.message || e);
-  }
+function generateAuthKey(len = 36) {
+  return rand(ALPHA, len);
 }
 
 /* ================== تسريع تحميل الأسعار (SWR + Cache) ================== */
@@ -220,6 +451,7 @@ function persistOffers(data) {
     localStorage.setItem(OFFERS_CACHE_KEY, JSON.stringify(wrapped));
     // توافقي مع الصفحات/الأدمن التي تقرأ المفتاح القديم
     localStorage.setItem(OFFERS_CACHE_KEY_LEGACY, JSON.stringify(wrapped));
+    persistItemCodes(data);
   } catch (e) { console.warn('persistOffers failed:', e); }
 }
 
@@ -254,6 +486,7 @@ async function loadPrices(useruid = null, { timeoutMs = 5000, silentOnCached = t
     const data = await res.json();
     if (!data || data.success === false) throw new Error(data?.error || 'فشل جلب الأسعار');
     persistOffers(data);
+    applyItemCodesToOffers();
   } catch (e) {
     const hasCache =
       !!localStorage.getItem(OFFERS_CACHE_KEY) ||
@@ -298,6 +531,13 @@ async function sendOrder() {
 
   const buildOfferFromEl = (el) => {
     const entry = { type: el.dataset.type, offerName: el.dataset.offer || null };
+    const amount = resolveOfferAmountFromEl(el);
+    const itemCode = resolveItemCodeFromEl(el);
+    if (amount != null) entry.amount = amount;
+    if (itemCode != null) {
+      entry.itemCode = itemCode;
+      entry.item_code = itemCode;
+    }
     const val = el.dataset[OFFER_VALUE_KEY];
     entry[OFFER_VALUE_KEY] = (typeof val === "undefined") ? null : val;
     return entry;
@@ -346,8 +586,13 @@ async function sendOrder() {
     }
 
     // مفتاح الجلسة المحلي
-    const sessionKey = getLocalSessionKey();
+    let sessionKey = await ensureSessionKey(user);
     if (!sessionKey) {
+      const code = (ensureSessionKey.lastError || "").toLowerCase();
+      if (code === "verify_failed") {
+        showToast("تعذر التحقق من الجلسة، تحقق من الاتصال ثم حاول مرة أخرى.", "error");
+        return;
+      }
       showSessionExpiredModal();
       return;
     }
@@ -355,8 +600,14 @@ async function sendOrder() {
     // authkey من Firestore (كما هو)
     let authkey = null;
     try {
-      const userDoc = await firebase.firestore().collection("users").doc(user.uid).get();
+      const userRef = firebase.firestore().collection("users").doc(user.uid);
+      const userDoc = await userRef.get();
       if (userDoc.exists) authkey = userDoc.data().authkey || null;
+      if (!authkey) {
+        const fresh = generateAuthKey();
+        await userRef.set({ authkey: fresh }, { merge: true });
+        authkey = fresh;
+      }
     } catch (e) {
       showToast("❌ فشل في جلب بيانات المستخدم", "error");
       return;
@@ -391,13 +642,16 @@ async function sendOrder() {
     const currentUrl = window.location.href;
 
     // ====== Purchase ======
+    const sessionInfo = readSessionInfo() || {};
+    const sessionDeviceId = sessionInfo.deviceId || "";
     try {
-      const response = await fetch(API_BASE_URL, {
+      const doPurchase = (key) => fetch(API_BASE_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${idToken}`,
-          "X-SessionKey": sessionKey,
+          "X-SessionKey": key,
+          ...(sessionDeviceId ? { "X-DeviceId": sessionDeviceId } : {}),
           ...COMMON_GAME_HEADERS
         },
         body: JSON.stringify({
@@ -406,36 +660,55 @@ async function sendOrder() {
           currency: "دأ",
           currentUrl,
           authkey,
-          turnstileToken
+          turnstileToken,
+          sessionKey: key,
+          ...(sessionDeviceId ? { deviceId: sessionDeviceId } : {})
         })
       });
 
       // إن كانت 401 نتحقق من كود الخطأ ونُظهر النافذة المطلوبة
+      let response = await doPurchase(sessionKey);
       if (response.status === 401) {
         let errJson = {};
         try { errJson = await response.json(); } catch {}
         const code = (errJson?.code || "").toLowerCase();
         const sessionFail =
           code === "session_missing" ||
+          code === "session_not_found" ||
           code === "session_invalid" ||
           code === "session_mismatch" ||
-          code === "session_expired";
+          code === "session_expired" ||
+          code === "session_revoked";
 
         if (sessionFail) {
-          showSessionModal("فشل التحقق من رمز الجلسة يرجى تسجيل الدخول مرة اخرى");
+          const canRefresh =
+            code === "session_missing" ||
+            code === "session_not_found" ||
+            code === "session_expired";
+          if (canRefresh) {
+            const refreshed = await refreshSessionKey(user);
+            if (refreshed && refreshed !== sessionKey) {
+              sessionKey = refreshed;
+              response = await doPurchase(sessionKey);
+            } else {
+              showSessionModal();
+              return;
+            }
+          } else {
+            showSessionModal();
+            return;
+          }
+        } else {
+          // إن لم يكن خطأ جلسة، عالج كالعادة
+          showToast("فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
           return;
         }
-        // إن لم يكن خطأ جلسة، عالج كالعادة
-        showToast("فشل الشراء: " + (errJson?.error || "خطأ غير معروف"), "error");
-        return;
       }
 
-      const result = await response.json();
+      let result = await response.json().catch(() => ({}));
 
       if (result.success) {
         showConfirmation(result.orderCode);
-        // تدوير sessionKey بعد نجاح الطلب
-        try { await rotateSessionKeyAfterOrder(user.uid); } catch {}
       } else {
         // أيضًا إن أعاد الخادم كود جلسة مع 200 (احتمال ضعيف) نتعامل معه
         const code = (result?.code || "").toLowerCase();
@@ -630,6 +903,9 @@ const detectTheme = () => {
 // ✅ عند تحميل الصفحة سننتظر onAuthStateChanged لتحديد useruid ثم ننادي loadPrices()
 document.addEventListener('DOMContentLoaded', () => {
   // onAuthStateChanged أعلاه سيتكفّل بتحميل الأسعار
+
+  applyItemCodesToOffers();
+  observeOfferBoxes();
 });
 
 

@@ -8,7 +8,7 @@
  * - The HTML already registers this file conditionally on HTTPS / localhost.
  */
 
-const VERSION = 'v1.0.4';
+const VERSION = 'v1.0.12';
 const STATIC_CACHE = `static-${VERSION}`;
 const IMAGE_CACHE  = `images-${VERSION}`;
 const PAGE_CACHE   = `pages-${VERSION}`;

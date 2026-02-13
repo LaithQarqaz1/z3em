@@ -161,6 +161,61 @@ html[data-theme="dark"] .card::after{
 .card.maintenance h2{ color:#a00; }
 .card.maintenance img{ filter:grayscale(100%); }
 
+/* Grid layout: 5 cards per row on desktop */
+body .categories{
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  justify-content: center !important;
+}
+@media (max-width: 992px){
+  body .categories{ grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+}
+@media (max-width: 768px){
+  body .categories{ grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap:12px !important; }
+}
+@media (max-width: 600px){
+  body .categories{ grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap:10px !important; }
+}
+
+body .categories:not([data-smm-inline="1"]) .card,
+body .categories:not([data-smm-inline="1"]) .offer-box.card{
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 12px !important;
+  gap: 10px !important;
+}
+body .categories:not([data-smm-inline="1"]) .card h2,
+body .categories:not([data-smm-inline="1"]) .offer-box.card h2{
+  font-size: .95rem !important;
+  line-height: 1.3 !important;
+}
+body .categories:not([data-smm-inline="1"]) .offer-box .offer-price{
+  padding: 6px 0 !important;
+  font-size: .95rem !important;
+  line-height: 1.2 !important;
+}
+@media (max-width: 768px){
+  body .categories:not([data-smm-inline="1"]) .card,
+  body .categories:not([data-smm-inline="1"]) .offer-box.card{
+    padding: 10px !important;
+  }
+  body .categories:not([data-smm-inline="1"]) .card h2,
+  body .categories:not([data-smm-inline="1"]) .offer-box.card h2{
+    font-size: .9rem !important;
+  }
+}
+@media (max-width: 600px){
+  body .categories:not([data-smm-inline="1"]) .card,
+  body .categories:not([data-smm-inline="1"]) .offer-box.card{
+    padding: 8px !important;
+  }
+  body .categories:not([data-smm-inline="1"]) .card h2,
+  body .categories:not([data-smm-inline="1"]) .offer-box.card h2{
+    font-size: .85rem !important;
+  }
+}
+
 /* تنسيقات مربع العرض المحدد */
 .offer-box.selected {
   background-color: var(--card-bg);

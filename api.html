@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>توثيق API - متجر زعيم</title>
+  <link rel="icon" href="emp.png" type="image/png" />
+
+  <!-- Theme bootstrap -->
+  <script>
+    (function(){
+      var theme = 'dark';
+      try{
+        var t = localStorage.getItem('theme');
+        if(!t){ t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'; }
+        theme = (t==='light') ? 'light' : 'dark';
+      }catch(e){ theme='dark'; }
+      document.documentElement.setAttribute('data-theme', theme);
+      try{
+        var metaCS=document.querySelector('meta[name="color-scheme"]'); if(!metaCS){ metaCS=document.createElement('meta'); metaCS.name='color-scheme'; document.head.appendChild(metaCS);} metaCS.setAttribute('content', theme==='dark'?'dark light':'light dark');
+        var metaTC=document.querySelector('meta[name="theme-color"]'); if(!metaTC){ metaTC=document.createElement('meta'); metaTC.name='theme-color'; document.head.appendChild(metaTC);} metaTC.setAttribute('content', theme==='dark'?'#05050b':'#f9f9f9');
+      }catch(e){}
+      var s=document.createElement('style'); s.id='critical-theme'; s.textContent='html{background:'+(theme==='dark'?'#05050b':'#f9f9f9')+';color:'+(theme==='dark'?'#f0f1ff':'#333')+'} body{background:inherit;color:inherit;margin:0}'; document.head.appendChild(s);
+    })();
+  </script>
+  <meta name="color-scheme" content="dark light" />
+
+  <link rel="stylesheet" href="header.css" />
+  <script src="header.js" defer></script>
+  <link rel="stylesheet" href="loader.css" />
+  <script src="loader.js" defer></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+  <!-- Firebase (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root{
+      --bg:#f8f9fa; --text:#111827; --muted:#6f72a6;
+      --card-bg:#f9f9ff; --card-text:var(--text); --card-border:#d9dbff;
+      --card-gradient:linear-gradient(160deg, rgba(122,124,208,.16) 0%, rgba(249,250,255,.96) 100%);
+      --card-border-strong:rgba(122,124,208,.32);
+      --card-border-hover:rgba(122,124,208,.45);
+      --card-shadow:0 12px 28px rgba(32,34,79,.14);
+      --accent:#5c5ebf;
+      --accent-strong:#4f46e5;
+      --chip:#eef2ff;
+    }
+    html[data-theme="dark"]{
+      --bg:#05050b; --text:#f0f1ff; --muted:#9ea0d9;
+      --card-bg:#101223; --card-text:var(--text); --card-border:#2b2d52;
+      --card-gradient:linear-gradient(160deg, rgba(122,124,208,.14) 0%, rgba(16,18,35,.9) 100%);
+      --card-border-strong:rgba(156,158,222,.32);
+      --card-border-hover:rgba(156,158,222,.5);
+      --card-shadow:0 10px 28px rgba(5,6,18,.6);
+      --accent:#8b8fe8;
+      --accent-strong:#a5b4fc;
+      --chip:#1f223f;
+    }
+    body{
+      font-family:'Cairo', sans-serif;
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .api-page{
+      max-width:1100px;
+      margin:24px auto 60px;
+      padding:0 16px;
+    }
+    .card{
+      background:var(--card-gradient);
+      color:var(--card-text);
+      border:1px solid var(--card-border-strong);
+      border-radius:18px;
+      box-shadow:var(--card-shadow);
+      padding:20px;
+      margin-bottom:18px;
+    }
+    .hero{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .hero h1{
+      margin:0;
+      font-size:1.6rem;
+      font-weight:800;
+    }
+    .hero-lines{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      font-weight:700;
+    }
+    .copy-row{
+      display:grid;
+      grid-template-columns:140px 1fr auto;
+      gap:10px;
+      align-items:center;
+    }
+    .copy-label{
+      color:var(--muted);
+      font-weight:700;
+    }
+    .token-grid{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:12px;
+      align-items:center;
+    }
+    .token-input{
+      width:100%;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid var(--card-border);
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:.95rem;
+      background:rgba(255,255,255,.8);
+    }
+    .copy-row .token-input{
+      direction:ltr;
+      text-align:left;
+    }
+    html[data-theme="dark"] .token-input{
+      background:rgba(8,10,22,.6);
+      color:var(--text);
+    }
+    .btn{
+      border:0;
+      border-radius:12px;
+      padding:10px 16px;
+      font-weight:700;
+      cursor:pointer;
+      background:var(--accent);
+      color:#fff;
+    }
+    .copy-row .btn{
+      padding:8px 14px;
+    }
+    .btn.outline{
+      background:transparent;
+      border:1px solid var(--card-border-strong);
+      color:var(--text);
+    }
+    .btn:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+    }
+    .token-meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      font-size:.9rem;
+      color:var(--muted);
+      margin:8px 0 0;
+    }
+    .docs h2{
+      margin:0 0 12px;
+      font-size:1.3rem;
+    }
+    .docs h3{
+      margin:20px 0 8px;
+      font-size:1.1rem;
+    }
+    pre{
+      background:rgba(12,14,28,.06);
+      border:1px solid var(--card-border);
+      border-radius:12px;
+      padding:12px;
+      overflow:auto;
+      direction:ltr;
+    }
+    html[data-theme="dark"] pre{
+      background:rgba(9,12,28,.65);
+      border-color:#2b2d52;
+      color:#e6e8ff;
+    }
+    .note{
+      color:var(--muted);
+      font-size:.95rem;
+    }
+    @media (max-width: 720px){
+      .token-grid{ grid-template-columns:1fr; }
+      .copy-row{ grid-template-columns:1fr; }
+      .copy-row .btn{ justify-self:flex-start; }
+      .hero h1{ font-size:1.35rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="headerContainer"></div>
+  <div id="sidebarContainer"></div>
+
+  <main class="api-page">
+    <section class="card hero">
+      <h1>واجهة برمجة التطبيقات (API)</h1>
+      <div class="hero-lines">
+        <div class="copy-row">
+          <span class="copy-label">Base URL</span>
+          <input id="apiBaseInput" class="token-input" readonly />
+          <button class="btn outline copy-btn" data-copy-target="apiBaseInput">نسخ</button>
+        </div>
+        <div class="copy-row">
+          <span class="copy-label">Authentication</span>
+          <input id="apiAuthInput" class="token-input" readonly />
+          <button class="btn outline copy-btn" data-copy-target="apiAuthInput">نسخ</button>
+        </div>
+        <div class="note">يمكنك ربط منصاتك الخارجية عبر توكن مخصص لكل مستخدم.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>مفتاح API الخاص بك</h2>
+      <div class="token-grid">
+        <input id="apiTokenInput" class="token-input" placeholder="اضغط توليد لعرض التوكن هنا" readonly />
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="generateTokenBtn" class="btn">توليد توكن</button>
+          <button id="regenerateTokenBtn" class="btn outline">إعادة توليد</button>
+          <button id="copyTokenBtn" class="btn outline">نسخ</button>
+        </div>
+      </div>
+      <div class="token-meta">
+        <span id="tokenStatus">الحالة: غير مفعّل</span>
+        <span id="tokenLast">آخر 4 أرقام: ----</span>
+        <span id="tokenCreated">تاريخ التوليد: --</span>
+      </div>
+      <div class="note" style="margin-top:10px;">
+        يتم عرض التوكن مرة واحدة عند التوليد. إن ضاع منك، استخدم إعادة التوليد.
+      </div>
+      <div id="tokenLoginHint" class="note" style="margin-top:8px; display:none;">
+        يجب تسجيل الدخول لإدارة التوكن.
+      </div>
+    </section>
+
+    <section class="card docs">
+      <h2>API Documentation</h2>
+      <div class="copy-row" style="margin-bottom:10px;">
+        <span class="copy-label">Base URL</span>
+        <input id="apiBaseInput2" class="token-input" readonly />
+        <button class="btn outline copy-btn" data-copy-target="apiBaseInput2">نسخ</button>
+      </div>
+
+      <h3>Authentication Required</h3>
+      <p class="note">Include the following header in all API requests:</p>
+      <pre><code>api-token: YOUR_API_TOKEN</code></pre>
+
+      <h3>Profile</h3>
+      <pre><code>GET /client/api/profile</code></pre>
+      <p class="note">Retrieves the user's balance and profile information.</p>
+      <pre><code>{
+    "status": "OK",
+    "balance": "8788.683",
+    "email": "user@email.com"
+}</code></pre>
+
+      <h3>Products</h3>
+      <pre><code>GET /client/api/products</code></pre>
+      <p class="note">Retrieves all available products.</p>
+      <pre><code>{
+    "status": "OK",
+    "data": [
+    {
+        "id": 365,
+        "name": "UC 60",
+        "price": 0.104,
+        "params": ["ادخل الايدي الاعب"],
+        "category_name": "UC 60",
+        "available": true,
+        "qty_values": {
+            "min": 1,
+            "max": "15000"
+        },
+        "product_type": "amount",
+        "parent_id": 0,
+        "base_price": 0.10,
+        "category_img": ""
+    },
+    {
+        "id": 18,
+        "name": "UC 60",
+        "price": 1.094,
+        "params": ["ادخل الايدي الاعب"],
+        "category_name": "PUBG Global ID UC",
+        "available": true,
+        "qty_values": null,
+        "product_type": "package",
+        "parent_id": 7,
+        "base_price": 0.877,
+        "category_img": "images/category/1710948113.webp"
+    }
+    ]
+}</code></pre>
+
+      <h3>Filter Products by IDs</h3>
+      <pre><code>GET /client/api/products?products_id=id1,id2,id3</code></pre>
+
+      <h3>Get Minimal Product Data</h3>
+      <pre><code>GET /client/api/products?base=1</code></pre>
+
+      <h3>Quantity Values Note</h3>
+      <pre><code>qty_values: null - Quantity in order must be 1
+qty_values: ["110", "150", "210"] - Only these specific quantities are allowed
+qty_values: {"min": "500", "max": "500000"} - Quantity must be within this range</code></pre>
+
+      <h3>Content</h3>
+      <pre><code>GET /client/api/content/0</code></pre>
+      <p class="note">Retrieves products and categories for the home page (parent ID = 0).</p>
+      <pre><code>GET /client/api/content/[category.id]</code></pre>
+      <p class="note">Replace [category.id] with the desired category ID to retrieve its products and subcategories.</p>
+
+      <h3>Order (Idempotent via order_uuid)</h3>
+      <pre><code>POST /client/api/newOrder/364/params?qty=1&amp;playerId=test&amp;anyKey=anyVal&amp;order_uuid=ecbdd545-e616-4aee-8770-7eefa977bcd</code></pre>
+      <p class="note">The order_uuid parameter is required and serves as a unique identifier for each order request.</p>
+      <p class="note">When you send a request with the same order_uuid more than once:</p>
+      <pre><code>The system will not create a duplicate order
+Instead, it will return the original order data
+This prevents duplicate charges and ensures order idempotency
+Always generate a new UUIDv4 for each unique order attempt.</code></pre>
+      <h3>Order Parameters</h3>
+      <pre><code>364          Product ID (replace with desired product ID from products.id)  Yes
+qty          Quantity of product                                            Yes
+playerId     Player identifier (can be any name)                            Depends on product
+anyKey       Any additional parameters can be included as key-value pairs   No
+order_uuid   Unique UUIDv4 identifier for the order                         Yes</code></pre>
+      <pre><code>{
+    "status": "OK",
+    "data": {
+        "order_id": "ID_9fffb0d849a45215",
+        "status": "accept",
+        "price": 1.26048,
+        "data": { "playerId": "test" },
+        "replay_api": [
+            {
+                "replay": ["erg3eg"]
+            }
+        ]
+    }
+}</code></pre>
+      <p class="note">Status Values: accept, reject, wait</p>
+      <p class="note">About replay_api: may be null or contain an array of responses from the service provider.</p>
+
+      <h3>Check Orders</h3>
+      <pre><code>GET /client/api/check?orders=[ID_a37aaa06,ID2,ID3]</code></pre>
+      <p class="note">Check by Order UUID</p>
+      <pre><code>GET /client/api/check?orders=[yourOrderUUID]&amp;uuid=1</code></pre>
+      <pre><code>{
+    "status": "OK",
+    "data": [
+        {
+            "order_id": "ID_9fffb0d849a45215",
+            "quantity": 1,
+            "data": { "playerId": "test" },
+            "created_at": "2025-04-10 13:55:48",
+            "product_name": "A-60UC-stock",
+            "price": "1.2604800000000000",
+            "status": "accept",
+            "replay_api": ["erg3eg"]
+        }
+    ]
+}</code></pre>
+
+      <h3>Error Codes</h3>
+      <pre><code>120  Api Token is required!
+121  Token error
+122  Not allowed to use API
+123  IP not allowed
+130  The site is under maintenance
+
+100  Insufficient balance
+105  Quantity not available
+106  Quantity not allowed
+107  Player ID blocked
+108  2FA required
+109  Product deleted or not found
+110  Product not available now
+111  Try again after 1 minute
+112  Quantity is too small
+113  Quantity is too large
+114  Unknown error
+500  Unknown error</code></pre>
+    </section>
+  </main>
+
+  <script>
+    function normalizeBaseUrl(value){
+      if (!value) return "";
+      let out = String(value).trim();
+      if (!out) return "";
+      if (!/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(out)) {
+        if (out.startsWith("/")) out = location.origin + out;
+        else out = location.origin + "/" + out;
+      }
+      if (!out.endsWith("/")) out += "/";
+      return out;
+    }
+
+    function defaultApiBase(){
+      const host = location.hostname || "";
+      const protocol = location.protocol || "https:";
+      if (!host) return "";
+      const isLocal = host === "localhost" || host === "127.0.0.1" || host === "[::1]" || /^\d+\.\d+\.\d+\.\d+$/.test(host);
+      if (isLocal) return location.origin + "/";
+      if (host.startsWith("api.")) return protocol + "//" + host + "/";
+      const cleanHost = host.replace(/^www\./i, "");
+      return protocol + "//api." + cleanHost + "/";
+    }
+
+    function isFileOrigin(){
+      return location.protocol === "file:" || location.origin === "null";
+    }
+
+    function applyBaseUrl(){
+      const override = window.API_BASE_URL || document.documentElement.getAttribute("data-api-base");
+      const base = normalizeBaseUrl(override)
+        || (!isFileOrigin() ? defaultApiBase() || (location.origin ? location.origin + "/" : "") : "");
+      const fallback = base || "SET_API_BASE_URL";
+      const el1 = document.getElementById("apiBaseInput");
+      const el2 = document.getElementById("apiBaseInput2");
+      if (el1) el1.value = fallback;
+      if (el2) el2.value = fallback;
+      const authInput = document.getElementById("apiAuthInput");
+      if (authInput) authInput.value = "api-token: YOUR_API_TOKEN";
+    }
+
+    window.API_BASE_URL = "https://z3em-manwal.laithqarqaz1.workers.dev/";
+    applyBaseUrl();
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBRVEViuKnCUZqBoD0liuA-P0DVN7mTePA",
+      authDomain: "z3em-d9b11.firebaseapp.com",
+      projectId: "z3em-d9b11",
+      storageBucket: "z3em-d9b11.firebasestorage.app",
+      messagingSenderId: "236716520945",
+      appId: "1:236716520945:web:a0c336db7dc7079c190050",
+      measurementId: "G-1GG6DE12K6"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const tokenInput = document.getElementById('apiTokenInput');
+    const generateBtn = document.getElementById('generateTokenBtn');
+    const regenBtn = document.getElementById('regenerateTokenBtn');
+    const copyBtn = document.getElementById('copyTokenBtn');
+    const statusEl = document.getElementById('tokenStatus');
+    const lastEl = document.getElementById('tokenLast');
+    const createdEl = document.getElementById('tokenCreated');
+    const loginHint = document.getElementById('tokenLoginHint');
+    let currentUser = null;
+
+    async function copyById(id){
+      const el = document.getElementById(id);
+      if (!el) return;
+      const val = (el.value || el.textContent || "").trim();
+      if (!val) return;
+      try { await navigator.clipboard.writeText(val); } catch {}
+    }
+
+    document.querySelectorAll('.copy-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const target = btn.getAttribute('data-copy-target');
+        if (target) await copyById(target);
+      });
+    });
+
+    function setButtons(enabled){
+      generateBtn.disabled = !enabled;
+      regenBtn.disabled = !enabled;
+      copyBtn.disabled = !enabled;
+    }
+
+    function formatDate(value){
+      if (!value) return "--";
+      try { return new Date(value).toLocaleString(); } catch { return value; }
+    }
+
+    async function sha256Hex(input){
+      const data = new TextEncoder().encode(input || "");
+      const digest = await crypto.subtle.digest("SHA-256", data);
+      return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function generateApiToken(){
+      const bytes = new Uint8Array(32);
+      crypto.getRandomValues(bytes);
+      const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+      return "z3em_" + hex;
+    }
+
+    async function loadTokenState(user, opts = {}){
+      const snap = await db.collection("users").doc(user.uid).get();
+      const data = snap.exists ? snap.data() : {};
+      const hasToken = !!data.apiTokenHash;
+      statusEl.textContent = "الحالة: " + (hasToken ? "مفعّل" : "غير مفعّل");
+      lastEl.textContent = "آخر 4 أرقام: " + (data.apiTokenLast4 || "----");
+      createdEl.textContent = "تاريخ التوليد: " + formatDate(data.apiTokenCreatedAt);
+      if (!opts.keepToken) tokenInput.value = "";
+    }
+
+    async function saveToken(token){
+      const hash = await sha256Hex(token);
+      const payload = {
+        apiTokenHash: hash,
+        apiTokenLast4: token.slice(-4),
+        apiTokenCreatedAt: new Date().toISOString(),
+        apiTokenDisabled: false
+      };
+      await db.collection("users").doc(currentUser.uid).set(payload, { merge: true });
+      tokenInput.value = token;
+      await loadTokenState(currentUser, { keepToken: true });
+    }
+
+    generateBtn.addEventListener('click', async () => {
+      if (!currentUser) return;
+      const token = generateApiToken();
+      await saveToken(token);
+    });
+
+    regenBtn.addEventListener('click', async () => {
+      if (!currentUser) return;
+      const token = generateApiToken();
+      await saveToken(token);
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      const val = tokenInput.value.trim();
+      if (!val) return;
+      try { await navigator.clipboard.writeText(val); } catch {}
+    });
+
+    auth.onAuthStateChanged(async (user) => {
+      currentUser = user || null;
+      if (!currentUser) {
+        loginHint.style.display = "block";
+        setButtons(false);
+        statusEl.textContent = "الحالة: غير مفعّل";
+        lastEl.textContent = "آخر 4 أرقام: ----";
+        createdEl.textContent = "تاريخ التوليد: --";
+        tokenInput.value = "";
+        return;
+      }
+      loginHint.style.display = "none";
+      setButtons(true);
+      await loadTokenState(currentUser);
+    });
+  </script>
+</body>
+</html>

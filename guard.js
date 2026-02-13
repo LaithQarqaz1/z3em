@@ -9,5 +9,9 @@
       }
     }
   } catch {}
-  try { window.__SKIP_FIREBASE__ = false; } catch {}
+  try {
+    if (typeof window.__FIREBASE_ENV_OK__ === 'boolean') {
+      window.__SKIP_FIREBASE__ = !window.__FIREBASE_ENV_OK__;
+    }
+  } catch {}
 })();

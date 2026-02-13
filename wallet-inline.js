@@ -1,4 +1,4 @@
-(function(){
+﻿(function(){
   if (typeof window === 'undefined') return;
   if (window.__WALLET_SCRIPT_ATTACHED__) return;
   window.__WALLET_SCRIPT_ATTACHED__ = true;
@@ -7,8 +7,16 @@
     if (window.__WALLET_PAGE_ACTIVE__) return;
     window.__WALLET_PAGE_ACTIVE__ = true;
 
+    try {
+      if (typeof window.__FIREBASE_ENV_OK__ === 'boolean' && !window.__FIREBASE_ENV_OK__) {
+        console.warn('المحفظة: تم تعطيل Firebase في هذه البيئة.');
+        window.__WALLET_PAGE_ACTIVE__ = false;
+        return;
+      }
+    } catch(_){ }
+
     if (typeof firebase === 'undefined') {
-      console.warn('المحفظة: Firebase غير متاح.');
+      console.warn('ط§ظ„ظ…ط­ظپط¸ط©: Firebase ط؛ظٹط± ظ…طھط§ط­.');
       window.__WALLET_PAGE_ACTIVE__ = false;
       return;
     }
@@ -18,7 +26,9 @@
         if (window.__ORIG_FIREBASE__.auth) firebase.auth = window.__ORIG_FIREBASE__.auth;
         if (window.__ORIG_FIREBASE__.firestore) firebase.firestore = window.__ORIG_FIREBASE__.firestore;
       }
-      window.__SKIP_FIREBASE__ = false;
+      if (typeof window.__FIREBASE_ENV_OK__ !== 'boolean' || window.__FIREBASE_ENV_OK__) {
+        window.__SKIP_FIREBASE__ = false;
+      }
     } catch(_){ }
 
     try {
@@ -33,7 +43,7 @@
     try { dbInstance = (typeof window.db !== 'undefined' && window.db) ? window.db : firebase.firestore(); } catch(_){ }
 
     if (!authInstance || !dbInstance) {
-      console.warn('المحفظة: تعذر الوصول إلى Firebase.');
+      console.warn('ط§ظ„ظ…ط­ظپط¸ط©: طھط¹ط°ط± ط§ظ„ظˆطµظˆظ„ ط¥ظ„ظ‰ Firebase.');
       window.__WALLET_PAGE_ACTIVE__ = false;
       return;
     }
@@ -59,9 +69,9 @@
 
       function cardSkeleton(){ const d=document.createElement('div'); d.className='card loading'; d.style.minHeight='118px'; return d; }
       function showSkeleton(n=3){ listEl.innerHTML=''; for(let i=0;i<n;i++) listEl.appendChild(cardSkeleton()); }
-      function showEmpty(){ listEl.innerHTML = '<div class="empty">لا توجد معاملات للمحفظة حتى الآن.</div>'; }
+      function showEmpty(){ listEl.innerHTML = '<div class="empty">ظ„ط§ طھظˆط¬ط¯ ظ…ط¹ط§ظ…ظ„ط§طھ ظ„ظ„ظ…ط­ظپط¸ط© ط­طھظ‰ ط§ظ„ط¢ظ†.</div>'; }
       function showRequiresAuth(){
-        listEl.innerHTML = '<div class="empty">يرجى تسجيل الدخول لعرض معاملات محفظتك.</div>';
+        listEl.innerHTML = '<div class="empty">ظٹط±ط¬ظ‰ طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„ ظ„ط¹ط±ط¶ ظ…ط¹ط§ظ…ظ„ط§طھ ظ…ط­ظپط¸طھظƒ.</div>';
         chipsWrap.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
         ALL_ITEMS = [];
         CURRENT_FILTER = 'all';
@@ -86,8 +96,8 @@
 
       function normStatus(s){
         const v = (s||'').toString().toLowerCase();
-        if (v.includes('reject') || v.includes('مرفوض')) return 'rejected';
-        if (v.includes('approved') || v.includes('done') || v.includes('completed') || v.includes('تم') || v.includes('مقبول')) return 'approved';
+        if (v.includes('reject') || v.includes('ظ…ط±ظپظˆط¶')) return 'rejected';
+        if (v.includes('approved') || v.includes('done') || v.includes('completed') || v.includes('طھظ…') || v.includes('ظ…ظ‚ط¨ظˆظ„')) return 'approved';
         return 'pending';
       }
       function statusClass(s){
@@ -98,9 +108,9 @@
       }
       function statusLabel(s){
         const n = normStatus(s);
-        if (n === 'rejected') return 'مرفوضة';
-        if (n === 'approved') return 'مقبولة';
-        return 'قيد المراجعة';
+        if (n === 'rejected') return 'ظ…ط±ظپظˆط¶ط©';
+        if (n === 'approved') return 'ظ…ظ‚ط¨ظˆظ„ط©';
+        return 'ظ‚ظٹط¯ ط§ظ„ظ…ط±ط§ط¬ط¹ط©';
       }
 
       function parseNumeric(value){
@@ -130,7 +140,7 @@
       function digitsForCurrency(cur){
         if (!cur) return 2;
         var upper = String(cur).toUpperCase();
-        if (upper === 'JOD' || upper === 'JO' || upper.indexOf('دينار') >= 0) return 3;
+        if (upper === 'JOD' || upper === 'JO' || upper.indexOf('ط¯ظٹظ†ط§ط±') >= 0) return 3;
         return 2;
       }
 
@@ -169,6 +179,65 @@
       function formatBalanceValue(value){
         if (value == null || !isFinite(value)) return '';
         return formatNumber(value, 3) + ' JOD';
+      }
+
+      function buildWin1256Map(){
+        try{
+          if (typeof TextDecoder === 'undefined') return null;
+          var dec = new TextDecoder('windows-1256');
+          var bytes = new Uint8Array(256);
+          for (var i = 0; i < 256; i++) bytes[i] = i;
+          var decoded = dec.decode(bytes);
+          var map = {};
+          for (var j = 0; j < decoded.length; j++){
+            var ch = decoded.charAt(j);
+            if (map[ch] === undefined) map[ch] = j;
+          }
+          return map;
+        }catch(_){ return null; }
+      }
+
+      var fixWalletText = (function(){
+        var map = buildWin1256Map();
+        var utf8Dec = null;
+        try { utf8Dec = new TextDecoder('utf-8'); } catch(_){ }
+        function countArabic(str){
+          var m = str && str.match(/[ء-ي]/g);
+          return m ? m.length : 0;
+        }
+        function countLatin1(str){
+          var m = str && str.match(/[\u00A0-\u00FF]/g);
+          return m ? m.length : 0;
+        }
+        function decodeBroken(str){
+          if (!map || !utf8Dec) return str;
+          var bytes = new Uint8Array(str.length);
+          for (var i = 0; i < str.length; i++){
+            var b = map[str.charAt(i)];
+            if (b == null) return str;
+            bytes[i] = b;
+          }
+          return utf8Dec.decode(bytes);
+        }
+        return function(str){
+          if (!str || typeof str !== 'string') return str;
+          if (!/[\u00A0-\u00FF]/.test(str)) return str;
+          var fixed = decodeBroken(str);
+          if (!fixed || fixed === str) return str;
+          if (countArabic(fixed) >= countArabic(str) && countLatin1(fixed) <= countLatin1(str)) return fixed;
+          return str;
+        };
+      })();
+
+      function fixWalletTextNodes(root){
+        if (!root || typeof document === 'undefined' || !document.createTreeWalker) return;
+        try{
+          var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+          var node;
+          while ((node = walker.nextNode())){
+            node.nodeValue = fixWalletText(node.nodeValue);
+          }
+        }catch(_){ }
       }
 
       function getKind(item){
@@ -247,10 +316,10 @@
 
       function buildMetaParts(item, kind){
         var parts = [];
-        var country = item.countryName || item.country || '';
-        var method = item.methodName || item.method || '';
-        var transferPeer = item.transferPeer || item.transferPeerUid || '';
-        var transferNote = item.transferNote || '';
+        var country = fixWalletText(item.countryName || item.country || '');
+        var method = fixWalletText(item.methodName || item.method || '');
+        var transferPeer = fixWalletText(item.transferPeer || item.transferPeerUid || '');
+        var transferNote = fixWalletText(item.transferNote || '');
         if (country){
           parts.push('<span><i class="fas fa-location-dot"></i> ' + country + '</span>');
         }
@@ -265,7 +334,7 @@
         } else {
           var payout = resolveWithdrawPayout(item);
           if (payout) parts.push('<span><i class="fas fa-wallet"></i> ' + payout + '</span>');
-          var payoutName = item.payoutName || item.receiverName || '';
+          var payoutName = fixWalletText(item.payoutName || item.receiverName || '');
           if (payoutName) parts.push('<span><i class="fas fa-user"></i> ' + payoutName + '</span>');
         }
         if (transferPeer){
@@ -280,19 +349,32 @@
       function buildTransactionHTML(item){
         var data = Object.assign({}, item);
         var kind = ensureKind(data, 'deposit');
-        var code = getCode(data) || '-';
-        var st = data.status || data.state || data.depositStatus || 'pending';
+        var code = getCode(data) || '';
         var change = resolveChange(data);
         var balances = resolveBalances(data);
-        var method = data.methodName || data.method || '';
+        var method = fixWalletText(data.methodName || data.method || '');
+        var titleHint = fixWalletText(data.title || data.serviceName || data.productName || data.name || '');
+        var isTransfer = !!(data.transferPeer || data.transferNote) ||
+          (typeof method === 'string' && method.indexOf('تحويل') >= 0) ||
+          (typeof data.countryName === 'string' && data.countryName.indexOf('تحويل') >= 0);
+        var isPurchase = !!titleHint;
         var titleBase = kind === 'withdraw' ? 'طلب سحب' : 'طلب إيداع';
-        var title = method ? titleBase + ' - ' + method : titleBase;
-        var metaHtml = buildMetaParts(data, kind);
+        var title = isPurchase ? titleHint : (isTransfer ? (method || titleBase) : (method ? titleBase + ' - ' + method : titleBase));
+        title = fixWalletText(title);
         var ts = data.timestamp || data.createdAt || data.created_at || data.computedAt || '';
         var shortDate = formatShortDate(ts);
         var longDate = formatDate(ts);
-        var proof = data.proof || data.proofUrl || '';
-        var actionIcon = kind === 'withdraw' ? 'fa-arrow-up-right' : 'fa-arrow-down-left';
+        var status = normStatus((data && (data.status || data.state || data.depositStatus)) || '');
+        var isRejectedDeposit = (kind === 'deposit' && status === 'rejected');
+        if (isRejectedDeposit){
+          change.className = 'neutral';
+          change.signSymbol = '';
+        }
+        var actionKind = isRejectedDeposit ? 'neutral' : (kind === 'withdraw' ? 'withdraw' : 'deposit');
+        var actionIcon = actionKind === 'withdraw' ? 'fa-arrow-up-right' : (actionKind === 'deposit' ? 'fa-arrow-down-left' : 'fa-xmark');
+        var codeLabel = code && code !== '-' ? code : '';
+        var showCode = false;
+        var codePrefix = isTransfer ? 'ID:' : (kind === 'withdraw' ? 'ID:' : 'Payment ID:');
 
         var balancePieces = [];
         if (balances.after != null) {
@@ -303,30 +385,27 @@
         }
         var balancesHtml = balancePieces.length ? '<div class="txn-balances">' + balancePieces.join('') + '</div>' : '';
 
+        var codeHtml = showCode ? '<span class="txn-code">' + codePrefix + ' <button class="code-btn" data-code="' + codeLabel + '">' + codeLabel + '</button></span>' : '';
+        var dateHtml = shortDate ? '<span class="txn-date" title="' + longDate + '">' + shortDate + '</span>' : '';
+        var metaRow = (codeHtml || dateHtml) ? '<div class="txn-meta">' + [codeHtml, dateHtml].filter(Boolean).join('') + '</div>' : '';
+
         return [
           '<div class="txn-body">',
-        '<div class="txn-middle">',
-          '<div class="txn-title-row">',
-            '<span class="txn-title">', title, '</span>',
-            '<span class="', statusClass(st), '" data-role="status">', statusLabel(st), '</span>',
-          '</div>',
-          metaHtml ? ('<div class="txn-meta">' + metaHtml + '</div>') : '',
-        '</div>',
-        '<div class="txn-amount ', change.className, '">',
-          '<div class="txn-value">',
-            '<span class="sign">', change.signSymbol, '</span>',
-            '<span class="number">', change.numberText, '</span>',
-            change.currency ? '<span class="currency">' + change.currency + '</span>' : '',
-          '</div>',
-          balancesHtml,
-        '</div>',
-          '<i class="fas ' + actionIcon + '"></i>',
-        '</button>',
-          '</div>',
-          '<div class="txn-footer">',
-        '<span class="txn-code">كود: <button class="code-btn" data-code="' + code + '">' + code + '</button></span>',
-        shortDate ? '<span class="txn-date" title="' + longDate + '"><i class="fas fa-clock"></i> ' + shortDate + '</span>' : '',
-        proof ? '<span class="txn-proof"><i class="fas fa-image"></i> <a href="' + proof + '" target="_blank" rel="noopener">إثبات</a></span>' : '',
+            '<div class="txn-amount ', change.className, '">',
+              '<div class="txn-value">',
+                '<span class="sign">', change.signSymbol, '</span>',
+                '<span class="number">', change.numberText, '</span>',
+                change.currency ? '<span class="currency">' + change.currency + '</span>' : '',
+              '</div>',
+              balancesHtml,
+            '</div>',
+            '<div class="txn-middle">',
+              '<div class="txn-title">', title, '</div>',
+              metaRow,
+            '</div>',
+            '<div class="txn-action ', actionKind, '">',
+              '<i class="fas ', actionIcon, '"></i>',
+            '</div>',
           '</div>'
         ].join('');
       }
@@ -457,6 +536,7 @@
       function displayItems(uid, items){
         ALL_ITEMS = sortByNewest(items);
         renderDeposits(applyFilter(ALL_ITEMS));
+        fixWalletTextNodes(listEl);
         chipsWrap.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', (c.dataset.filter||'all') === CURRENT_FILTER));
         selectLastCard(uid);
       }
@@ -622,8 +702,8 @@
           var item = {
             code: readField(flat,'code') || '',
             status: readField(flat,'status') || 'completed',
-            methodName: readField(flat,'methodName') || (kind === 'withdraw' ? ('تحويل إلى ' + (peer || 'مستلم')) : ('تحويل من ' + (peer || 'مرسل'))),
-            countryName: readField(flat,'countryName') || 'تحويل داخلي',
+            methodName: readField(flat,'methodName') || (kind === 'withdraw' ? ('طھط­ظˆظٹظ„ ط¥ظ„ظ‰ ' + (peer || 'ظ…ط³طھظ„ظ…')) : ('طھط­ظˆظٹظ„ ظ…ظ† ' + (peer || 'ظ…ط±ط³ظ„'))),
+            countryName: readField(flat,'countryName') || 'طھط­ظˆظٹظ„ ط¯ط§ط®ظ„ظٹ',
             transferPeer: peer,
             transferNote: note,
             createdAt: createdDate || new Date(),
@@ -668,7 +748,7 @@
       }
 
       async function loadWalletFor(user, opts = {}){
-        if (!user){ showRequiresAuth(); return; }
+        if (!user){ showRequiresAuth(); fixWalletTextNodes(listEl); return; }
         const force = !!opts.force;
         const skipSkeleton = !!opts.skipSkeleton;
         if (!skipSkeleton) showSkeleton();
@@ -832,3 +912,5 @@
     })(authInstance, dbInstance);
   };
 })();
+
+
