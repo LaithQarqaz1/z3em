@@ -1,10 +1,11 @@
-
+﻿
 body {
   font-family: 'Cairo', sans-serif;
   direction: rtl;
   margin: 0;
   padding-top: 60px; /* حتى لا يغطي الهيدر الصفحة */
   background: #f8f9fa;
+  color: #1b1d3b;
   overflow-x: hidden;
 }
 :root {
@@ -103,6 +104,7 @@ a img {
       padding: 0;
       direction: rtl;
       background: #f8f9fa;
+  color: #1b1d3b;
       min-height: 100vh;
       overflow-x: hidden;
       padding-top: 70px; /* مساحة للشريط العلوي */
@@ -137,6 +139,11 @@ a img {
 .header-logo-link {
   margin-right: auto;
   margin-left: 0;
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  cursor: pointer;
+  min-height: 44px;
 }
 
 .header-logo-link img {
@@ -1066,9 +1073,17 @@ html[dir="ltr"] #sidebar ul li a {
 /* ====== Dark Mode overrides for header & sidebar ====== */
 body.dark-mode {
   background: #05050b;
+
+  color: #f0f1ff;
 }
 
-/* الهيدر */
+
+body.light-mode {
+  background: #f8f9fa;
+  color: #1b1d3b;
+}
+html[data-theme="dark"] body { color: #f0f1ff; }
+html[data-theme="light"] body { color: #1b1d3b; }/* الهيدر */
 body.dark-mode .top-header {
   background: linear-gradient(135deg,#2e316f,#5c5ebf);
   box-shadow: 0 8px 18px rgba(5,6,18,0.6);
@@ -1123,7 +1138,24 @@ body.dark-mode select:focus {
   box-shadow: 0 0 5px rgba(122,124,208,0.35);
 }
 
-/* أزرار الأدلّة/المرفقات */
+
+body.light-mode .content-container {
+  background: #ffffff;
+  color: #1b1d3b;
+  box-shadow: 0 8px 22px rgba(15,23,42,0.08);
+  border: 1px solid rgba(148,163,184,0.25);
+}
+body.light-mode label { color: #1b1d3b; }
+body.light-mode label i { color: #5c5ebf; }
+body.light-mode select {
+  background: #ffffff;
+  color: #1b1d3b;
+  border-color: rgba(148,163,184,0.55);
+}
+body.light-mode select:focus {
+  border-color: #7a7cd0;
+  box-shadow: 0 0 5px rgba(122,124,208,0.22);
+}/* أزرار الأدلّة/المرفقات */
 body.dark-mode .btn-show-proof {
   background: linear-gradient(135deg, #3b3e8c 0%, #5c5ebf 100%);
   color: #f0f1ff;
@@ -1227,8 +1259,16 @@ button,
 }
 
 /* Hint color-scheme for UA widgets */
-body.dark-mode { color-scheme: dark; }
-html[data-theme="dark"] { color-scheme: dark; }
+body.dark-mode { color-scheme: dark; 
+  color: #f0f1ff;
+}
+
+body.light-mode {
+  background: #f8f9fa;
+  color: #1b1d3b;
+}
+html[data-theme="dark"] body { color: #f0f1ff; }
+html[data-theme="light"] body { color: #1b1d3b; }html[data-theme="dark"] { color-scheme: dark; }
 
 /* ===== Interactive micro-interactions ===== */
 /* Links and buttons */

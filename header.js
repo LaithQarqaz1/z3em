@@ -1,8 +1,9 @@
-// Deobfuscated and cleaned header logic
+﻿// Deobfuscated and cleaned header logic
 
 // ألغينا حد إعادة تحميل Firebase؛ أعِد الوظائف الأصلية إن وُجدت
 (function(){
   try {
+    if (typeof SKIP_HEADER !== 'undefined' && SKIP_HEADER) return;
     if (typeof firebase !== 'undefined' && window.__ORIG_FIREBASE__) {
       if (window.__ORIG_FIREBASE__.auth) {
         firebase.auth = window.__ORIG_FIREBASE__.auth;
@@ -12,8 +13,35 @@
       }
     }
   } catch {}
-  try { window.__SKIP_FIREBASE__ = false; } catch {}
+  try {
+    if (typeof window.__FIREBASE_ENV_OK__ === 'boolean') {
+      window.__SKIP_FIREBASE__ = !window.__FIREBASE_ENV_OK__;
+    }
+  } catch {}
 })();
+
+// Realtime Firestore toggle (to reduce "channel?VER=8" requests)
+function shouldEnableRealtime(feature){
+  try { if (window.__DISABLE_FIREBASE_REALTIME__ === true) return false; } catch {}
+  try {
+    const cfg = window.__FIREBASE_REALTIME__;
+    if (cfg === true) return true;
+    if (cfg && typeof cfg === 'object') {
+      if (cfg.all === true) return true;
+      if (feature && Object.prototype.hasOwnProperty.call(cfg, feature)) return !!cfg[feature];
+    }
+  } catch {}
+  try {
+    const perKey = feature ? ('FIREBASE_REALTIME_' + String(feature).toUpperCase()) : '';
+    const perVal = perKey ? localStorage.getItem(perKey) : null;
+    if (perVal === '1' || perVal === 'true') return true;
+    if (perVal === '0' || perVal === 'false') return false;
+    const v = localStorage.getItem('FIREBASE_REALTIME');
+    if (v === '1' || v === 'true') return true;
+    if (v === '0' || v === 'false') return false;
+  } catch {}
+  return false;
+}
 
 // Force HTTPS when not local
 (function(){
@@ -28,6 +56,71 @@
       return;
     }
   } catch {}
+})();
+
+// Sync theme across all pages (light/dark + body classes + meta)
+(function(){
+  function normalizeTheme(value){
+    const t = String(value || '').toLowerCase().trim();
+    return (t === 'light' || t === 'dark') ? t : '';
+  }
+  function readTheme(){
+    let t = '';
+    try { t = normalizeTheme(document.documentElement.getAttribute('data-theme')); } catch {}
+    if (!t) {
+      try { t = normalizeTheme(localStorage.getItem('theme')); } catch {}
+    }
+    return t || 'light';
+  }
+  function ensureMeta(name){
+    try {
+      let meta = document.querySelector(`meta[name="${name}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = name;
+        document.head && document.head.appendChild(meta);
+      }
+      return meta;
+    } catch {
+      return null;
+    }
+  }
+  function applyTheme(theme){
+    const t = normalizeTheme(theme) || 'light';
+    try { document.documentElement.setAttribute('data-theme', t); } catch {}
+    try {
+      if (document.body) {
+        document.body.classList.toggle('dark-mode', t === 'dark');
+        document.body.classList.toggle('light-mode', t === 'light');
+      }
+    } catch {}
+    try {
+      const cs = ensureMeta('color-scheme');
+      if (cs) cs.setAttribute('content', t === 'dark' ? 'dark light' : 'light dark');
+    } catch {}
+    try {
+      const tc = ensureMeta('theme-color');
+      if (tc) tc.setAttribute('content', t === 'dark' ? '#05050b' : '#f8f9fa');
+    } catch {}
+  }
+  function sync(){
+    applyTheme(readTheme());
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', sync, { once: true });
+  } else {
+    sync();
+  }
+  document.addEventListener('theme:change', function(e){
+    try {
+      const next = e && e.detail ? e.detail.theme : '';
+      if (next) applyTheme(next);
+      else sync();
+    } catch {}
+  });
+  window.addEventListener('storage', function(e){
+    if (e && e.key === 'theme') sync();
+  });
 })();
 
 // Add allow=1 on .html links when clicked (for from-home navigation)
@@ -104,10 +197,11 @@
     }
   } catch {}
 })();
-function showPageLoader(){
+function showPageLoader(opts){
   try {
     const el = document.getElementById('preloader');
     if (!el) return;
+    const hold = !!(opts && opts.hold);
     try {
       sessionStorage.setItem('nav:loader:expected','1');
       sessionStorage.setItem('nav:loader:showAt', String(Date.now()));
@@ -115,12 +209,23 @@ function showPageLoader(){
     el.classList.remove('hidden');
     el.style.display = 'flex';
     el.style.opacity = '1';
+    try {
+      clearTimeout(window.__NAV_LOADER_TIMEOUT__);
+      if (!hold) {
+        window.__NAV_LOADER_TIMEOUT__ = setTimeout(function(){
+          try { sessionStorage.removeItem('nav:loader:expected'); sessionStorage.removeItem('nav:loader:showAt'); } catch(_){ }
+          try { hidePageLoader(); } catch(_){ }
+        }, 300);
+      }
+    } catch {}
   } catch {}
 }
 function hidePageLoader(){
   try {
+    try { if (window.__LOADER_HOLD_ACTIVE__) return; } catch {}
     const el = document.getElementById('preloader');
     if (!el) return;
+    try { sessionStorage.removeItem('nav:loader:expected'); sessionStorage.removeItem('nav:loader:showAt'); } catch(_){ }
     el.classList.add('hidden');
     el.style.transition = 'opacity 0.4s ease';
     el.style.opacity = '0';
@@ -129,13 +234,98 @@ function hidePageLoader(){
 }
 window.addEventListener('pageshow', () => { try { if (sessionStorage.getItem('nav:loader:expected') === '1') return; } catch {} hidePageLoader(); });
 
-// Device fingerprint helpers (legacy stub — device locking disabled)
+// Show loader during navigation for internal links
+(function setupNavLoader(){
+  function hasNoLoader(link){
+    try {
+      return link.hasAttribute('data-no-loader') || link.getAttribute('data-loader') === 'off';
+    } catch { return false; }
+  }
+  function shouldSkipHref(href){
+    if (!href) return true;
+    const v = href.trim();
+    if (!v || v === '#') return true;
+    // Hash-only navigation handled by SPA router; don't block with loader.
+    if (v.startsWith('#/')) return true;
+    if (v.startsWith('javascript:')) return true;
+    if (v.startsWith('mailto:') || v.startsWith('tel:')) return true;
+    if (v.startsWith('#') && !v.startsWith('#/')) return true;
+    return false;
+  }
+  function sameOrigin(url){
+    try { return url.origin === location.origin; } catch { return false; }
+  }
+  function handleNav(e){
+    try {
+      const link = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (!link || hasNoLoader(link)) return;
+      const target = (link.getAttribute('target') || '').toLowerCase();
+      if (target === '_blank') return;
+      const href = link.getAttribute('href') || '';
+      if (shouldSkipHref(href)) return;
+      let url;
+      try { url = new URL(href, location.href); } catch { return; }
+      if (!sameOrigin(url)) return;
+      if (url.pathname === location.pathname && url.search === location.search && url.hash === location.hash) return;
+      showPageLoader();
+    } catch {}
+  }
+  document.addEventListener('pointerdown', handleNav, true);
+  document.addEventListener('click', handleNav, true);
+  window.addEventListener('beforeunload', function(){ try { showPageLoader(); } catch {} });
+})();
+
+// Device fingerprint helpers (per-device session id)
 const DEVICE_ID_STORAGE_KEY = 'session:device:id';
-function getDeviceFingerprint(){
-  return '';
+function generateDeviceId(){
+  try {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return window.crypto.randomUUID();
+    }
+  } catch {}
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const size = 24;
+  let out = '';
+  try {
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const buf = new Uint8Array(size);
+      window.crypto.getRandomValues(buf);
+      for (let i = 0; i < size; i++) out += alphabet[buf[i] % alphabet.length];
+      return out;
+    }
+  } catch {}
+  for (let i = 0; i < size; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return out;
 }
 function ensureDeviceFingerprint(){
-  return '';
+  try {
+    const cached = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
+    if (cached) return cached;
+  } catch {}
+  const id = generateDeviceId();
+  try { localStorage.setItem(DEVICE_ID_STORAGE_KEY, id); } catch {}
+  return id;
+}
+function getDeviceFingerprint(){
+  return ensureDeviceFingerprint();
+}
+function collectDeviceInfo(){
+  try {
+    const nav = navigator || {};
+    const uaData = nav.userAgentData || {};
+    const platform = String(uaData.platform || nav.platform || '').trim();
+    const brand = Array.isArray(uaData.brands) ? uaData.brands.map(b => b.brand).join(', ') : '';
+    const label = [platform, brand].filter(Boolean).join(' ').trim();
+    return {
+      label: label || '',
+      userAgent: String(nav.userAgent || ''),
+      platform: platform,
+      language: String(nav.language || ''),
+      timezone: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } })()
+    };
+  } catch (_) {
+    return {};
+  }
 }
 try { window.getDeviceFingerprint = getDeviceFingerprint; } catch {}
 
@@ -147,23 +337,21 @@ function clearSessionDocWatcher(){
     sessionDocUnsubscribe = null;
   }
 }
-function triggerSessionConflictLogout(){
+function triggerSessionConflictLogout(reasonCode){
   if (sessionConflictHandled) return;
   sessionConflictHandled = true;
   clearSessionDocWatcher();
-  try { localStorage.removeItem('sessionKeyInfo'); } catch {}
+  clearAuthClientState();
   try { window.dispatchEvent(new CustomEvent('session:conflict')); } catch {}
-  const message = 'تم تسجيل الدخول من جهاز آخر وتم إنهاء هذه الجلسة.';
-  try { alert(message); } catch {}
-  try {
-    firebase.auth().signOut().catch(()=>{}).finally(() => {
-      try { window.location.href = 'login.html?session=conflict'; }
-      catch { window.location.reload(); }
-    });
-  } catch {
-    try { window.location.href = 'login.html?session=conflict'; }
-    catch { window.location.reload(); }
+  let message = 'انتهت الجلسة الحالية. يرجى تسجيل الدخول من جديد.';
+  const code = String(reasonCode || '').trim();
+  if (code === 'session_revoked') message = 'تم تسجيل الخروج من هذا الجهاز.';
+  else if (code === 'session_expired') message = 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.';
+  else if (code === 'session_mismatch' || code === 'session_conflict') {
+    message = 'تم تسجيل الدخول من جهاز آخر وتم إنهاء هذه الجلسة.';
   }
+  try { alert(message); } catch {}
+  performClientLogout('index.html#/login');
 }
 function watchSessionDocForDevice(user){
   clearSessionDocWatcher();
@@ -180,14 +368,11 @@ function watchSessionDocForDevice(user){
     const SESSION_HEADER = 'X-SessionKey';
     const AUTH_HEADER = 'Authorization';
     const DEVICE_HEADER = 'X-DeviceId';
-    const SESSION_ERROR_CODES = new Set(['session_missing','session_invalid','session_mismatch','session_expired']);
+    const SESSION_ERROR_CODES = new Set(['session_missing','session_invalid','session_mismatch','session_expired','session_not_found','session_revoked','session_conflict']);
     const AUTH_ERROR_CODES = new Set([
       'auth_missing','auth_required','invalid_token','token_expired','invalid_alg','invalid_signature',
       'invalid_issuer','invalid_audience','jwk_not_found','sub_userid_mismatch','firestore_auth_missing','jwt_parse_error'
     ]);
-    const RAND_ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const RAND_SYMBOLS = '!@#$%&';
-    let rotatePromise = null;
     let authRefreshPromise = null;
 
     function requestCarriesSession(req){
@@ -227,61 +412,14 @@ function watchSessionDocForDevice(user){
       const ttl = Number(payload.ttlSeconds ?? payload.ttl ?? payload.ttl_seconds ?? payload.ttlseconds ?? payload.sessionTtl ?? 0);
       return Number.isFinite(ttl) && ttl > 0 ? ttl : 0;
     }
-    function randomFromAlphabet(alphabet, len){
-      const set = (typeof alphabet === 'string' && alphabet.length) ? alphabet : RAND_ALPHA;
-      const length = Math.max(1, Number(len) || 1);
-      const cryptoObj = (typeof window !== 'undefined' && window.crypto) || null;
-      if (cryptoObj && typeof cryptoObj.getRandomValues === 'function'){
-        const buf = new Uint32Array(length);
-        cryptoObj.getRandomValues(buf);
-        let out = '';
-        for (let i = 0; i < length; i++){ out += set[buf[i] % set.length]; }
-        return out;
-      }
-      let fallback = '';
-      for (let i = 0; i < length; i++){ fallback += set[Math.floor(Math.random() * set.length)]; }
-      return fallback;
-    }
-    function generateSessionKey(len = 64){
-      return randomFromAlphabet(RAND_ALPHA + RAND_SYMBOLS, len);
-    }
-    function persistSessionInfo(uid, key, ttlSeconds){
-      if (!uid || !key) return;
+    async function refreshSessionKey(){
       try {
-        localStorage.setItem('sessionKeyInfo', JSON.stringify({
-          uid,
-          sessionKey: key,
-          ts: Date.now(),
-          ttlSeconds: Number(ttlSeconds) || 0
-        }));
-      } catch {}
-    }
-    async function rotateSessionKey(ttlSeconds){
-      if (!window.firebase || !firebase.auth || !firebase.firestore) return null;
-      const user = firebase.auth().currentUser;
-      if (!user) return null;
-      if (!rotatePromise){
-        rotatePromise = (async () => {
-          const freshKey = generateSessionKey();
-          try {
-            const ref = firebase.firestore().collection('users').doc(user.uid).collection('keys').doc('session');
-            const payload = {
-              sessionKey: freshKey,
-              ttlSeconds: Number(ttlSeconds) || 0
-            };
-            const FieldValue = firebase.firestore.FieldValue;
-            if (FieldValue && FieldValue.serverTimestamp) {
-              payload.createdAt = FieldValue.serverTimestamp();
-            }
-            await ref.set(payload, { merge: true });
-          } catch (err) {
-            console.warn('Session key rotation write failed:', err);
-          }
-          persistSessionInfo(user.uid, freshKey, ttlSeconds);
-          return freshKey;
-        })().catch(err => { console.warn('Auto rotate session key failed:', err); return null; }).finally(() => { rotatePromise = null; });
+        const cached = JSON.parse(localStorage.getItem('sessionKeyInfo') || 'null');
+        const key = cached && cached.sessionKey ? String(cached.sessionKey || '') : '';
+        return key || null;
+      } catch {
+        return null;
       }
-      return rotatePromise;
     }
     async function refreshAuthToken(){
       if (!window.firebase || !firebase.auth) return null;
@@ -305,15 +443,24 @@ function watchSessionDocForDevice(user){
         return null;
       }
     }
+    function readSessionDeviceId(){
+      try {
+        const cached = JSON.parse(localStorage.getItem('sessionKeyInfo') || 'null');
+        const deviceId = cached && cached.deviceId ? String(cached.deviceId || '').trim() : '';
+        return deviceId || '';
+      } catch {
+        return '';
+      }
+    }
     function ensureDeviceHeader(request){
       if (!requestCarriesSession(request)) return request;
-      const fingerprint = (typeof getDeviceFingerprint === 'function') ? getDeviceFingerprint() : '';
-      if (!fingerprint) return request;
       try {
         const current = request.headers.get(DEVICE_HEADER);
-        if (current && current === fingerprint) return request;
+        if (current) return request;
       } catch {}
-      const updated = rebuildRequestWithHeaders(request, headers => { headers.set(DEVICE_HEADER, fingerprint); });
+      const sessionDeviceId = readSessionDeviceId();
+      if (!sessionDeviceId) return request;
+      const updated = rebuildRequestWithHeaders(request, headers => { headers.set(DEVICE_HEADER, sessionDeviceId); });
       return updated || request;
     }
     async function classifyForRetry(resp, req){
@@ -326,10 +473,10 @@ function watchSessionDocForDevice(user){
       const hasSession = requestCarriesSession(req);
       const hasAuth = requestCarriesAuth(req);
 
-      if (hasSession && (isSessionCode(code) || (statusIs401 && !code))) {
+      if (hasSession && isSessionCode(code)) {
         return { kind: 'session', ttlSeconds, code: code || (statusIs401 ? 'session_http_401' : '') };
       }
-      if (hasAuth && (isAuthCode(code) || (statusIs401 && !isSessionCode(code)))) {
+      if (hasAuth && (isAuthCode(code) || (statusIs401 && !code))) {
         return { kind: 'auth', ttlSeconds: 0, code: code || (statusIs401 ? 'auth_http_401' : '') };
       }
       return null;
@@ -350,17 +497,20 @@ function watchSessionDocForDevice(user){
         if (!action) return response;
 
         if (action.kind === 'session'){
-          const conflictCodes = new Set(['session_mismatch','session_conflict']);
+          const conflictCodes = new Set(['session_conflict','session_mismatch','session_revoked']);
           if (conflictCodes.has(action.code)) {
-            triggerSessionConflictLogout();
+            triggerSessionConflictLogout(action.code);
             return response;
           }
-          const newKey = await rotateSessionKey(action.ttlSeconds);
-          if (!newKey) return response;
+          const newKey = await refreshSessionKey();
+          if (!newKey) {
+            triggerSessionConflictLogout(action.code);
+            return response;
+          }
           const updated = rebuildRequestWithHeaders(request, headers => {
             headers.set(SESSION_HEADER, newKey);
-            const fingerprint = (typeof getDeviceFingerprint === 'function') ? getDeviceFingerprint() : '';
-            if (fingerprint) headers.set(DEVICE_HEADER, fingerprint);
+            const sessionDeviceId = readSessionDeviceId();
+            if (sessionDeviceId) headers.set(DEVICE_HEADER, sessionDeviceId);
           });
           if (!updated) return response;
           request = updated;
@@ -808,6 +958,10 @@ function watchSessionDocForDevice(user){
               }).catch(()=>{});
             } catch {}
           };
+          if (!shouldEnableRealtime('rates')) {
+            try { handleErr(); } catch {}
+            return;
+          }
           try { ref.onSnapshot(handleSnap, handleErr); } catch { try { ref.onSnapshot(handleSnap); } catch {} }
           return;
         }
@@ -1246,6 +1400,7 @@ function translateRawText(raw){
 function translateStringPreserveWhitespace(raw){
   if (raw == null) return raw;
   const str = String(raw);
+  if (currentLang === LANG_OFF) return str;
   if (currentLang === 'ar' && hasArabic(str)) return str;
   if (currentLang === 'en' && hasLatin(str) && !hasArabic(str)) return str;
   const leading = (str.match(/^\s*/) || [''])[0];
@@ -1441,19 +1596,29 @@ function patchI18nDialogs(){
   } catch {}
 }
 const LANG_KEY = 'site:lang';
+const LANG_OFF = 'off';
 const RTL_LANGS = new Set(['ar']);
+const DEFAULT_LANG = (() => {
+  try { return (document.documentElement.getAttribute('lang') || 'ar').toLowerCase(); } catch { return 'ar'; }
+})();
+const DEFAULT_DIR = (() => {
+  try { return document.documentElement.getAttribute('dir') || (RTL_LANGS.has(DEFAULT_LANG) ? 'rtl' : 'ltr'); }
+  catch { return RTL_LANGS.has(DEFAULT_LANG) ? 'rtl' : 'ltr'; }
+})();
 const langSelects = new Set();
 let currentLang = null;
 
 function normalizeLang(lang){
   const key = (lang || '').toString().toLowerCase();
-  return I18N_TEXT[key] ? key : 'ar';
+  if (key === LANG_OFF) return LANG_OFF;
+  return I18N_TEXT[key] ? key : DEFAULT_LANG;
 }
 function readStoredLang(){
   try { return localStorage.getItem(LANG_KEY); } catch { return null; }
 }
 function translateKey(key, fallback){
   if (!key) return fallback || '';
+  if (currentLang === LANG_OFF) return (fallback != null) ? fallback : key;
   const dict = I18N_TEXT[currentLang] || I18N_TEXT.ar || {};
   if (Object.prototype.hasOwnProperty.call(dict, key)) return dict[key];
   const rawFallback = (fallback != null) ? fallback : key;
@@ -1519,20 +1684,23 @@ function applyLang(lang, opts){
   const next = normalizeLang(lang);
   const prev = currentLang;
   currentLang = next;
+  const isOff = next === LANG_OFF;
+  const langForDom = isOff ? DEFAULT_LANG : next;
+  const dirForDom = isOff ? DEFAULT_DIR : (RTL_LANGS.has(next) ? 'rtl' : 'ltr');
   try {
     const root = document.documentElement;
-    root.setAttribute('lang', next);
-    root.setAttribute('dir', RTL_LANGS.has(next) ? 'rtl' : 'ltr');
+    root.setAttribute('lang', langForDom);
+    root.setAttribute('dir', dirForDom);
     root.setAttribute('data-lang', next);
   } catch {}
   try { if (!(opts && opts.store === false)) localStorage.setItem(LANG_KEY, next); } catch {}
   try {
     const localeMap = { ar: 'ar_AR', en: 'en_US', fr: 'fr_FR' };
     const metaLocale = document.querySelector('meta[property="og:locale"]');
-    if (metaLocale) metaLocale.setAttribute('content', localeMap[next] || 'ar_AR');
+    if (metaLocale) metaLocale.setAttribute('content', localeMap[langForDom] || 'ar_AR');
   } catch {}
   try {
-    const autoText = translateKey('home.autoRibbon', next === 'ar' ? '\u062A\u0644\u0642\u0627\u0626\u064A' : 'Auto');
+    const autoText = translateKey('home.autoRibbon', langForDom === 'ar' ? '\u062A\u0644\u0642\u0627\u0626\u064A' : 'Auto');
     document.documentElement.style.setProperty('--auto-ribbon-text', `"${autoText}"`);
   } catch {}
   applyTranslations(document);
@@ -1547,7 +1715,7 @@ function applyLang(lang, opts){
   }
 }
 function setLang(lang){ applyLang(lang, { reload: true }); }
-function getLang(){ return currentLang || 'ar'; }
+function getLang(){ return currentLang || DEFAULT_LANG; }
 
 function setupLanguageSelect(select){
   try {
@@ -1559,13 +1727,20 @@ function setupLanguageSelect(select){
           <option value="ar">\u0627\u0644\u0639\u0631\u0628\u064A\u0629</option>
           <option value="en">English</option>
           <option value="fr">Fran\u00E7ais</option>
+          <option value="off">\u0625\u064A\u0642\u0627\u0641\u0020\u0627\u0644\u062A\u0631\u062C\u0645\u0629</option>
         `;
+      }
+      if (!select.querySelector(`option[value="${LANG_OFF}"]`)) {
+        const opt = document.createElement('option');
+        opt.value = LANG_OFF;
+        opt.textContent = '\u0625\u064A\u0642\u0627\u0641\u0020\u0627\u0644\u062A\u0631\u062C\u0645\u0629';
+        select.appendChild(opt);
       }
       select.addEventListener('change', () => { setLang(select.value); });
       select.dataset.langReady = '1';
     }
     langSelects.add(select);
-    if (!currentLang) currentLang = normalizeLang(readStoredLang() || 'ar');
+    if (!currentLang) currentLang = normalizeLang(readStoredLang() || LANG_OFF);
     select.value = currentLang;
   } catch {}
 }
@@ -1598,7 +1773,7 @@ function attachLanguageSelector(){
 }
 
 (function initI18n(){
-  const initial = normalizeLang(readStoredLang() || document.documentElement.getAttribute('lang') || 'ar');
+  const initial = normalizeLang(readStoredLang() || LANG_OFF);
   applyLang(initial, { store: false, emit: false });
   try { patchI18nDialogs(); } catch {}
   try { ensureI18nDictLoaded().then(() => { applyTranslations(document); }); } catch {}
@@ -1619,6 +1794,34 @@ function toggleSidebar(){
   const el = document.getElementById('sidebar');
   if (!el) { console.warn('\u0627\u0644\u0634\u0631\u064A\u0637\u0020\u0627\u0644\u062C\u0627\u0646\u0628\u064A\u0020\u063A\u064A\u0631\u0020\u0645\u0648\u062C\u0648\u062F\u0020\u0628\u0639\u062F.'); return; }
   el.classList.toggle('active');
+}
+
+function closeSidebarIfOpen(){
+  const el = document.getElementById('sidebar');
+  if (!el) return;
+  if (el.classList.contains('active')) el.classList.remove('active');
+}
+
+function resolveHomeUrl(){
+  try { if (window.__HOME_URL__) return String(window.__HOME_URL__); } catch {}
+  try {
+    const meta = document.querySelector('meta[name="home-url"]');
+    if (meta && meta.content) return String(meta.content);
+  } catch {}
+  try {
+    const url = new URL(location.href);
+    url.hash = '';
+    const params = new URLSearchParams(url.search || '');
+    const keep = new URLSearchParams();
+    if (params.has('firebase')) keep.set('firebase', params.get('firebase'));
+    if (params.has('lang')) keep.set('lang', params.get('lang'));
+    url.search = keep.toString();
+    const path = url.pathname || '';
+    const base = path.endsWith('/') ? path : path.replace(/[^/]*$/, '');
+    url.pathname = (base || '/').replace(/\/?$/, '/') + 'index.html';
+    return url.toString();
+  } catch {}
+  return 'index.html';
 }
 
 const SKIP_HEADER = !!(typeof window !== 'undefined' && window.__SKIP_HEADER__);
@@ -1644,7 +1847,7 @@ logo.loading = 'eager';
 logo.decoding = 'async';
 (function(){ try { const href = logo.src; if (href && document.head && !document.querySelector(`link[rel='preload'][as='image'][href='${href}']`)){ const l = document.createElement('link'); l.rel='preload'; l.as='image'; l.href=href; document.head.appendChild(l); } } catch {} })();
 const logoLink = document.createElement('a');
-logoLink.href = 'index.html';
+logoLink.href = resolveHomeUrl();
 logoLink.style.marginLeft = '0';
 logoLink.style.marginRight = 'auto';
 logoLink.className = 'header-logo-link';
@@ -1653,6 +1856,53 @@ logoLink.setAttribute('data-i18n-aria-label', 'brand.home');
 logoLink.style.marginLeft = '';
 logoLink.style.marginRight = '';
 logoLink.appendChild(logo);
+function navigateLogoHome(event) {
+  const hasModifiers = event && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey);
+  if (hasModifiers) return;
+  const isMiddle = event && typeof event.button === 'number' && event.button !== 0;
+  if (isMiddle) return;
+  const href = resolveHomeUrl();
+  if (!href) return;
+  try { sessionStorage.setItem('nav:fromHome','1'); } catch {}
+  closeSidebarIfOpen();
+  if (event && event.type === 'click') {
+    try { event.preventDefault(); } catch {}
+  }
+  try {
+    const current = new URL(location.href);
+    const target = new URL(href, location.href);
+    const sameBase = current.origin === target.origin &&
+      current.pathname === target.pathname &&
+      current.search === target.search;
+    if (sameBase) {
+      try {
+        if (typeof window.navigateHome === 'function') {
+          window.navigateHome();
+          return;
+        }
+      } catch {}
+      if (current.hash) {
+        try { history.replaceState({}, '', target.pathname + target.search); } catch {}
+      }
+      try {
+        sessionStorage.removeItem('nav:loader:expected');
+        sessionStorage.removeItem('nav:loader:showAt');
+      } catch {}
+      try { hidePageLoader(); } catch {}
+      return;
+    }
+  } catch {}
+  try { showPageLoader(); } catch {}
+  try { window.location.assign(href); } catch { window.location.href = href; }
+}
+logoLink.addEventListener('pointerdown', (e) => {
+  try { logoLink.href = resolveHomeUrl(); } catch {}
+  navigateLogoHome(e);
+}, { passive: true });
+logoLink.addEventListener('click', (e) => {
+  try { logoLink.href = resolveHomeUrl(); } catch {}
+  navigateLogoHome(e);
+});
 
 // Balance display with deposit shortcut
 if (!document.getElementById('header-balance-style')) {
@@ -1809,11 +2059,101 @@ function seedHeaderFromCache(){
 }
 seedHeaderFromCache();
 
+// Apply auth state to sidebar (fallback to in-memory nodes if DOM not yet attached)
+function resolveSidebarNode(id, fallback){
+  try { return document.getElementById(id) || fallback || null; } catch { return fallback || null; }
+}
+function applyAuthUi(user){
+  try { window.__AUTH_LAST_USER__ = user || null; } catch {}
+  const loginBtn = resolveSidebarNode('loginSidebarBtn', typeof loginLi !== 'undefined' ? loginLi : null);
+  const depositBtn = resolveSidebarNode('depositBtn', typeof depositLi !== 'undefined' ? depositLi : null);
+  const walletBtn = resolveSidebarNode('walletBtn', typeof walletLi !== 'undefined' ? walletLi : null);
+  const transferBtn = resolveSidebarNode('transferBtn', typeof transferLi !== 'undefined' ? transferLi : null);
+  const settingsBtn = resolveSidebarNode('settingsBtn', typeof settingsLi !== 'undefined' ? settingsLi : null);
+  const securityBtn = resolveSidebarNode('securityBtn', typeof securityLi !== 'undefined' ? securityLi : null);
+  const logoutBtn = resolveSidebarNode('logoutBtn', typeof logoutLi !== 'undefined' ? logoutLi : null);
+
+  if (user) {
+    try { localStorage.setItem(LAST_LOGGED_KEY, '1'); } catch {}
+    try { if (user.uid) localStorage.setItem(LAST_UID_KEY, user.uid); } catch {}
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (depositBtn) depositBtn.style.display = 'flex';
+    if (walletBtn) walletBtn.style.display = 'flex';
+    if (transferBtn) transferBtn.style.display = 'flex';
+    if (settingsBtn) settingsBtn.style.display = 'flex';
+    if (securityBtn) securityBtn.style.display = 'flex';
+    if (logoutBtn) logoutBtn.style.display = 'flex';
+  } else {
+    try { localStorage.setItem(LAST_LOGGED_KEY, '0'); } catch {}
+    try { localStorage.removeItem(LAST_UID_KEY); } catch {}
+    if (loginBtn) loginBtn.style.display = 'flex';
+    if (depositBtn) depositBtn.style.display = 'none';
+    if (walletBtn) walletBtn.style.display = 'none';
+    if (transferBtn) transferBtn.style.display = 'none';
+    if (settingsBtn) settingsBtn.style.display = 'none';
+    if (securityBtn) securityBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+  }
+}
+try { window.__applyAuthUi = applyAuthUi; } catch {}
+
+function clearAuthClientState(){
+  let uid = "";
+  try { uid = localStorage.getItem(LAST_UID_KEY) || ""; } catch {}
+  try {
+    const cached = JSON.parse(localStorage.getItem('sessionKeyInfo') || 'null');
+    if (cached && typeof cached === 'object' && cached.uid) uid = String(cached.uid || '');
+  } catch {}
+  try { localStorage.removeItem('sessionKeyInfo'); } catch {}
+  try { localStorage.removeItem('postLoginPayload'); } catch {}
+  try { localStorage.removeItem(LAST_LOGGED_KEY); } catch {}
+  try { localStorage.removeItem(LAST_UID_KEY); } catch {}
+  try { localStorage.removeItem('auth:lastLoggedIn'); } catch {}
+  try { localStorage.removeItem('auth:lastUid'); } catch {}
+  if (uid) { try { localStorage.removeItem(BAL_KEY(uid)); } catch {} }
+  try {
+    if (typeof window.name === 'string' && window.name.startsWith('__Z3EM_AUTH__:')) window.name = '';
+  } catch {}
+  try { window.__POST_LOGIN_PAYLOAD__ = null; } catch {}
+  try { window.__AUTH_LAST_USER__ = null; } catch {}
+  try { window.__AUTH_RESTORE_PROMISE__ = null; } catch {}
+  try { window.__AUTH_RESTORE_ATTEMPTED__ = true; } catch {}
+}
+
+function performClientLogout(redirectUrl){
+  try { clearSessionDocWatcher(); } catch {}
+  if (typeof unsubscribeBalance === 'function') { try { unsubscribeBalance(); } catch {} unsubscribeBalance = null; }
+  clearAuthClientState();
+  try { applyAuthUi(null); } catch {}
+  try { setHeaderBalance('0.00 $'); } catch {}
+  try { broadcastBalance(0); } catch {}
+  try {
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      firebase.auth().signOut().catch(()=>{});
+    }
+  } catch {}
+  try {
+    if (redirectUrl) window.location.href = redirectUrl;
+    else window.location.reload();
+  } catch {
+    try { window.location.href = 'index.html#/login'; } catch {}
+  }
+}
+
 // Gracefully block banned accounts across the site
-function showBannedOverlay(){
+function showBannedOverlay(reason){
   try {
     let overlay = document.getElementById('ban-block-overlay');
-    if (overlay) return overlay;
+    const applyReason = (root) => {
+      try {
+        const reasonEl = root.querySelector('#banReasonText');
+        if (!reasonEl) return;
+        const cleanReason = (typeof reason === 'string' ? reason.trim() : '');
+        reasonEl.textContent = cleanReason ? ('سبب الحظر: ' + cleanReason) : '';
+        reasonEl.style.display = cleanReason ? 'block' : 'none';
+      } catch {}
+    };
+    if (overlay) { applyReason(overlay); return overlay; }
     overlay = document.createElement('div');
     overlay.id = 'ban-block-overlay';
     overlay.setAttribute('role','alertdialog');
@@ -1841,29 +2181,37 @@ function showBannedOverlay(){
       <p style="margin:0 0 18px;line-height:1.7;font-size:1rem;">\u062A\u0645 \u062D\u0638\u0631 \u062D\u0633\u0627\u0628\u0643 \u0648\u0644\u0627 \u064A\u0645\u0643\u0646 \u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u0627\u0633\u062A\u062E\u062F\u0627\u0645. \u064A\u064F\u0631\u062C\u0649 \u0627\u0644\u062A\u0648\u0627\u0635\u0644 \u0645\u0639 \u0627\u0644\u062F\u0639\u0645 \u0625\u0630\u0627 \u0643\u0646\u062A \u062A\u0639\u062A\u0642\u062F \u0623\u0646 \u0647\u0630\u0627 \u062E\u0637\u0623.</p>
       <button id="banLogoutBtn" type="button" style="width:100%;padding:12px 14px;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800;font-size:1rem;cursor:pointer;">\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062E\u0631\u0648\u062C</button>
     `;
-    overlay.appendChild(card);
-    (document.body || document.documentElement).appendChild(overlay);
-    return overlay;
+      const reasonEl = document.createElement('p');
+      reasonEl.id = 'banReasonText';
+      reasonEl.style.margin = '0 0 18px';
+      reasonEl.style.lineHeight = '1.7';
+      reasonEl.style.fontSize = '0.95rem';
+      reasonEl.style.display = 'none';
+      const logoutBtn = card.querySelector('#banLogoutBtn');
+      if (logoutBtn && logoutBtn.parentNode) logoutBtn.parentNode.insertBefore(reasonEl, logoutBtn);
+      else card.appendChild(reasonEl);
+      overlay.appendChild(card);
+      (document.body || document.documentElement).appendChild(overlay);
+      applyReason(overlay);
+      return overlay;
   } catch { return null; }
 }
-function handleBannedAccount(){
+function handleBannedAccount(reason){
   if (bannedSessionHandled) return;
   bannedSessionHandled = true;
   clearSessionDocWatcher();
   if (typeof unsubscribeBalance === 'function') { try { unsubscribeBalance(); } catch {} unsubscribeBalance = null; }
-  const overlay = showBannedOverlay();
+    const overlay = showBannedOverlay(reason);
   const logoutBtn = overlay ? overlay.querySelector('#banLogoutBtn') : null;
   let logoutTriggered = false;
   const forceLogout = () => {
     if (logoutTriggered) return;
     logoutTriggered = true;
-    try { localStorage.removeItem('sessionKeyInfo'); } catch {}
-    try { firebase.auth().signOut().catch(()=>{}); } catch {}
     try {
       const path = (location.pathname || '').toLowerCase();
-      if (path.includes('login')) { window.location.reload(); }
-      else { window.location.href = 'login.html?banned=1'; }
-    } catch { window.location.href = 'login.html?banned=1'; }
+      if (path.includes('login')) performClientLogout();
+      else performClientLogout('index.html#/login');
+    } catch { performClientLogout('index.html#/login'); }
   };
   if (logoutBtn) logoutBtn.addEventListener('click', forceLogout);
   setTimeout(forceLogout, 800);
@@ -1956,7 +2304,7 @@ depositLi.style.display = 'none';
 ul.appendChild(depositLi);
 // الرئيسية
 const ordersLi = document.createElement('li');
-ordersLi.onclick = () => navigateTo('talabat.html');
+ordersLi.onclick = () => navigateHomeHash('#/orders','orders');
 ordersLi.innerHTML = '<i class="fas fa-list"></i><a href="#" data-i18n="nav.orders">\u0637\u0644\u0628\u0627\u062A\u064A</a>';
 ul.appendChild(ordersLi);
 // الرئيسية
@@ -1985,6 +2333,13 @@ settingsLi.innerHTML = '<i class="fa-solid fa-gear"></i><a href="#" data-i18n="n
 settingsLi.onclick = () => navigateHomeHash('#/settings','settings');
 settingsLi.style.display = 'none';
 ul.appendChild(settingsLi);
+// حماية الحساب
+const securityLi = document.createElement('li');
+securityLi.id = 'securityBtn';
+securityLi.innerHTML = '<i class="fa-solid fa-shield-halved"></i><a href="#" data-i18n="nav.security">\u062D\u0645\u0627\u064A\u0629\u0020\u0627\u0644\u062D\u0633\u0627\u0628</a>';
+securityLi.onclick = () => navigateHomeHash('#/security','security');
+securityLi.style.display = 'none';
+ul.appendChild(securityLi);
 // API docs
 const apiLi = document.createElement('li');
 apiLi.innerHTML = '<i class="fa-solid fa-code"></i><a href="#" data-i18n="nav.api">API</a>';
@@ -1994,7 +2349,7 @@ ul.appendChild(apiLi);
 const loginLi = document.createElement('li');
 loginLi.id = 'loginSidebarBtn';
 loginLi.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i><a href="#" data-i18n="nav.login">\u062A\u0633\u062C\u064A\u0644\u0020\u0627\u0644\u062F\u062E\u0648\u0644</a>';
-loginLi.onclick = () => navigateTo('login.html');
+loginLi.onclick = () => navigateHomeHash('#/login','login');
 ul.appendChild(loginLi);
 const logoutLi = document.createElement('li');
 logoutLi.id = 'logoutBtn';
@@ -2002,14 +2357,8 @@ logoutLi.style.display = 'none';
 logoutLi.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i><a href="#" data-i18n="nav.logout">\u062A\u0633\u062C\u064A\u0644\u0020\u0627\u0644\u062E\u0631\u0648\u062C</a>';
 logoutLi.onclick = () => {
   try { showPageLoader(); } catch {}
-  try {
-    firebase.auth().signOut().catch(()=>{}).finally(()=>{
-      try { sessionStorage.setItem('nav:fromHome','1'); } catch {}
-      window.location.href = 'index.html';
-    });
-  } catch {
-    try { window.location.href = 'index.html'; } catch {}
-  }
+  try { sessionStorage.setItem('nav:fromHome','1'); } catch {}
+  performClientLogout('index.html');
 };
 ul.appendChild(logoutLi);
 sidebar.appendChild(ul);
@@ -2026,10 +2375,20 @@ window.addEventListener('DOMContentLoaded', () => {
   // Ensure support anchor exists for sidebar link
   try { const sec = document.querySelector('section.support-section'); if (sec && !sec.id) sec.id = 'support'; } catch {}
   try { if (window.__I18N__ && typeof window.__I18N__.applyTranslations === 'function') window.__I18N__.applyTranslations(document); } catch {}
+
+  // Re-apply auth state after sidebar/header are attached (handles early auth events).
+  try {
+    let user = (window.__AUTH_LAST_USER__ != null)
+      ? window.__AUTH_LAST_USER__
+      : (typeof firebase !== 'undefined' && firebase.auth ? firebase.auth().currentUser : null);
+    if (!user) user = buildFallbackUserFromPayload(readPostLoginPayload());
+    if (typeof window.__applyAuthUi === 'function') window.__applyAuthUi(user);
+  } catch {}
 });
 
 // Firebase auth + balance live update
 async function ensureFirebaseCompat(){
+  try { if (typeof window.__FIREBASE_ENV_OK__ === 'boolean' && !window.__FIREBASE_ENV_OK__) return false; } catch {}
   if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) return true;
   return new Promise(resolve => {
     try {
@@ -2044,6 +2403,7 @@ async function ensureFirebaseCompat(){
 }
 async function initFirebaseApp(){
   try {
+    try { if (typeof window.__FIREBASE_ENV_OK__ === 'boolean' && !window.__FIREBASE_ENV_OK__) return false; } catch {}
     const ok = await ensureFirebaseCompat();
     if (!ok || typeof firebase === 'undefined') return false;
     if (!firebase.apps || !firebase.apps.length){
@@ -2063,54 +2423,239 @@ async function initFirebaseApp(){
     return true;
   } catch { return false; }
 }
+
+// محاولة استعادة جلسة Firebase من بيانات مخزنة (postLoginPayload)
+const POST_LOGIN_STORAGE_KEY = 'postLoginPayload';
+const TRANSIENT_AUTH_PREFIX = '__Z3EM_AUTH__:';
+const MANUAL_ROUTER_DEFAULT = 'https://z3em-manwal.laithqarqaz1.workers.dev/';
+let __AUTH_RESTORE_ATTEMPTED__ = false;
+let __AUTH_RESTORE_PROMISE__ = null;
+
+function readPostLoginPayload(){
+  try {
+    const raw = localStorage.getItem(POST_LOGIN_STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data && typeof data === 'object') return data;
+    }
+  } catch {}
+  try {
+    if (window.__POST_LOGIN_PAYLOAD__ && typeof window.__POST_LOGIN_PAYLOAD__ === 'object') {
+      return window.__POST_LOGIN_PAYLOAD__;
+    }
+  } catch {}
+  // Fallback: same-tab transfer via window.name (file:// safe)
+  try {
+    if (typeof window.name === 'string' && window.name.startsWith(TRANSIENT_AUTH_PREFIX)) {
+      const json = window.name.slice(TRANSIENT_AUTH_PREFIX.length);
+      const data = JSON.parse(json);
+      if (data && typeof data === 'object') {
+        try { localStorage.setItem(POST_LOGIN_STORAGE_KEY, JSON.stringify(data)); } catch {}
+        try { window.__POST_LOGIN_PAYLOAD__ = data; } catch {}
+        try { window.name = ''; } catch {}
+        return data;
+      }
+    }
+  } catch {}
+  return null;
+}
+function writePostLoginPayload(payload){
+  try {
+    const data = { ...(payload || {}), ts: Date.now() };
+    localStorage.setItem(POST_LOGIN_STORAGE_KEY, JSON.stringify(data));
+    try { window.name = TRANSIENT_AUTH_PREFIX + JSON.stringify(data); } catch {}
+    try { window.__POST_LOGIN_PAYLOAD__ = data; } catch {}
+  } catch {}
+}
+function base64UrlDecode(input){
+  try {
+    let str = String(input || '').replace(/-/g, '+').replace(/_/g, '/');
+    const pad = str.length % 4;
+    if (pad) str += '='.repeat(4 - pad);
+    return atob(str);
+  } catch { return ''; }
+}
+function decodeJwtPayload(token){
+  const parts = String(token || '').split('.');
+  if (parts.length < 2) return null;
+  try {
+    const json = base64UrlDecode(parts[1]);
+    return json ? JSON.parse(json) : null;
+  } catch { return null; }
+}
+function isJwtUsable(token, leewaySec = 60){
+  const payload = decodeJwtPayload(token);
+  if (!payload || !payload.exp) return true;
+  const expMs = Number(payload.exp) * 1000;
+  if (!Number.isFinite(expMs)) return true;
+  return expMs - Date.now() > (Number(leewaySec) || 0) * 1000;
+}
+function buildFallbackUserFromPayload(payload){
+  if (!payload) return null;
+  const idToken = payload.token || payload.idToken || '';
+  const hasSession = !!(payload.sessionKey || payload.session_key);
+  const hasAuthKey = !!(payload.authkey || payload.authKey);
+  const decoded = idToken ? (decodeJwtPayload(idToken) || {}) : {};
+  const uid = payload.uid || decoded.user_id || decoded.sub || '';
+  if (!uid) return null;
+  if (idToken && isJwtUsable(idToken, 30)) {
+    return {
+      uid,
+      email: payload.email || decoded.email || '',
+      displayName: payload.displayName || decoded.name || '',
+      photoURL: payload.photoURL || decoded.picture || '',
+      isFallback: true,
+      getIdToken: async () => idToken
+    };
+  }
+  if (!hasSession && !hasAuthKey) return null;
+  return {
+    uid,
+    email: payload.email || '',
+    displayName: payload.displayName || '',
+    photoURL: payload.photoURL || '',
+    isFallback: true,
+    getIdToken: async () => ''
+  };
+}
+function getManualRouterBase(){
+  try {
+    const stored = localStorage.getItem('MANWAL_ROUTER_BASE');
+    if (stored) {
+      const candidate = stored.trim();
+      const normalized = /^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`;
+      let url = new URL(normalized);
+      try {
+        if (location.protocol === 'https:' && url.protocol === 'http:') {
+          url = new URL(url.toString().replace(/^http:/i, 'https:'));
+        }
+      } catch {}
+      return url.toString();
+    }
+  } catch {}
+  return MANUAL_ROUTER_DEFAULT;
+}
+function buildManualAuthUrl(){
+  const base = getManualRouterBase();
+  try {
+    const url = new URL(base);
+    if (!url.searchParams.has('game')) url.searchParams.set('game','auth');
+    return url.toString();
+  } catch { return MANUAL_ROUTER_DEFAULT + '?game=auth'; }
+}
+function writeSessionInfo(uid, sessionKey, ttlSeconds, deviceId){
+  if (!uid || !sessionKey) return;
+  try {
+    const payload = {
+      uid,
+      sessionKey,
+      ts: Date.now(),
+      ttlSeconds: Number(ttlSeconds) || 0
+    };
+    if (deviceId) payload.deviceId = deviceId;
+    localStorage.setItem('sessionKeyInfo', JSON.stringify(payload));
+  } catch {}
+}
+async function syncManualAuthFromToken(idToken, payload){
+  if (!idToken) return null;
+  let sessionKey = "";
+  let sessionUid = "";
+  try {
+    const cached = JSON.parse(localStorage.getItem('sessionKeyInfo') || 'null');
+    if (cached && typeof cached === 'object') {
+      sessionKey = String(cached.sessionKey || "");
+      sessionUid = String(cached.uid || cached.useruid || "");
+    }
+  } catch {}
+  if (payload?.sessionKey) sessionKey = String(payload.sessionKey || "");
+  if (payload?.uid) sessionUid = String(payload.uid || "");
+  const authkey = payload?.authkey || payload?.authKey || "";
+  const customToken = payload?.customToken || payload?.custom_token || "";
+  if (!sessionKey && !authkey && !customToken) return null;
+  return { sessionKey, uid: sessionUid || payload?.uid || "", authkey, customToken };
+}
+async function tryRestoreAuthFromPostLogin(){
+  if (__AUTH_RESTORE_PROMISE__) return __AUTH_RESTORE_PROMISE__;
+  if (__AUTH_RESTORE_ATTEMPTED__) return null;
+  __AUTH_RESTORE_ATTEMPTED__ = true;
+  __AUTH_RESTORE_PROMISE__ = (async () => {
+    try {
+      if (typeof firebase === 'undefined' || !firebase.auth) return null;
+      const auth = firebase.auth();
+      if (auth.currentUser) return auth.currentUser;
+      const payload = readPostLoginPayload();
+      if (!payload) return null;
+      const customToken = payload.customToken || payload.custom_token || '';
+      if (customToken && isJwtUsable(customToken, 30) && typeof auth.signInWithCustomToken === 'function') {
+        try {
+          await auth.signInWithCustomToken(customToken);
+          return auth.currentUser || null;
+        } catch (_) {}
+      }
+      const idToken = payload.token || payload.idToken || '';
+      if (idToken && isJwtUsable(idToken, 30)) {
+        // لا تقم بمزامنة الجلسة من الواجهة. الاعتماد فقط على بيانات تسجيل الدخول.
+      }
+    } catch {}
+    return null;
+  })().finally(() => { __AUTH_RESTORE_PROMISE__ = null; });
+  return __AUTH_RESTORE_PROMISE__;
+}
+try { window.__ensureAuthReady = async function(){ await initFirebaseApp(); return tryRestoreAuthFromPostLogin(); }; } catch {}
+
 try {
   (async ()=>{
     const ok = await initFirebaseApp();
     if (!ok || typeof firebase === 'undefined' || !firebase.auth) return;
-    firebase.auth().onAuthStateChanged(user => {
+    let authRestoreChecked = false;
+    firebase.auth().onAuthStateChanged(async user => {
+    if (!user && !authRestoreChecked) {
+      authRestoreChecked = true;
+      const restored = await tryRestoreAuthFromPostLogin();
+      if (restored) return;
+    }
     clearSessionDocWatcher();
     sessionConflictHandled = false;
     bannedSessionHandled = false;
     if (typeof unsubscribeBalance === 'function') { try { unsubscribeBalance(); } catch (err) { console.warn('unsubscribeBalance error:', err); } unsubscribeBalance = null; }
-    const loginBtn = document.getElementById('loginSidebarBtn');
-    const depositBtn = document.getElementById('depositBtn');
-    const walletBtn = document.getElementById('walletBtn');
-    const transferBtn = document.getElementById('transferBtn');
-    const settingsBtn = document.getElementById('settingsBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
+
+    try {
+      const displayUser = user || buildFallbackUserFromPayload(readPostLoginPayload());
+      if (typeof window.__applyAuthUi === 'function') window.__applyAuthUi(displayUser);
+    } catch {}
 
     if (user) {
       watchSessionDocForDevice(user);
       try { localStorage.setItem(LAST_UID_KEY, user.uid); } catch {}
-      try { localStorage.setItem(LAST_LOGGED_KEY, '1'); } catch {}
-      if (loginBtn) loginBtn.style.display = 'none';
-      if (depositBtn) depositBtn.style.display = 'flex';
-      if (walletBtn) walletBtn.style.display = 'flex';
-      if (transferBtn) transferBtn.style.display = 'flex';
-      if (settingsBtn) settingsBtn.style.display = 'flex';
-      if (logoutBtn) logoutBtn.style.display = 'flex';
       const cached = readCachedBalance(user.uid); if (cached != null) { try { window.__BAL_BASE__ = cached; } catch {}; setHeaderBalance((typeof window.formatCurrencyFromJOD === 'function') ? window.formatCurrencyFromJOD(cached) : (Number(cached).toFixed(2) + ' $')); broadcastBalance(cached); }
       const docRef = firebase.firestore().collection('users').doc(user.uid);
-      unsubscribeBalance = docRef.onSnapshot(snap => {
-        if (snap.exists) {
+      const handleBalanceSnap = (snap) => {
+        if (snap && snap.exists) {
           const data = snap.data() || {};
-          if (data.isBanned === true) { handleBannedAccount(); return; }
+          if (data.isBanned === true) { handleBannedAccount(data.banReason); return; }
           const raw = data.balance ?? 0; const num = Number(raw); const val = Number.isFinite(num) ? num : 0;
           try { window.__BAL_BASE__ = val; } catch {}
           setHeaderBalance((typeof window.formatCurrencyFromJOD === 'function') ? window.formatCurrencyFromJOD(val) : (Number(val).toFixed(2) + ' $'));
           writeCachedBalance(user.uid, val); broadcastBalance(val);
-        } else { try { window.__BAL_BASE__ = 0; } catch {}; setHeaderBalance((typeof window.formatCurrencyFromJOD === 'function') ? window.formatCurrencyFromJOD(0) : '0.00 $'); writeCachedBalance(user.uid, 0); broadcastBalance(0); }
-      }, err => { console.error('Balance listener error:', err); setHeaderBalance('تعذر التحميل'); });
+        } else {
+          try { window.__BAL_BASE__ = 0; } catch {};
+          setHeaderBalance((typeof window.formatCurrencyFromJOD === 'function') ? window.formatCurrencyFromJOD(0) : '0.00 $');
+          writeCachedBalance(user.uid, 0); broadcastBalance(0);
+        }
+      };
+      if (shouldEnableRealtime('balance')) {
+        unsubscribeBalance = docRef.onSnapshot(handleBalanceSnap, err => {
+          console.error('Balance listener error:', err);
+          setHeaderBalance('تعذر التحميل');
+        });
+      } else {
+        docRef.get().then(handleBalanceSnap).catch(err => {
+          console.error('Balance fetch error:', err);
+          setHeaderBalance('تعذر التحميل');
+        });
+      }
     } else {
       setHeaderBalance('0.00 $');
-      try { localStorage.setItem(LAST_LOGGED_KEY, '0'); } catch {}
-      try { localStorage.removeItem(LAST_UID_KEY); } catch {}
-      if (loginBtn) loginBtn.style.display = 'flex';
-      if (depositBtn) depositBtn.style.display = 'none';
-      if (walletBtn) walletBtn.style.display = 'none';
-      if (transferBtn) transferBtn.style.display = 'none';
-      if (settingsBtn) settingsBtn.style.display = 'none';
-      if (logoutBtn) logoutBtn.style.display = 'none';
       broadcastBalance(null);
     }
     });
@@ -2127,7 +2672,7 @@ function initMobileDock(){
     const makeItem = (html, key, href) => { if (href) { const a = document.createElement('a'); a.href = href; a.innerHTML = html; a.className = 'dock-item'; a.dataset.key = key; return a; } else { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = html; b.className = 'dock-item'; b.dataset.key = key; return b; } };
     const wallet = makeItem('<i class="fa-solid fa-wallet" aria-hidden="true"></i>', 'wallet', 'index.html#/wallet'); wallet.setAttribute('aria-label','محفظتي');
     const store  = makeItem('<i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>', 'store', 'index.html#/games'); store.setAttribute('aria-label','المتجر/الألعاب');
-    const orders = makeItem('<i class="fa-solid fa-list" aria-hidden="true"></i>', 'orders', 'talabat.html'); orders.setAttribute('aria-label','طلباتي');
+    const orders = makeItem('<i class="fa-solid fa-list" aria-hidden="true"></i>', 'orders', 'index.html#/orders'); orders.setAttribute('aria-label','طلباتي');
     const deposit= makeItem('<i class="fa-solid fa-circle-dollar-to-slot" aria-hidden="true"></i>', 'deposit', 'edaa.html'); deposit.setAttribute('aria-label','شحن الرصيد');
     const home   = makeItem('<i class="fa-solid fa-house" aria-hidden="true"></i>', 'home', 'index.html'); home.setAttribute('aria-label','الرئيسية');
     dock.appendChild(wallet); dock.appendChild(store); dock.appendChild(orders); dock.appendChild(deposit); dock.appendChild(home);
@@ -2140,6 +2685,7 @@ function initMobileDock(){
         const storePages = new Set(['games.html','freefire.html','freefireauto.html','freefiremembership.html','freefireinbut.html','freefiren.html','pubg.html','weplay.html','bloodstrike.html','roblox.html','jawaker.html','yala.html','8ball.html','mobaileg.html','instainbut.html']);
         let key = 'home';
         if (hash === '#/wallet') key = 'wallet';
+        else if (hash === '#/orders') key = 'orders';
         else if (hash === '#/reviews') key = 'home';
         else if (file === 'wallet.html') key = 'wallet';
         else if (hash === '#/games' || hash === '#/social' || hash === '#/software') key = 'store';
@@ -2474,4 +3020,412 @@ function wirePageBalanceBox(){
       schedule();
     }
   }catch(_){ }
+})();
+
+// =================== Site state (theme + maintenance) ===================
+(function(){
+  const log = () => {};
+  try {
+    let started = false;
+
+    function ensureCss(){
+      if (document.getElementById("site-state-style")) return;
+      const st = document.createElement("style");
+      st.id = "site-state-style";
+      st.textContent = `
+        #maintenance-overlay{position:fixed;inset:0;z-index:15000;display:flex;align-items:center;justify-content:center;background:rgba(5,6,20,.92);color:#f8f9ff;text-align:center;padding:30px;backdrop-filter:blur(3px);}
+        #maintenance-overlay .card{background:#0f172a;border:1px solid rgba(124,126,208,.35);padding:24px 20px;border-radius:16px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.45);}
+        #maintenance-overlay h2{margin:0 0 10px;font-size:1.5rem;}
+        #maintenance-overlay p{margin:6px 0;color:#cbd5e1;}
+        #maintenance-overlay .countdown{font-weight:800;color:#fbbf24;}
+        /* Disable any template background (dots/pattern) while theme effects are active. */
+        body::before{display:none!important;background-image:none!important;background:none!important;}
+        /* Force a clean background for seasonal themes. */
+        body.theme-fall,
+        body.theme-snow,
+        body.theme-ramadan,
+        body.theme-eid{
+          background:#0b0f1d !important;
+          background-image:none !important;
+          background-repeat:no-repeat !important;
+        }
+        html[data-theme="light"] body.theme-fall,
+        html[data-theme="light"] body.theme-snow,
+        html[data-theme="light"] body.theme-ramadan,
+        html[data-theme="light"] body.theme-eid{
+          background:#f5f7ff !important;
+          background-image:none !important;
+          background-repeat:no-repeat !important;
+        }
+        body.theme-snow,
+        body.theme-eid{
+          padding-bottom: calc(var(--theme-bottom-pad, 0px) + env(safe-area-inset-bottom)) !important;
+        }
+        body.theme-snow{ --theme-bottom-pad: 140px; }
+        body.theme-eid{ --theme-bottom-pad: clamp(90px, 16vh, 170px); }
+        @media (max-width: 768px){
+          body.mobile-has-dock.theme-snow,
+          body.mobile-has-dock.theme-eid{
+            padding-bottom: calc(var(--theme-bottom-pad, 0px) + 78px + env(safe-area-inset-bottom)) !important;
+          }
+        }
+        body.theme-snow::before,
+        body.theme-fall::before,
+        body.theme-ramadan::before,
+        body.theme-eid::before{display:none!important;background-image:none!important;}
+        body.theme-snow::after{
+          content:"";
+          position:fixed;
+          left:-10vw;right:-10vw;bottom:-40px;
+          height:140px;
+          background:url('ICE.png') repeat-x bottom;
+          background-size:auto 140px;
+          pointer-events:none;
+          z-index:46;
+        }
+        body.theme-fall .leaf{
+          position:fixed;
+          top:-12%;
+          font-size:26px;
+          line-height:1;
+          opacity:.92;
+          transform:rotate(12deg);
+          /* Run once then JS removes the node on animationend (continuous spawner). */
+          animation:falling-leaf 11s linear forwards;
+          z-index:50;
+          pointer-events:none;
+          filter:drop-shadow(0 3px 6px rgba(0,0,0,.25));
+          right:auto!important;
+          font-family:"Segoe UI Symbol","Apple Color Emoji","Noto Color Emoji",sans-serif;
+          color:#f59e0b;
+          text-shadow:0 2px 6px rgba(0,0,0,.25);
+        }
+        @keyframes falling-leaf{
+          0%{transform:translate3d(0,-5%,0) rotate(0deg);}
+          25%{transform:translate3d(-5vw,25vh,0) rotate(90deg);}
+          50%{transform:translate3d(3vw,55vh,0) rotate(180deg);}
+          75%{transform:translate3d(-8vw,85vh,0) rotate(270deg);}
+          100%{transform:translate3d(-12vw,110vh,0) rotate(360deg);}
+        }
+        .snowflake{
+          position:fixed;
+          top:-8%;
+          color:#e0e9ff;
+          font-size:14px;
+          line-height:1;
+          opacity:.8;
+          /* Run once then JS removes the node on animationend (continuous spawner). */
+          animation:snowfall 11s linear forwards;
+          pointer-events:none;
+          z-index:50;
+          text-shadow:0 0 6px rgba(255,255,255,.35);
+          right:auto!important;
+          font-family:"Segoe UI Symbol","Apple Color Emoji","Noto Color Emoji",sans-serif;
+        }
+        html[data-theme="light"] .snowflake{
+          color:#94a3b8;
+          text-shadow:0 0 4px rgba(15,23,42,.12);
+        }
+        @keyframes snowfall{0%{transform:translateY(-10%) translateX(0);}100%{transform:translateY(115vh) translateX(var(--dx,20px));}}
+
+        /* Ramadan: hanging lantern */
+        .ramadan-wrap{
+          position:fixed;
+          top:72px; /* under the header */
+          right:10vw;
+          z-index:60;
+          pointer-events:none;
+          display:flex;flex-direction:column;align-items:center;gap:4px;
+          animation:swing 5.5s ease-in-out infinite alternate;
+          transform-origin:top center;
+        }
+        .ramadan-string{
+          width:2px;height:90px;
+          background:linear-gradient(#facc15,#f59e0b);
+          box-shadow:0 0 6px rgba(250,204,21,.55);
+        }
+        .ramadan-lantern{
+          width:58px;height:80px;
+          background:radial-gradient(circle at 50% 18%,#fff7d6 0%,#fcd34d 35%,#c2410c 95%);
+          border:2px solid #7c2d12;border-radius:14px;
+          box-shadow:0 10px 18px rgba(0,0,0,.30),0 0 12px rgba(251,191,36,.48);
+          position:relative;overflow:hidden;
+        }
+        .ramadan-lantern::before,.ramadan-lantern::after{
+          content:"";position:absolute;left:50%;transform:translateX(-50%);
+          width:72%;height:6px;border-radius:6px;background:rgba(255,249,226,.95);
+        }
+        .ramadan-lantern::before{top:9px;}
+        .ramadan-lantern::after{bottom:9px;}
+        .ramadan-crescent{
+          position:absolute;
+          width:34px;height:34px;border-radius:50%;
+          left:-14px;top:18px;
+          box-shadow:12px 0 0 0 #facc15;
+          filter:drop-shadow(0 0 6px rgba(250,204,21,.8));
+        }
+        @keyframes swing{
+          0%{transform:rotate(-7deg);}
+          50%{transform:rotate(6deg);}
+          100%{transform:rotate(-5deg);}
+        }
+
+        /* Eid: grass + fireworks */
+        .eid-grass{
+          position:fixed;left:0;right:0;bottom:0;
+          height:16vh;min-height:90px;max-height:170px;
+          pointer-events:none;z-index:45;overflow:visible;
+          background:none;
+        }
+        .eid-grass::before{
+          content:"";
+          position:absolute;left:-80px;right:-80px;top:-18px;bottom:-2px;
+          background-image:url('pngegg(2).png');
+          background-repeat:repeat-x;
+          background-size:90px 120px;
+          background-position:-30px 100%;
+          mix-blend-mode:normal;
+          opacity:1;
+          filter:drop-shadow(0 -4px 10px rgba(0,0,0,.22));
+          animation:grass-drift 6s ease-in-out infinite alternate;
+        }
+        @keyframes grass-drift{
+          0%{transform:translateX(-12px);}
+          100%{transform:translateX(12px);}
+        }
+        @keyframes grass-wind{
+          0%{transform:translateX(-8px) skewX(-1deg);}
+          100%{transform:translateX(8px) skewX(1deg);}
+        }
+        @media (prefers-reduced-motion: reduce){
+          .eid-grass::before,
+          .eid-grass::after{animation:none;}
+        }
+        .eid-firework{
+          position:fixed;top:20vh;left:50vw;width:8px;height:8px;
+          background:radial-gradient(circle,#fde68a 0%, #f59e0b 60%, rgba(0,0,0,0) 70%);
+          border-radius:50%;opacity:0;pointer-events:none;z-index:65;
+          animation:firework 1.8s ease-out forwards;
+        }
+        @keyframes firework{
+          0%{transform:scale(.2);opacity:0;}
+          40%{opacity:1;}
+          100%{transform:scale(3.2);opacity:0;}
+        }
+      `;
+      document.head.appendChild(st);
+    }
+
+    let maintTimer = null;
+    function applyMaintenance(state){
+      const on = state && state.on === true;
+      const untilMs = state && state.until ? Date.parse(state.until) : null;
+      // If maintenance expired, turn it off immediately.
+      if (on && untilMs && Date.now() > untilMs) {
+        log("maintenance expired", state.until);
+        applyMaintenance({ on:false });
+        return;
+      }
+      if (!on) {
+        document.getElementById("maintenance-overlay")?.remove();
+        if (maintTimer) { clearInterval(maintTimer); maintTimer = null; }
+        log("maintenance off");
+        return;
+      }
+      let overlay = document.getElementById("maintenance-overlay");
+      if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "maintenance-overlay";
+        overlay.innerHTML = `<div class="card"><h2>الموقع في وضع الصيانة</h2><p>الرجاء العودة لاحقاً.</p><p class="countdown"></p></div>`;
+        document.body.appendChild(overlay);
+      }
+      const cd = overlay.querySelector(".countdown");
+      if (maintTimer) clearInterval(maintTimer);
+      maintTimer = setInterval(() => {
+        if (untilMs && Date.now() > untilMs) { applyMaintenance({ on:false }); return; }
+        if (!cd) return;
+        if (untilMs) {
+          const diff = Math.max(0, untilMs - Date.now());
+          const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
+          cd.textContent = `الوقت المتبقي: ${m} دقيقة ${s} ثانية`;
+        } else {
+          cd.textContent = "بدون وقت انتهاء";
+        }
+      }, 1000);
+      log("maintenance on", state);
+    }
+
+    let particleKind = null;
+    let particleTimer = null;
+    // Particle caps are per-theme. Leaves should be much lighter than snow.
+    const PARTICLE_MAX = { snow: 90, leaf: 36 };
+    function clearThemeParticles(){
+      particleKind = null;
+      if (particleTimer){ clearInterval(particleTimer); particleTimer = null; }
+      document.querySelectorAll(".leaf,.snowflake").forEach(el=>el.remove());
+    }
+    function clearSpecialEffects(){ document.querySelectorAll(".ramadan-wrap,.eid-grass,.eid-firework").forEach(el=>el.remove()); }
+
+    function spawnRamadan(){
+      clearSpecialEffects(); clearThemeParticles();
+      const count = 1;
+      for(let i=0;i<count;i++){
+        const wrap=document.createElement("div");
+        wrap.className="ramadan-wrap";
+        wrap.style.right=`${8+Math.random()*14}vw`;
+        wrap.style.animationDuration=`${5+Math.random()*1.5}s`;
+        const string=document.createElement("div"); string.className="ramadan-string";
+        const lantern=document.createElement("div"); lantern.className="ramadan-lantern";
+        const cres=document.createElement("div"); cres.className="ramadan-crescent";
+        lantern.appendChild(cres);
+        wrap.append(string,lantern);
+        document.body.appendChild(wrap);
+      }
+    }
+
+    function spawnEid(){
+      clearSpecialEffects(); clearThemeParticles();
+      const grass=document.createElement("div");
+      grass.className="eid-grass";
+      document.body.appendChild(grass);
+      const count=8;
+      const frag=document.createDocumentFragment();
+      for(let i=0;i<count;i++){
+        const fw=document.createElement("div");
+        fw.className="eid-firework";
+        fw.style.left=`${10+Math.random()*80}vw`;
+        fw.style.top=`${10+Math.random()*45}vh`;
+        fw.style.animationDelay=`${Math.random()*1.2}s`;
+        fw.style.background=`radial-gradient(circle at center, ${Math.random()>.5?'#fde68a':'#a5b4fc'} 0%, ${Math.random()>.5?'#f97316':'#6366f1'} 55%, rgba(0,0,0,0) 70%)`;
+        frag.appendChild(fw);
+      }
+      document.body.appendChild(frag);
+    }
+
+    function spawnThemeParticles(kind,count){
+      clearThemeParticles();
+      clearSpecialEffects();
+      particleKind = kind;
+      const max = (kind === "leaf") ? PARTICLE_MAX.leaf : PARTICLE_MAX.snow;
+      const intervalMs = (kind === "leaf") ? 1400 : 700;
+
+      const makeOne = () => {
+        if (!particleKind) return;
+        const selector = (kind === "leaf") ? ".leaf" : ".snowflake";
+        if (document.querySelectorAll(selector).length >= max) return;
+        // Leaves are intentionally sparse to avoid covering the UI.
+        if (kind === "leaf" && Math.random() < 0.5) return;
+        const el=document.createElement("div");
+        if(kind==="leaf"){
+          el.className="leaf";
+          el.textContent="🍁";
+          el.style.top=`-${5+Math.random()*15}%`;
+          el.style.left=`${Math.random()*100}vw`;
+          el.style.animationDelay=`${Math.random()*1.2}s`;
+          el.style.animationDuration=`${10+Math.random()*8}s`;
+          el.style.fontSize=`${20+Math.random()*10}px`;
+          el.style.transform=`rotate(${Math.random()*40-20}deg)`;
+        } else if(kind==="snow"){
+          el.className="snowflake";
+          el.textContent="❄";
+          el.style.top=`-${5+Math.random()*15}%`;
+          el.style.left=`${Math.random()*100}vw`;
+          el.style.animationDelay=`${Math.random()*1.2}s`;
+          el.style.animationDuration=`${12+Math.random()*10}s`;
+          el.style.fontSize=`${12+Math.random()*10}px`;
+          el.style.setProperty('--dx', `${Math.random()*80-40}px`);
+        }
+        el.addEventListener("animationend", ()=> el.remove(), { once:true });
+        document.body.appendChild(el);
+      };
+
+      const burst = Math.max(0, Number(count) || 0);
+      for(let i=0;i<burst;i++){
+        const delay = (kind === "leaf" ? 220 : 120) * i + Math.random()*120;
+        setTimeout(makeOne, delay);
+      }
+      particleTimer = setInterval(makeOne, intervalMs);
+    }
+
+    function applyTheme(theme){
+      const name = String(theme?.name||"").toLowerCase().trim();
+      const color = String(theme?.color||"").trim();
+      document.body.classList.remove("theme-fall","theme-snow","theme-ramadan","theme-eid");
+      clearSpecialEffects(); clearThemeParticles();
+      if (["fall","autumn","خريف"].includes(name)) { document.body.classList.add("theme-fall"); spawnThemeParticles("leaf",6); }
+      else if (["snow","winter","ثلج"].includes(name)) { document.body.classList.add("theme-snow"); spawnThemeParticles("snow",14); }
+      else if (["ramadan","رمضان"].includes(name)) { document.body.classList.add("theme-ramadan"); spawnRamadan(); }
+      else if (["eid","عيد"].includes(name)) { document.body.classList.add("theme-eid"); spawnEid(); }
+      if (color) document.documentElement.style.setProperty("--accent-theme", color);
+      log("theme applied", name, color);
+    }
+
+    function decodeFirestoreValue(val){
+      if (!val || typeof val !== "object") return null;
+      if (Object.prototype.hasOwnProperty.call(val, "stringValue")) return String(val.stringValue || "");
+      if (Object.prototype.hasOwnProperty.call(val, "booleanValue")) return !!val.booleanValue;
+      if (Object.prototype.hasOwnProperty.call(val, "integerValue")) return Number(val.integerValue);
+      if (Object.prototype.hasOwnProperty.call(val, "doubleValue")) return Number(val.doubleValue);
+      if (Object.prototype.hasOwnProperty.call(val, "mapValue")) {
+        const out = {};
+        const fields = (val.mapValue && val.mapValue.fields) ? val.mapValue.fields : {};
+        Object.keys(fields).forEach(key => { out[key] = decodeFirestoreValue(fields[key]); });
+        return out;
+      }
+      if (Object.prototype.hasOwnProperty.call(val, "arrayValue")) {
+        const values = (val.arrayValue && Array.isArray(val.arrayValue.values)) ? val.arrayValue.values : [];
+        return values.map(decodeFirestoreValue);
+      }
+      return null;
+    }
+
+    function fetchSiteStateOnce(){
+      try {
+        const pid = "z3em-d9b11";
+        fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents/config/siteState`)
+          .then(r => r.json())
+          .then(doc => {
+            const fields = (doc && doc.fields) ? doc.fields : {};
+            const data = decodeFirestoreValue({ mapValue: { fields } }) || {};
+            applyTheme(data.theme || {});
+            applyMaintenance(data.maintenance || {});
+          })
+          .catch(() => {});
+      } catch {}
+    }
+
+    function startListener() {
+      if (started) return;
+      if (!shouldEnableRealtime('siteState')) {
+        started = true;
+        ensureCss();
+        fetchSiteStateOnce();
+        return;
+      }
+      if (!window.firebase || !firebase.apps?.length) { log("firebase not ready"); return; }
+      started = true;
+      ensureCss();
+      const db = firebase.firestore();
+      log("listener started");
+      db.collection("config").doc("siteState").onSnapshot(
+        (snap)=>{
+          const data = snap && snap.exists ? snap.data() : {};
+          log("snapshot", data);
+          applyTheme(data.theme || {});
+          applyMaintenance(data.maintenance || {});
+        },
+        (err)=> log("snapshot error", err?.message||err)
+      );
+    }
+
+    function waitForFirebase(attempt=0){
+      if (window.firebase && firebase.apps?.length) { log("firebase ready", attempt); startListener(); return; }
+      if (attempt > 30) { log("firebase not ready after retries"); return; }
+      setTimeout(() => waitForFirebase(attempt+1), 1000);
+    }
+
+    waitForFirebase();
+  } catch (err) {
+    log("siteState listener failed", err?.message||err);
+  }
 })();
